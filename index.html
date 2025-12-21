@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão | Portaria e Zeladoria</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50; --secondary: #34495e; --accent: #2980b9;
+            --success: #27ae60; --warning: #f39c12; --danger: #c0392b;
+            --visitante: #8e44ad; --servidor: #2980b9; --recepcao: #16a085;
+            --estacionado: #d35400; --edit: #e67e22; --info: #17a2b8;
+            --evento: #e74c3c; --coffee: #6f4e37;
+            --excel: #217346;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f7f6; color: #333; padding-bottom: 50px;}
+
+        /* LOGIN */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .login-box { background: white; padding: 2rem; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box h2 { color: var(--primary); margin-bottom: 1.5rem; }
+        .login-box input { margin-bottom: 1rem; }
+        .login-error { color: var(--danger); font-size: 0.9rem; margin-top: 10px; display: none; }
+
+        /* HEADER E NAV */
+        #app-content { display: none; }
+        header { background-color: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.5rem; }
+        
+        .nav-tabs { display: flex; background: var(--secondary); padding: 0 2rem; overflow-x: auto;}
+        .tab-btn { background: none; border: none; color: #bdc3c7; padding: 1rem 2rem; cursor: pointer; font-weight: bold; transition: 0.3s; border-bottom: 4px solid transparent; white-space: nowrap; }
+        .tab-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: white; border-bottom-color: var(--accent); }
+        .hidden-tab { display: none !important; }
+
+        main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .section { display: none; animation: fadeIn 0.4s; }
+        .section.active { display: block; }
+
+        /* CARDS E FORMULARIOS */
+        .dashboard-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .metric-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--secondary); display: flex; align-items: center; justify-content: space-between; }
+        .metric-info h3 { font-size: 0.9rem; color: #7f8c8d; text-transform: uppercase; margin-bottom: 5px; }
+        .metric-info p { font-size: 1.8rem; font-weight: bold; color: var(--primary); margin: 0; }
+        .metric-icon { font-size: 2rem; opacity: 0.2; }
+
+        .card-total { border-left-color: var(--primary); }
+        .card-pendente { border-left-color: var(--warning); }
+        .card-andamento { border-left-color: var(--accent); }
+        .card-concluido { border-left-color: var(--success); }
+        .card-recepcao { border-left-color: var(--recepcao); }
+        .card-estacionado { border-left-color: var(--estacionado); }
+        
+        /* NOVOS CARDS DE EVENTOS */
+        .card-evt-total { border-left-color: #333; }
+        .card-evt-interno { border-left-color: var(--primary); }
+        .card-evt-externo { border-left-color: var(--evento); }
+        .card-evt-publico { border-left-color: var(--success); }
+
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 2rem; border-top: 4px solid var(--accent); }
+        .card h2 { margin-bottom: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        
+        /* FILTROS */
+        .filter-container { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 1rem; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
+        .filter-group label { font-weight: bold; color: var(--secondary); font-size: 0.85rem;}
+        .filter-group input, .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+        .tipo-selector { display: flex; gap: 20px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+        .radio-label { display: flex; align-items: center; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        .radio-label input { width: auto; margin-right: 8px; }
+        
+        input, select, textarea { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; background: #fdf2e9; padding: 10px; border-radius: 4px; border: 1px solid #e67e22; }
+        .checkbox-wrapper input { width: auto; margin: 0; }
+        .checkbox-wrapper label { font-weight: bold; color: #d35400; cursor: pointer; }
+
+        .btn-container { display: flex; gap: 10px; }
+        button.btn-primary { background: var(--accent); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
+        button.btn-primary:hover { filter: brightness(90%); }
+        button.btn-cancel { background: #95a5a6; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
+        
+        /* Botão Excel */
+        button.btn-excel { background: var(--excel); color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: none; align-items: center; gap: 5px; margin-left: auto; }
+        button.btn-excel:hover { filter: brightness(90%); }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: var(--secondary); color: white; font-size: 0.85rem; text-transform: uppercase; }
+        tr:hover { background-color: #f9f9f9; }
+
+        .badge { padding: 5px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; color: white; display: inline-block; min-width: 80px; text-align: center;}
+        
+        .bg-pendente { background-color: var(--warning); }
+        .bg-andamento { background-color: var(--accent); }
+        .bg-concluido { background-color: var(--success); }
+        .bg-estacionado { background-color: var(--estacionado); } 
+        .bg-saiu { background-color: #95a5a6; } 
+        .bg-visitante-ativo { background-color: var(--recepcao); }
+        .bg-interno { background-color: var(--primary); }
+        .bg-externo { background-color: var(--evento); }
+
+        .action-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; color: white; font-size: 0.8rem; }
+        .btn-check { background-color: var(--success); }
+        .btn-delete { background-color: var(--danger); }
+        .btn-edit { background-color: var(--edit); }
+        .btn-baixa { background-color: var(--danger); }
+
+        .time-badge { background: #ecf0f1; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #bdc3c7; display: inline-flex; align-items: center; gap: 5px;}
+        .time-badge i { font-size: 0.8rem; }
+
+        .foto-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; background: #fafafa; }
+        .foto-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; background-color: #eee; margin-bottom: 10px; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-foto { background: #34495e; color: white; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-block; }
+        
+        .cam-controls { display: flex; gap: 10px; margin-top: 10px; }
+        #webcam-video { width: 100%; max-width: 300px; border-radius: 10px; display: none; transform: scaleX(-1); border: 3px solid var(--accent); }
+        
+        input[type="file"] { display: none; }
+        .avatar-table { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; vertical-align: middle; margin-right: 10px; }
+
+        /* Estilo da Tabela de Auditoria */
+        #tabela-logs td { font-size: 0.85rem; padding: 8px 12px; }
+        .log-acao-edicao { color: var(--edit); font-weight: bold; }
+        .log-acao-exclusao { color: var(--danger); font-weight: bold; }
+
+        /* Estilo da Tabela de Permissões */
+        .perm-table th, .perm-table td { text-align: center; }
+        .perm-table td:first-child { text-align: left; font-weight: bold; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2><i class="fas fa-lock"></i> Acesso Restrito</h2>
+            <p style="margin-bottom: 1rem; color: #666;">Entre com suas credenciais.</p>
+            <input type="text" id="login-email" placeholder="E-mail" onkeyup="checkEnter(event)">
+            <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)">
+            <button onclick="fazerLogin()" class="btn-primary">Entrar</button>
+            <p id="login-error" class="login-error">E-mail ou senha incorretos!</p>
+        </div>
+    </div>
+
+    <div id="app-content">
+        <header>
+            <h1><i class="fas fa-building"></i> COGESPA - DIVISÃO DE ZELADORIA <i class="fas fa-shield-alt" style="font-size:0.8rem; color: #27ae60;" title="Conexão Segura"></i></h1>
+            <div style="text-align: right;">
+                <small id="user-display" style="display:block; font-weight:bold; color: var(--accent);"></small>
+                <small id="user-role-display" style="display:block; font-size: 0.75rem; color: #bdc3c7;"></small>
+                <small id="date-display"></small>
+                <a href="#" onclick="logout()" style="color: white; font-size: 0.8rem; margin-left: 10px;">(Sair)</a>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button id="tab-demandas" class="tab-btn" onclick="switchTab('demandas')"><i class="fas fa-clipboard-list"></i> Demandas</button>
+            <button id="tab-visitantes" class="tab-btn" onclick="switchTab('visitantes')"><i class="fas fa-users"></i> Recepção</button>
+            <button id="tab-veiculos" class="tab-btn" onclick="switchTab('veiculos')"><i class="fas fa-car"></i> Garagem</button>
+            <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
+            <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')" style="border-bottom-color: var(--danger);"><i class="fas fa-history"></i> Auditoria</button>
+            <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')" style="border-bottom-color: #8e44ad;"><i class="fas fa-user-cog"></i> Usuários</button>
+        </nav>
+
+        <main>
+            <section id="demandas" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-demanda-total">...</p></div><i class="fas fa-folder-open metric-icon" style="color: var(--primary)"></i></div>
+                    <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-demanda-pendente">...</p></div><i class="fas fa-clock metric-icon" style="color: var(--warning)"></i></div>
+                    <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-demanda-andamento">...</p></div><i class="fas fa-tools metric-icon" style="color: var(--accent)"></i></div>
+                    <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-demanda-concluido">...</p></div><i class="fas fa-check-circle metric-icon" style="color: var(--success)"></i></div>
+                </div>
+
+                <div class="card">
+                    <h2 id="titulo-form-demanda"><i class="fas fa-plus-circle"></i> Nova Solicitação</h2>
+                    <form id="form-demanda">
+                        <input type="hidden" id="demanda-id-edit" value="">
+                        <div class="form-grid">
+                            <input type="text" id="demanda-titulo" placeholder="Descrição do Serviço" required>
+                            <input type="text" id="demanda-setor" placeholder="Local / Setor" required>
+                            <input type="text" id="demanda-solicitante" placeholder="Nome do Solicitante" required>
+                            <select id="demanda-prioridade">
+                                <option value="Baixa">Prioridade Baixa</option>
+                                <option value="Média">Prioridade Média</option>
+                                <option value="Alta">Prioridade Alta</option>
+                            </select>
+                            <input type="date" id="demanda-data" required>
+                            <select id="demanda-status-edit" style="display:none">
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Concluído">Concluído</option>
+                            </select>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-demanda">Registrar Demanda</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-demanda" onclick="cancelarEdicaoDemanda()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
+                        <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" onkeyup="window.renderizarApenasDemandas()" placeholder="Ex: Lâmpada, Copa..."></div>
+                        <div class="filter-group"><label>Status:</label>
+                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
+                                <option value="">Todos</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Concluído">Concluído</option>
+                            </select>
+                        </div>
+                        <button id="btn-export-demandas" class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-demandas">
+                            <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="visitantes" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-recepcao"><div class="metric-info"><h3>Visitantes Ativos</h3><p id="dash-visitantes-ativos">...</p></div><i class="fas fa-users metric-icon" style="color: var(--recepcao)"></i></div>
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total no Período</h3><p id="dash-visitantes-total">...</p></div><i class="fas fa-list metric-icon"></i></div>
+                </div>
+
+                <div class="card">
+                    <h2 id="titulo-form-visitante"><i class="fas fa-user-plus"></i> Cadastrar Visitante</h2>
+                    <form id="form-visitante">
+                        <input type="hidden" id="visitante-id-edit" value="">
+                        
+                        <div class="foto-container">
+                            <video id="webcam-video" autoplay playsinline></video>
+                            <canvas id="webcam-canvas" style="display:none;"></canvas>
+                            <img id="vis-preview" class="foto-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E">
+                            
+                            <div class="cam-controls">
+                                <button type="button" id="btn-iniciar-cam" onclick="iniciarCamera()" class="btn-foto"><i class="fas fa-camera"></i> Abrir Câmera</button>
+                                <button type="button" id="btn-capturar-cam" onclick="capturarFoto()" class="btn-primary" style="display:none; padding:5px 15px; font-size:0.8rem">Capturar</button>
+                                <label for="vis-foto-input" class="btn-foto"><i class="fas fa-upload"></i> Enviar Arquivo</label>
+                            </div>
+
+                            <input type="file" id="vis-foto-input" accept="image/*">
+                            <input type="hidden" id="vis-foto-base64">
+                        </div>
+
+                        <div class="form-grid">
+                            <input type="text" id="vis-nome" placeholder="Nome Completo" required>
+                            <input type="text" id="vis-doc" placeholder="Documento (RG/CPF)" required>
+                            <input type="text" id="vis-empresa" placeholder="Empresa (Opcional)">
+                            <input type="text" id="vis-contato" placeholder="E-mail / Telefone">
+                            <input type="text" id="vis-responsavel" placeholder="Pessoa Responsável (Anfitrião)" required>
+                            <input type="text" id="vis-finalidade" placeholder="Finalidade da Visita" required>
+                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="vis-entrada" required></div>
+                            <select id="vis-status-edit" style="display:none"><option value="Ativo">Na Empresa</option><option value="Saiu">Saiu</option></select>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-vis">Registrar Entrada</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-vis" onclick="cancelarEdicaoVisitante()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
+                        <div class="filter-group"><label>Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
+                        <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-visitantes">
+                            <thead><tr><th>Status</th><th>Visitante</th><th>Empresa/Doc</th><th>Responsável/Finalidade</th><th>Entrada/Saída</th><th>Ação</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="veiculos" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-estacionado"><div class="metric-info"><h3>Estacionados</h3><p id="dash-frota-estacionados">...</p></div><i class="fas fa-parking metric-icon" style="color: var(--estacionado)"></i></div>
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Acessos</h3><p id="dash-frota-total">...</p></div><i class="fas fa-car metric-icon" style="color: var(--primary)"></i></div>
+                    <div class="metric-card card-servidor"><div class="metric-info"><h3>Servidores</h3><p id="dash-servidor-count">...</p></div><i class="fas fa-id-badge metric-icon" style="color: var(--servidor)"></i></div>
+                    <div class="metric-card card-visitante"><div class="metric-info"><h3>Visitantes</h3><p id="dash-visitante-count">...</p></div><i class="fas fa-user-tag metric-icon" style="color: var(--visitante)"></i></div>
+                </div>
+
+                <div class="card">
+                    <h2 id="titulo-form-veiculo"><i class="fas fa-parking"></i> Registrar Entrada (Garagem)</h2>
+                    <form id="form-veiculo">
+                        <input type="hidden" id="veiculo-id-edit" value="">
+                        <div class="tipo-selector">
+                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-servidor" value="servidor" checked onclick="atualizarLabels()"><span style="color: var(--servidor)">Entrada Servidor</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-visitante" value="visitante" onclick="atualizarLabels()"><span style="color: var(--visitante)">Entrada Visitante</span></label>
+                        </div>
+                        <div class="form-grid">
+                            <input type="text" id="veiculo-carro" placeholder="Veículo (Modelo - Placa)" required>
+                            <input type="text" id="veiculo-motorista" placeholder="Nome do Condutor" required>
+                            <input type="text" id="veiculo-setor" placeholder="Setor" required>
+                            <input type="text" id="veiculo-contato" placeholder="Ramal / Contato">
+                            <input type="text" id="veiculo-destino" placeholder="Obs / Destino">
+                            <div><label style="font-size:0.8rem">KM Entrada</label><input type="number" id="veiculo-km-saida" placeholder="0"></div>
+                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
+                            <div id="container-status-veiculo" style="display:none"><label style="font-size:0.8rem;color:var(--edit)">Status</label><select id="veiculo-status-edit"><option value="Aberto">Estacionado</option><option value="Fechado">Finalizado</option></select></div>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-veiculo">Registrar Entrada</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-veiculo" onclick="cancelarEdicaoVeiculo()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
+                        <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-veiculos">
+                            <thead><tr><th>Status</th><th>Tipo</th><th>Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="eventos" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-evt-total">
+                        <div class="metric-info"><h3>Total Eventos</h3><p id="dash-eventos-qtd">...</p></div>
+                        <i class="fas fa-calendar metric-icon"></i>
+                    </div>
+                    <div class="metric-card card-evt-interno">
+                        <div class="metric-info"><h3>Internos</h3><p id="dash-eventos-interno">...</p></div>
+                        <i class="fas fa-building metric-icon" style="color: var(--primary)"></i>
+                    </div>
+                    <div class="metric-card card-evt-externo">
+                        <div class="metric-info"><h3>Externos</h3><p id="dash-eventos-externo">...</p></div>
+                        <i class="fas fa-globe metric-icon" style="color: var(--evento)"></i>
+                    </div>
+                    <div class="metric-card card-evt-publico">
+                        <div class="metric-info"><h3>Público Total</h3><p id="dash-eventos-publico">...</p></div>
+                        <i class="fas fa-users metric-icon" style="color: var(--success)"></i>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 id="titulo-form-evento"><i class="fas fa-calendar-plus"></i> Registrar Evento</h2>
+                    <form id="form-evento">
+                        <input type="hidden" id="evento-id-edit" value="">
+                        <div class="tipo-selector">
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Interno" checked> <span style="color: var(--primary)">Interno</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Externo"> <span style="color: var(--evento)">Externo</span></label>
+                        </div>
+                        <div class="form-grid">
+                            <input type="text" id="evento-nome" placeholder="Nome do Evento / Reunião" required>
+                            <input type="text" id="evento-organizador" placeholder="Organizador / Responsável" required>
+                            <div><label style="font-size:0.8rem">Data do Evento</label><input type="date" id="evento-data" required></div>
+                            <div><label style="font-size:0.8rem">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>
+                            <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>
+                            
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="evento-coffee">
+                                <label for="evento-coffee"><i class="fas fa-coffee"></i> Servir Coffee Break?</label>
+                            </div>
+                            <textarea id="evento-obs" placeholder="Observações e Solicitações (Ex: Datashow, Água, Cadeiras extras...)" style="grid-column: 1 / -1; height: 80px; resize: vertical;"></textarea>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-evento" style="background-color: var(--evento)">Salvar Evento</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-evento" onclick="cancelarEdicaoEvento()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
+                        <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-eventos">
+                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local / Obs</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="6" class="loading">Carregando dados...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="auditoria" class="section">
+                <div class="card">
+                    <h2><i class="fas fa-history"></i> Logs de Auditoria (Últimas ações)</h2>
+                    <div class="table-container">
+                        <table id="tabela-logs">
+                            <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Seção</th><th>Ação</th><th>Detalhes</th></tr></thead>
+                            <tbody><tr><td colspan="5" class="loading">Carregando histórico...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="usuarios" class="section">
+                <div class="card">
+                    <h2 id="titulo-user-form"><i class="fas fa-user-shield"></i> Criar Novo Usuário</h2>
+                    <div class="form-grid" style="background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 20px;">
+                        <input type="hidden" id="edit-user-id">
+                        <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>
+                        <input type="password" id="novo-user-pass" placeholder="Senha" required>
+                        <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>
+                        
+                        <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select>
+
+                        <div class="checkbox-wrapper" style="grid-column: 1 / -1; background: #e8f6f3; border-color: #27ae60;">
+                            <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">
+                            <label for="novo-user-admin" style="color: #27ae60;">É Administrador Geral? (Acesso Total)</label>
+                        </div>
+
+                        <div id="container-permissoes" style="grid-column: 1 / -1; margin-top: 10px;">
+                            <h4 style="margin-bottom: 10px; color: #666;">Permissões Específicas:</h4>
+                            <div class="table-container">
+                                <table class="perm-table">
+                                    <thead><tr><th>Módulo</th><th>Visualizar</th><th>Editar</th><th>Excluir</th><th>Exportar</th></tr></thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Demandas</td>
+                                            <td><input type="checkbox" id="perm-demandas-ver" checked></td>
+                                            <td><input type="checkbox" id="perm-demandas-edit"></td>
+                                            <td><input type="checkbox" id="perm-demandas-del"></td>
+                                            <td><input type="checkbox" id="perm-demandas-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Visitantes</td>
+                                            <td><input type="checkbox" id="perm-visitantes-ver"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-edit"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-del"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Frota / Veículos</td>
+                                            <td><input type="checkbox" id="perm-veiculos-ver"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-edit"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-del"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Eventos</td>
+                                            <td><input type="checkbox" id="perm-eventos-ver"></td>
+                                            <td><input type="checkbox" id="perm-eventos-edit"></td>
+                                            <td><input type="checkbox" id="perm-eventos-del"></td>
+                                            <td><input type="checkbox" id="perm-eventos-exp"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="btn-container" style="grid-column: 1 / -1;">
+                            <button onclick="salvarUsuario()" class="btn-primary" id="btn-save-user">Criar Usuário</button>
+                            <button onclick="cancelarEdicaoUsuario()" class="btn-cancel" id="btn-cancel-user" style="display:none">Cancelar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="tabela-usuarios-app">
+                            <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Último Login</th><th>Ação</th></tr></thead>
+                            <tbody><tr><td colspan="5" class="loading">Carregando usuários...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://cmdmjprdsxglfjvohcyp.supabase.co';
+        const supabaseKey = 'sb_publishable_2kT53IwbI5_A3ag5zu_CFg_3fhWCcAr';
+        
+        const sb = supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                storage: sessionStorage, 
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            }
+        });
+
+        // VARIÁVEIS GLOBAIS
+        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [];
+        let currentUserRole = null, currentUserData = null;
+        let streamGeral = null; // Para webcam
+
+        // VERIFICA SESSÃO AO INICIAR
+        async function verificarSessao() {
+            const { data } = await sb.auth.getSession();
+            if (data.session) {
+                const user = data.session.user;
+                const meta = user.user_metadata;
+                
+                // Monta objeto de usuário com permissões
+                currentUserData = { 
+                    nome: meta.nome || 'Usuário', 
+                    email: user.email,
+                    isAdmin: meta.is_admin === true,
+                    perms: meta.permissoes || {} 
+                };
+                
+                iniciarSistema(currentUserData);
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+            }
+        }
+        verificarSessao();
+
+        window.checkEnter = function(e) { if(e.key === 'Enter') window.fazerLogin(); }
+        
+        window.fazerLogin = async function() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            const errorMsg = document.getElementById('login-error');
+            errorMsg.style.display = 'none';
+
+            const { data, error } = await sb.auth.signInWithPassword({ email: email, password: password });
+
+            if (error) {
+                errorMsg.innerText = "Erro: Credenciais inválidas."; 
+                errorMsg.style.display = 'block';
+            } else {
+                location.reload();
+            }
+        }
+
+        function iniciarSistema(userData) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('user-display').innerText = `Olá, ${userData.nome}`;
+            
+            let labelRole = userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão';
+            document.getElementById('user-role-display').innerText = labelRole;
+
+            carregarDados();
+            iniciarRealtime();
+
+            // Lógica de visualização de abas
+            const allTabs = ['demandas', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios'];
+            
+            // Esconde todas inicialmente
+            allTabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden-tab'));
+
+            if (userData.isAdmin) {
+                // Admin vê tudo
+                allTabs.forEach(t => document.getElementById('tab-' + t).classList.remove('hidden-tab'));
+                carregarUsuarios(); // Carrega lista de usuários
+                if(!document.querySelector('.section.active')) window.switchTab('demandas');
+            } else {
+                // Usuário comum: checa permissões 'ver'
+                let firstTab = null;
+                
+                if (userData.perms.demandas?.ver) { document.getElementById('tab-demandas').classList.remove('hidden-tab'); if(!firstTab) firstTab='demandas'; }
+                if (userData.perms.visitantes?.ver) { document.getElementById('tab-visitantes').classList.remove('hidden-tab'); if(!firstTab) firstTab='visitantes'; }
+                if (userData.perms.veiculos?.ver) { document.getElementById('tab-veiculos').classList.remove('hidden-tab'); if(!firstTab) firstTab='veiculos'; }
+                if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
+                
+                if(firstTab) window.switchTab(firstTab);
+                else alert('Seu usuário não tem permissão para visualizar nenhuma aba.');
+            }
+        }
+
+        function togglePermissoes(checkbox) {
+            const container = document.getElementById('container-permissoes');
+            if (checkbox.checked) {
+                container.style.opacity = '0.5';
+                container.style.pointerEvents = 'none';
+            } else {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            }
+        }
+
+        window.logout = async function() { await sb.auth.signOut(); location.reload(); }
+
+        async function registrarLog(acao, secao, detalhes) {
+            if (!currentUserData) return;
+            await sb.from('logs_auditoria').insert({
+                usuario: currentUserData.nome,
+                acao: acao,
+                secao: secao,
+                detalhes: detalhes
+            });
+        }
+
+        async function carregarDados() {
+            // Só carrega se tiver permissão de ver OU for admin
+            const p = currentUserData.perms || {};
+            const admin = currentUserData.isAdmin;
+
+            if (admin || p.demandas?.ver) { let { data } = await sb.from('demandas').select('*'); if(data) { demandas = data.sort((a,b) => b.id - a.id); window.renderizarApenasDemandas(); } }
+            if (admin || p.visitantes?.ver) { let { data } = await sb.from('visitantes').select('*'); if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); } }
+            if (admin || p.veiculos?.ver) { let { data } = await sb.from('frota').select('*'); if(data) { frota = data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); } }
+            if (admin || p.eventos?.ver) { let { data } = await sb.from('eventos').select('*'); if(data) { eventos = data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); } }
+
+            if(admin) {
+                let { data: lData } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
+                if(lData) { logs = lData; renderizarLogs(); }
+            }
+        }
+
+        // --- GESTÃO DE USUÁRIOS (ADMIN) ---
+        async function carregarUsuarios() {
+            if(!currentUserData.isAdmin) return;
+            const { data, error } = await sb.rpc('admin_get_users');
+            if (error) {
+                console.error("Erro ao buscar usuários:", error);
+                const tbody = document.querySelector('#tabela-usuarios-app tbody');
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Erro: ${error.message}</td></tr>`;
+                return;
+            }
+            if(data) {
+                appUsers = data;
+                renderizarTabelaUsuarios();
+            } else {
+                const tbody = document.querySelector('#tabela-usuarios-app tbody');
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum usuário encontrado.</td></tr>`;
+            }
+        }
+
+        // FUNÇÃO UNIFICADA: SALVAR (CRIAR OU EDITAR)
+        async function salvarUsuario() {
+            const idEdit = document.getElementById('edit-user-id').value;
+            if(idEdit) {
+                editarUsuarioSalvar(idEdit);
+            } else {
+                criarUsuario();
+            }
+        }
+
+        async function criarUsuario() {
+            const email = document.getElementById('novo-user-email').value;
+            const pass = document.getElementById('novo-user-pass').value;
+            const nome = document.getElementById('novo-user-nome').value;
+            const isAdmin = document.getElementById('novo-user-admin').checked;
+            const perms = montarPermissoesJSON();
+
+            if(!email || !pass || !nome) return alert("Preencha todos os campos obrigatórios!");
+
+            const { data, error } = await sb.rpc('admin_create_user', {
+                email_input: email,
+                pass_input: pass,
+                nome_input: nome,
+                is_admin_input: isAdmin,
+                permissoes_input: perms
+            });
+
+            if(error) alert("Erro ao criar: " + error.message);
+            else {
+                alert("Usuário criado com sucesso!");
+                cancelarEdicaoUsuario();
+                carregarUsuarios();
+                registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`);
+            }
+        }
+
+        async function editarUsuarioSalvar(id) {
+            const nome = document.getElementById('novo-user-nome').value;
+            const isAdmin = document.getElementById('novo-user-admin').checked;
+            const perms = montarPermissoesJSON();
+            
+            const { error } = await sb.rpc('admin_update_user_meta', {
+                user_id_input: id,
+                nome_input: nome,
+                role_input: 'custom',
+                is_admin_input: isAdmin,
+                permissoes_input: perms
+            });
+
+            if(error) alert("Erro ao atualizar: " + error.message);
+            else {
+                alert("Usuário atualizado!");
+                cancelarEdicaoUsuario();
+                carregarUsuarios();
+                registrarLog('Edição', 'Usuários', `Atualizou permissões do usuário ID: ${id}`);
+            }
+        }
+
+        // Prepara o formulário para edição
+        function editarUsuario(userStr) {
+            const u = JSON.parse(decodeURIComponent(userStr));
+            const meta = u.usr_meta || {};
+            
+            document.getElementById('edit-user-id').value = u.usr_id;
+            document.getElementById('titulo-user-form').innerHTML = '<i class="fas fa-edit"></i> Editando Usuário';
+            document.getElementById('btn-save-user').innerText = 'Salvar Alterações';
+            document.getElementById('btn-cancel-user').style.display = 'block';
+
+            document.getElementById('novo-user-email').value = u.usr_email;
+            document.getElementById('novo-user-email').disabled = true; 
+            document.getElementById('novo-user-pass').style.display = 'none'; 
+            document.getElementById('novo-user-nome').value = meta.nome || '';
+            document.getElementById('novo-user-admin').checked = meta.is_admin === true;
+            togglePermissoes(document.getElementById('novo-user-admin'));
+
+            // Preenche Permissões
+            const p = meta.permissoes || {};
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos'];
+            mods.forEach(m => {
+                document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
+                document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
+                document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
+                document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true; // Novo
+            });
+            
+            document.getElementById('usuarios').scrollIntoView({behavior: 'smooth'});
+        }
+
+        function cancelarEdicaoUsuario() {
+            document.getElementById('edit-user-id').value = "";
+            document.getElementById('titulo-user-form').innerHTML = '<i class="fas fa-user-shield"></i> Criar Novo Usuário';
+            document.getElementById('btn-save-user').innerText = 'Criar Usuário';
+            document.getElementById('btn-cancel-user').style.display = 'none';
+            
+            document.getElementById('novo-user-email').value = '';
+            document.getElementById('novo-user-email').disabled = false;
+            document.getElementById('novo-user-pass').value = '';
+            document.getElementById('novo-user-pass').style.display = 'block';
+            document.getElementById('novo-user-nome').value = '';
+            document.getElementById('novo-user-admin').checked = false;
+            togglePermissoes(document.getElementById('novo-user-admin'));
+            
+            const cbs = document.querySelectorAll('.perm-table input[type="checkbox"]');
+            cbs.forEach(cb => cb.checked = false);
+        }
+
+        function montarPermissoesJSON() {
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos'];
+            let perms = {};
+            mods.forEach(m => {
+                perms[m] = {
+                    ver: document.getElementById(`perm-${m}-ver`).checked,
+                    editar: document.getElementById(`perm-${m}-edit`).checked,
+                    excluir: document.getElementById(`perm-${m}-del`).checked,
+                    exportar: document.getElementById(`perm-${m}-exp`).checked // Novo
+                };
+            });
+            return perms;
+        }
+
+        async function excluirUsuario(id, email) {
+            if(confirm(`Tem certeza que deseja excluir o usuário ${email}?`)) {
+                const { error } = await sb.rpc('admin_delete_user', { user_id_input: id });
+                if(error) alert("Erro: " + error.message);
+                else {
+                    alert("Usuário removido.");
+                    carregarUsuarios();
+                    registrarLog('Exclusão', 'Usuários', `Removeu usuário: ${email}`);
+                }
+            }
+        }
+
+        function renderizarTabelaUsuarios() {
+            const tbody = document.querySelector('#tabela-usuarios-app tbody'); tbody.innerHTML = '';
+            appUsers.forEach(u => {
+                const meta = u.usr_meta || {};
+                const tipo = meta.is_admin ? '<span class="badge" style="background:#27ae60">ADMIN</span>' : '<span class="badge" style="background:#7f8c8d">USUÁRIO</span>';
+                const lastLogin = u.usr_last_login ? new Date(u.usr_last_login).toLocaleString('pt-BR') : 'Nunca';
+                const userStr = encodeURIComponent(JSON.stringify(u));
+
+                tbody.innerHTML += `<tr>
+                    <td>${meta.nome}</td>
+                    <td>${u.usr_email}</td>
+                    <td>${tipo}</td>
+                    <td>${lastLogin}</td>
+                    <td>
+                        <button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>
+                        <button onclick="excluirUsuario('${u.usr_id}', '${u.usr_email}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function iniciarRealtime() {
+            sb.channel('mudancas-db').on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+                carregarDados(); 
+            }).subscribe();
+        }
+
+        // --- RENDERIZAÇÃO E NAVEGAÇÃO ---
+        function renderizarLogs() {
+            const tbody = document.querySelector('#tabela-logs tbody'); tbody.innerHTML = '';
+            logs.forEach(l => {
+                const tr = document.createElement('tr');
+                const data = new Date(l.data_hora).toLocaleString('pt-BR');
+                const classAcao = l.acao === 'Exclusão' ? 'log-acao-exclusao' : (l.acao === 'Edição' ? 'log-acao-edicao' : '');
+                tr.innerHTML = `<td>${data}</td><td>${l.usuario}</td><td>${l.secao}</td><td class="${classAcao}">${l.acao}</td><td>${l.detalhes}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getLocalISO() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            return now.toISOString().slice(0,16);
+        }
+
+        document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('demanda-data').valueAsDate = new Date();
+        document.getElementById('evento-data').valueAsDate = new Date();
+        document.getElementById('vis-entrada').value = getLocalISO();
+        document.getElementById('veiculo-hora-saida').value = getLocalISO();
+
+        window.switchTab = function(tabId) {
+            // Se estiver saindo da aba de visitantes, para a câmera
+            if (document.getElementById('visitantes').classList.contains('active')) {
+                pararCamera();
+            }
+
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
+        }
+
+        function calcularTempoDecorrido(dataInicio, dataFim = new Date()) {
+            const inicio = new Date(dataInicio);
+            const fim = new Date(dataFim);
+            const diffMs = fim - inicio;
+            const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHoras = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            if (diffDias > 0) return `${diffDias}d ${diffHoras}h`;
+            return `${diffHoras} horas`;
+        }
+
+        function formatarData(dataISO) { if(!dataISO) return ''; const [ano, mes, dia] = dataISO.split('-'); return `${dia}/${mes}/${ano}`; }
+
+        // --- HELPER DE PERMISSÃO ---
+        function pode(modulo, acao) {
+            if (currentUserData.isAdmin) return true;
+            return currentUserData.perms[modulo] && currentUserData.perms[modulo][acao] === true;
+        }
+
+        // --- WEBCAM ---
+        async function iniciarCamera() {
+            const video = document.getElementById('webcam-video');
+            const imgPreview = document.getElementById('vis-preview');
+            const btnCapturar = document.getElementById('btn-capturar-cam');
+            const btnIniciar = document.getElementById('btn-iniciar-cam');
+
+            try {
+                streamGeral = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                video.srcObject = streamGeral;
+                video.style.display = "block";
+                imgPreview.style.display = "none";
+                btnCapturar.style.display = "inline-block";
+                btnIniciar.style.display = "none";
+            } catch (err) {
+                alert("Erro ao acessar câmera: " + err.message);
+            }
+        }
+
+        function capturarFoto() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('webcam-canvas');
+            const imgPreview = document.getElementById('vis-preview');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Espelha horizontalmente se for câmera frontal (opcional, mas bom pra UX)
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Converte para Base64 (JPG qualidade 0.7)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            document.getElementById('vis-foto-base64').value = dataUrl;
+            imgPreview.src = dataUrl;
+
+            pararCamera();
+        }
+
+        function pararCamera() {
+            const video = document.getElementById('webcam-video');
+            const imgPreview = document.getElementById('vis-preview');
+            const btnCapturar = document.getElementById('btn-capturar-cam');
+            const btnIniciar = document.getElementById('btn-iniciar-cam');
+
+            if(streamGeral) {
+                streamGeral.getTracks().forEach(track => track.stop());
+                streamGeral = null;
+            }
+            video.style.display = "none";
+            imgPreview.style.display = "block";
+            btnCapturar.style.display = "none";
+            btnIniciar.style.display = "inline-block";
+        }
+
+        // --- EXPORTAR EXCEL ---
+        function exportarExcel(tipo) {
+            let data = [];
+            let nomeArquivo = "";
+
+            if (tipo === 'demandas') {
+                data = demandas; nomeArquivo = "Relatorio_Demandas.xlsx";
+            } else if (tipo === 'visitantes') {
+                data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx";
+            } else if (tipo === 'frota') {
+                data = frota; nomeArquivo = "Relatorio_Frota.xlsx";
+            } else if (tipo === 'eventos') {
+                data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx";
+            }
+
+            if(data.length === 0) return alert("Não há dados para exportar.");
+
+            // Limpa dados complexos antes de exportar (ex: fotos base64 grandes)
+            const cleanData = data.map(item => {
+                const novo = {...item};
+                if(novo.foto) novo.foto = "(Imagem)"; // Remove base64 gigante
+                return novo;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(cleanData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados");
+            XLSX.writeFile(wb, nomeArquivo);
+            registrarLog('Exportação', tipo, 'Gerou relatório Excel');
+        }
+
+        // --- 1. DEMANDAS ---
+        const formDemanda = document.getElementById('form-demanda');
+        formDemanda.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('demanda-id-edit').value;
+            const id = idEdicao || Date.now(); 
+            const novaDemanda = {
+                id: id,
+                titulo: document.getElementById('demanda-titulo').value,
+                setor: document.getElementById('demanda-setor').value,
+                solicitante: document.getElementById('demanda-solicitante').value,
+                prioridade: document.getElementById('demanda-prioridade').value,
+                data: document.getElementById('demanda-data').value,
+                status: idEdicao ? document.getElementById('demanda-status-edit').value : 'Pendente',
+                data_fim: null 
+            };
+            if(idEdicao) {
+                const itemAntigo = demandas.find(d => d.id == id);
+                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) novaDemanda.data_fim = new Date().toISOString();
+                else if (itemAntigo && itemAntigo.data_fim) novaDemanda.data_fim = itemAntigo.data_fim;
+                registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${id} (${novaDemanda.titulo})`);
+            }
+            const { error } = await sb.from('demandas').upsert(novaDemanda);
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
+        });
+
+        window.editarDemanda = function(id) {
+            const d = demandas.find(item => item.id == id); if (!d) return;
+            document.getElementById('demanda-id-edit').value = d.id;
+            document.getElementById('demanda-titulo').value = d.titulo; document.getElementById('demanda-setor').value = d.setor;
+            document.getElementById('demanda-solicitante').value = d.solicitante; document.getElementById('demanda-prioridade').value = d.prioridade;
+            document.getElementById('demanda-data').value = d.data;
+            document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-edit"></i> Editando';
+            document.getElementById('btn-submit-demanda').innerText = "Salvar"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--edit)";
+            document.getElementById('btn-cancel-demanda').style.display = "block";
+            const selectStatus = document.getElementById('demanda-status-edit'); selectStatus.style.display = "block"; selectStatus.value = d.status;
+            document.getElementById('demandas').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.cancelarEdicaoDemanda = function() {
+            document.getElementById('demanda-id-edit').value = ""; formDemanda.reset(); document.getElementById('demanda-data').valueAsDate = new Date();
+            document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação';
+            document.getElementById('btn-submit-demanda').innerText = "Registrar Demanda"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--accent)";
+            document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
+        }
+
+        window.renderizarApenasDemandas = function() {
+            const filtroMes = document.getElementById('filtro-mes-demanda').value; 
+            const filtroStatus = document.getElementById('filtro-status-demanda').value;
+            const filtroTexto = document.getElementById('filtro-texto-demanda').value.toLowerCase();
+            const lista = demandas.filter(d => {
+                const bateData = !filtroMes || d.data.startsWith(filtroMes);
+                const bateStatus = !filtroStatus || d.status === filtroStatus;
+                const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante).toLowerCase();
+                const bateTexto = !filtroTexto || textoGeral.includes(filtroTexto);
+                return bateData && bateStatus && bateTexto;
+            });
+            document.getElementById('dash-demanda-total').innerText = lista.length;
+            document.getElementById('dash-demanda-pendente').innerText = lista.filter(d => d.status === 'Pendente').length;
+            document.getElementById('dash-demanda-andamento').innerText = lista.filter(d => d.status === 'Em Andamento').length;
+            document.getElementById('dash-demanda-concluido').innerText = lista.filter(d => d.status === 'Concluído').length;
+            const tbody = document.querySelector('#tabela-demandas tbody'); tbody.innerHTML = '';
+            
+            // BOTÃO DE EXPORTAR
+            const btnExport = document.getElementById('btn-export-demandas');
+            if (pode('demandas', 'exportar')) btnExport.style.display = 'inline-flex';
+            else btnExport.style.display = 'none';
+
+            lista.forEach(d => {
+                const tr = document.createElement('tr');
+                let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
+                let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
+                const btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
+                
+                let buttons = '';
+                if (pode('demandas', 'editar')) buttons += `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
+                if (pode('demandas', 'excluir')) buttons += `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+
+                tr.innerHTML = `<td>${formatarData(d.data)}</td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:120px">${btnAvancar}${buttons}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.avancarStatus = async function(id) { 
+            const item = demandas.find(d => d.id == id); if(!item) return;
+            let novoStatus = item.status, novaDataFim = item.data_fim;
+            if(item.status === 'Pendente') novoStatus = 'Em Andamento'; else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = new Date().toISOString(); }
+            await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id); carregarDados();
+        }
+
+        window.deletarDemanda = async function(id) { 
+            if(confirm('Excluir?')) { 
+                const item = demandas.find(d => d.id == id);
+                await sb.from('demandas').delete().eq('id', id);
+                registrarLog('Exclusão', 'Demandas', `Removeu demanda: ${item ? item.titulo : id}`);
+                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda(); carregarDados();
+            } 
+        }
+
+        // 2. VISITANTES
+        const fileInput = document.getElementById('vis-foto-input');
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                        const maxWidth = 500; const scale = maxWidth / img.width;
+                        const newWidth = (img.width > maxWidth) ? maxWidth : img.width; const newHeight = (img.width > maxWidth) ? img.height * scale : img.height;
+                        canvas.width = newWidth; canvas.height = newHeight; ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        const base64String = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('vis-foto-base64').value = base64String; document.getElementById('vis-preview').src = base64String;
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        const formVis = document.getElementById('form-visitante');
+        formVis.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('visitante-id-edit').value;
+            const id = idEdicao || Date.now();
+            const fotoBase64 = document.getElementById('vis-foto-base64').value;
+            const novoVisitante = {
+                id: id, foto: fotoBase64 || null, 
+                nome: document.getElementById('vis-nome').value, doc: document.getElementById('vis-doc').value,
+                empresa: document.getElementById('vis-empresa').value, contato: document.getElementById('vis-contato').value,
+                responsavel: document.getElementById('vis-responsavel').value, finalidade: document.getElementById('vis-finalidade').value,
+                entrada: document.getElementById('vis-entrada').value, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null
+            };
+            if(idEdicao) {
+                const ant = visitantes.find(v => v.id == id);
+                if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto;
+                if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString();
+                else if (ant && ant.saida) novoVisitante.saida = ant.saida;
+                registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`);
+            }
+            const { error } = await sb.from('visitantes').upsert(novoVisitante);
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); }
+        });
+
+        window.editarVisitante = function(id) {
+            const v = visitantes.find(i => i.id == id); if(!v) return;
+            document.getElementById('visitante-id-edit').value = v.id;
+            document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc;
+            document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato;
+            document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade;
+            document.getElementById('vis-entrada').value = v.entrada;
+            const preview = document.getElementById('vis-preview');
+            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
+            if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; }
+            document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante';
+            const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)";
+            document.getElementById('btn-cancel-vis').style.display = "block";
+            const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status;
+            document.getElementById('visitantes').scrollIntoView({behavior:'smooth'});
+        }
+        
+        window.deletarVisitante = async function(id) {
+            if(confirm('Excluir?')) {
+                const item = visitantes.find(v => v.id == id);
+                await sb.from('visitantes').delete().eq('id', id);
+                registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`);
+                if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados();
+            }
+        }
+
+        window.cancelarEdicaoVisitante = function() {
+            document.getElementById('visitante-id-edit').value = ""; formVis.reset(); document.getElementById('vis-entrada').value = getLocalISO();
+            document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante';
+            const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)";
+            document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none";
+            document.getElementById('vis-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; document.getElementById('vis-foto-base64').value = "";
+            pararCamera();
+        }
+
+        window.renderizarApenasVisitantes = function() {
+            const mes = document.getElementById('filtro-mes-vis').value; const termo = document.getElementById('filtro-busca-vis').value.toLowerCase();
+            const lista = visitantes.filter(v => {
+                const bateMes = !mes || v.entrada.startsWith(mes);
+                const bateTermo = !termo || v.nome.toLowerCase().includes(termo) || v.doc.includes(termo) || v.empresa.toLowerCase().includes(termo);
+                return bateMes && bateTermo;
+            });
+            document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
+            document.getElementById('dash-visitantes-total').innerText = lista.length;
+            const tbody = document.querySelector('#tabela-visitantes tbody'); tbody.innerHTML = '';
+            
+            const btnExport = document.getElementById('btn-export-visitantes');
+            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex';
+            else btnExport.style.display = 'none';
+
+            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
+            lista.forEach(v => {
+                const tr = document.createElement('tr');
+                const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
+                const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+                const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
+                const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
+                
+                let buttons = '';
+                if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
+                if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
+
+                const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
+                tr.innerHTML = `<td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.baixaVisitante = async function(id) { 
+            if(confirm('Confirmar saída do visitante?')) { 
+                await sb.from('visitantes').update({ status: 'Saiu', saida: new Date().toISOString() }).eq('id', id); carregarDados();
+            } 
+        }
+
+        // 3. VEICULOS
+        window.atualizarLabels = function() {
+            const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
+            const btn = document.getElementById('btn-submit-veiculo');
+            if (!document.getElementById('veiculo-id-edit').value) btn.innerText = "Registrar Entrada";
+            if (tipo === 'servidor') { btn.style.backgroundColor = "var(--servidor)"; document.getElementById('veiculo-setor').placeholder = "Setor de Origem"; } 
+            else { btn.style.backgroundColor = "var(--visitante)"; document.getElementById('veiculo-setor').placeholder = "Empresa / Setor Visitado"; }
+        }
+
+        const formVeiculo = document.getElementById('form-veiculo');
+        formVeiculo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('veiculo-id-edit').value;
+            const id = idEdicao || Date.now();
+            const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
+            const novoVeiculo = {
+                id: id, tipo: tipo, carro: document.getElementById('veiculo-carro').value,
+                motorista: document.getElementById('veiculo-motorista').value, setor: document.getElementById('veiculo-setor').value,
+                contato: document.getElementById('veiculo-contato').value, destino: document.getElementById('veiculo-destino').value,
+                km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: document.getElementById('veiculo-hora-saida').value,
+                status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null
+            };
+            if(idEdicao) {
+                const ant = frota.find(f => f.id == id);
+                if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } 
+                else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; }
+                registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro} - ${novoVeiculo.motorista}`);
+            }
+            const { error } = await sb.from('frota').upsert(novoVeiculo);
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
+        });
+
+        window.editarVeiculo = function(id) {
+            const f = frota.find(i => i.id == id); if (!f) return;
+            document.getElementById('veiculo-id-edit').value = f.id;
+            document.getElementById('veiculo-carro').value = f.carro; document.getElementById('veiculo-motorista').value = f.motorista;
+            document.getElementById('veiculo-setor').value = f.setor || ''; document.getElementById('veiculo-contato').value = f.contato || '';
+            document.getElementById('veiculo-destino').value = f.destino; document.getElementById('veiculo-km-saida').value = f.km_inicial;
+            document.getElementById('veiculo-hora-saida').value = f.hora_inicial;
+            if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true;
+            document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando';
+            const btn = document.getElementById('btn-submit-veiculo'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)";
+            document.getElementById('btn-cancel-veiculo').style.display = "block";
+            document.getElementById('container-status-veiculo').style.display = "block"; document.getElementById('veiculo-status-edit').value = f.status;
+            window.atualizarLabels(); document.getElementById('veiculos').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.deletarVeiculo = async function(id) {
+            if(confirm('Tem certeza que deseja EXCLUIR este registro da garagem?')) {
+                const item = frota.find(f => f.id == id);
+                await sb.from('frota').delete().eq('id', id);
+                registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`);
+                if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados();
+            }
+        }
+
+        window.cancelarEdicaoVeiculo = function() {
+            document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset(); document.getElementById('veiculo-hora-saida').value = getLocalISO();
+            document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-parking"></i> Registrar Entrada';
+            document.getElementById('btn-cancel-veiculo').style.display = "none"; document.getElementById('container-status-veiculo').style.display = "none";
+            document.getElementById('radio-servidor').checked = true; window.atualizarLabels();
+        }
+
+        window.renderizarApenasFrota = function() {
+            const mes = document.getElementById('filtro-mes-frota').value; const busca = document.getElementById('filtro-busca-frota').value.toLowerCase();
+            const lista = frota.filter(f => {
+                const bData = !mes || f.hora_inicial.startsWith(mes);
+                const bTexto = !busca || (f.motorista+f.carro+f.setor).toLowerCase().includes(busca);
+                return bData && bTexto;
+            });
+            document.getElementById('dash-frota-total').innerText = lista.length;
+            document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;
+            document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;
+            document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length;
+            const tbody = document.querySelector('#tabela-veiculos tbody'); tbody.innerHTML = '';
+            
+            const btnExport = document.getElementById('btn-export-veiculos');
+            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex';
+            else btnExport.style.display = 'none';
+
+            lista.forEach(f => {
+                const tr = document.createElement('tr');
+                const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';
+                const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante';
+                const dIn = new Date(f.hora_inicial).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+                const dOut = f.hora_final ? new Date(f.hora_final).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
+                const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
+                
+                let buttons = '';
+                if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
+                if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
+
+                tr.innerHTML = `<td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.baixaVeiculo = async function(id) {
+            const km = prompt("KM de Saída (Opcional):", "0");
+            if (km !== null) { 
+                await sb.from('frota').update({ km_final: km, hora_final: new Date().toISOString(), status: 'Fechado' }).eq('id', id); carregarDados();
+            }
+        }
+
+        // 4. EVENTOS
+        const formEvento = document.getElementById('form-evento');
+        formEvento.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('evento-id-edit').value;
+            const id = idEdicao || Date.now();
+            const novoEvento = {
+                id: id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value,
+                nome: document.getElementById('evento-nome').value, organizador: document.getElementById('evento-organizador').value,
+                data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0,
+                local: document.getElementById('evento-local').value, coffee: document.getElementById('evento-coffee').checked,
+                obs: document.getElementById('evento-obs').value
+            };
+            if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
+            const { error } = await sb.from('eventos').upsert(novoEvento);
+            if(error) alert('Erro ao salvar evento: ' + error.message); else { cancelarEdicaoEvento(); carregarDados(); }
+        });
+
+        window.editarEvento = function(id) {
+            const ev = eventos.find(item => item.id == id); if (!ev) return;
+            document.getElementById('evento-id-edit').value = ev.id;
+            document.getElementById('evento-nome').value = ev.nome; document.getElementById('evento-organizador').value = ev.organizador;
+            document.getElementById('evento-data').value = ev.data; document.getElementById('evento-publico').value = ev.publico;
+            document.getElementById('evento-local').value = ev.local; document.getElementById('evento-coffee').checked = ev.coffee || false;
+            document.getElementById('evento-obs').value = ev.obs || "";
+            const radios = document.getElementsByName('tipoEvento');
+            for(let i=0; i<radios.length; i++) { if(radios[i].value === ev.tipo) radios[i].checked = true; }
+            document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento';
+            const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--edit)";
+            document.getElementById('btn-cancel-evento').style.display = "block";
+            document.getElementById('eventos').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.cancelarEdicaoEvento = function() {
+            document.getElementById('evento-id-edit').value = ""; formEvento.reset(); document.getElementById('evento-data').valueAsDate = new Date();
+            document.getElementById('evento-coffee').checked = false; document.getElementById('evento-obs').value = "";
+            document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-calendar-plus"></i> Registrar Evento';
+            const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--evento)";
+            document.getElementById('btn-cancel-evento').style.display = "none";
+        }
+
+        window.deletarEvento = async function(id) {
+            if(confirm('Tem certeza que deseja EXCLUIR este evento?')) {
+                const item = eventos.find(e => e.id == id);
+                await sb.from('eventos').delete().eq('id', id);
+                registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`);
+                if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados();
+            }
+        }
+
+        window.renderizarApenasEventos = function() {
+            const mes = document.getElementById('filtro-mes-evento').value; const busca = document.getElementById('filtro-busca-evento').value.toLowerCase();
+            const lista = eventos.filter(ev => {
+                const bData = !mes || ev.data.startsWith(mes);
+                const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toLowerCase().includes(busca);
+                return bData && bTexto;
+            });
+            document.getElementById('dash-eventos-qtd').innerText = lista.length;
+            const qtdInterno = lista.filter(e => e.tipo === 'Interno').length; const qtdExterno = lista.filter(e => e.tipo === 'Externo').length;
+            document.getElementById('dash-eventos-interno').innerText = qtdInterno; document.getElementById('dash-eventos-externo').innerText = qtdExterno;
+            const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0);
+            document.getElementById('dash-eventos-publico').innerText = totalPublico;
+            const tbody = document.querySelector('#tabela-eventos tbody'); tbody.innerHTML = '';
+            
+            const btnExport = document.getElementById('btn-export-eventos');
+            if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex';
+            else btnExport.style.display = 'none';
+
+            lista.forEach(ev => {
+                const tr = document.createElement('tr');
+                const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo'; const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`;
+                const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : '';
+                const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : '';
+                
+                // CHECAGEM DE PERMISSÃO
+                let buttons = '';
+                if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
+                if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+
+                tr.innerHTML = `<td>${formatarData(ev.data)}</td><td>${badge}</td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><i class="fas fa-user"></i> ${ev.publico}</td><td style="min-width:100px">${buttons}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
