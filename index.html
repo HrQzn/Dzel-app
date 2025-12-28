@@ -322,6 +322,13 @@
             </section>
 
             <section id="predial" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-predial-total">...</p></div><i class="fas fa-folder-open metric-icon" style="color: var(--predial)"></i></div>
+                    <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-predial-pendente">...</p></div><i class="fas fa-clock metric-icon" style="color: var(--warning)"></i></div>
+                    <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-predial-andamento">...</p></div><i class="fas fa-tools metric-icon" style="color: var(--accent)"></i></div>
+                    <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-predial-concluido">...</p></div><i class="fas fa-check-circle metric-icon" style="color: var(--success)"></i></div>
+                </div>
+
                 <div class="card" style="border-top-color: var(--predial);">
                     <h2 style="color: var(--predial);"><i class="fas fa-hammer"></i> Nova Solicitação - Manutenção Predial</h2>
                     <form id="form-predial">
@@ -339,7 +346,20 @@
                     </form>
                 </div>
                 <div class="card">
-                    <h3>Serviços em Aberto - Predial</h3>
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Status:</label>
+                            <select id="filtro-status-predial" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Todos</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Concluído">Concluído</option>
+                            </select>
+                        </div>
+                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar Predial</button>
+                    </div>
+
                     <div class="table-container">
                         <table id="tabela-predial">
                             <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Ações</th></tr></thead>
@@ -350,6 +370,13 @@
             </section>
 
             <section id="ar" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-ar-total">...</p></div><i class="fas fa-folder-open metric-icon" style="color: var(--ar)"></i></div>
+                    <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-ar-pendente">...</p></div><i class="fas fa-clock metric-icon" style="color: var(--warning)"></i></div>
+                    <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-ar-andamento">...</p></div><i class="fas fa-tools metric-icon" style="color: var(--accent)"></i></div>
+                    <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-ar-concluido">...</p></div><i class="fas fa-check-circle metric-icon" style="color: var(--success)"></i></div>
+                </div>
+
                 <div class="card" style="border-top-color: var(--ar);">
                     <h2 style="color: var(--ar);"><i class="fas fa-snowflake"></i> Nova Solicitação - Ar Condicionado</h2>
                     <form id="form-ar">
@@ -367,7 +394,20 @@
                     </form>
                 </div>
                 <div class="card">
-                    <h3>Serviços em Aberto - Ar Condicionado</h3>
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Status:</label>
+                            <select id="filtro-status-ar" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Todos</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Concluído">Concluído</option>
+                            </select>
+                        </div>
+                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar Ar</button>
+                    </div>
+
                     <div class="table-container">
                         <table id="tabela-ar">
                             <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Ações</th></tr></thead>
@@ -378,6 +418,13 @@
             </section>
 
             <section id="limpeza" class="section">
+                <div class="dashboard-panel">
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-limpeza-total">...</p></div><i class="fas fa-folder-open metric-icon" style="color: var(--limpeza)"></i></div>
+                    <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-limpeza-pendente">...</p></div><i class="fas fa-clock metric-icon" style="color: var(--warning)"></i></div>
+                    <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-limpeza-andamento">...</p></div><i class="fas fa-tools metric-icon" style="color: var(--accent)"></i></div>
+                    <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-limpeza-concluido">...</p></div><i class="fas fa-check-circle metric-icon" style="color: var(--success)"></i></div>
+                </div>
+
                 <div class="card" style="border-top-color: var(--limpeza);">
                     <h2 style="color: var(--limpeza);"><i class="fas fa-broom"></i> Nova Solicitação - Limpeza</h2>
                     <form id="form-limpeza">
@@ -395,7 +442,20 @@
                     </form>
                 </div>
                 <div class="card">
-                    <h3>Serviços em Aberto - Limpeza</h3>
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Status:</label>
+                            <select id="filtro-status-limpeza" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Todos</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Concluído">Concluído</option>
+                            </select>
+                        </div>
+                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar Limpeza</button>
+                    </div>
+
                     <div class="table-container">
                         <table id="tabela-limpeza">
                             <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Ações</th></tr></thead>
@@ -847,7 +907,7 @@
         async function criarUsuario() {
             const email = document.getElementById('novo-user-email').value;
             const pass = document.getElementById('novo-user-pass').value;
-            const nome = document.getElementById('novo-user-nome').value; // Minúsculo permitido
+            const nome = document.getElementById('novo-user-nome').value; 
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
 
@@ -1030,21 +1090,42 @@
         function exportarExcel(tipo) {
             let data = [];
             let nomeArquivo = "";
+
             if (tipo === 'demandas') {
-                data = demandas.map(d => ({
-                    ID: d.id, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante,
-                    CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data,
-                    HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim
-                }));
-                nomeArquivo = "Relatorio_Demandas.xlsx";
+                data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx";
+            }
+            else if (tipo === 'predial') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('PREDIAL'));
+                nomeArquivo = "Relatorio_Predial.xlsx";
+            }
+            else if (tipo === 'ar') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('CONDICIONADO'));
+                nomeArquivo = "Relatorio_ArCondicionado.xlsx";
+            }
+            else if (tipo === 'limpeza') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('LIMPEZA'));
+                nomeArquivo = "Relatorio_Limpeza.xlsx";
             }
             else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; } 
             else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; } 
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; } 
             else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
+
             if(data.length === 0) return alert("Não há dados para exportar.");
-            const finalData = data.map(item => { const novo = (tipo === 'demandas') ? item : {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });
-            const ws = XLSX.utils.json_to_sheet(finalData);
+
+            // Se for exportação de demandas (geral ou específica), formata as colunas
+            if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
+                 data = data.map(d => ({
+                    ID: d.id, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante,
+                    CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data,
+                    HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim
+                }));
+            } else {
+                // Outros módulos
+                data = data.map(item => { const novo = {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });
+            }
+
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dados");
             XLSX.writeFile(wb, nomeArquivo);
@@ -1186,11 +1267,12 @@
             </tr>`;
         }
 
-        // Função Simplificada para as Abas Específicas (Sem coluna Tempo/Prioridade para economizar espaço)
+        // Função Simplificada para as Abas Específicas
         function criarLinhaTabelaSimples(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
-            let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : ''; // Redireciona para geral
+            // Botão editar manda para a aba principal
+            let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
 
             return `<tr>
                 <td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td>
@@ -1221,21 +1303,41 @@
             lista.forEach(d => { tbody.innerHTML += criarLinhaTabela(d); });
         }
 
+        // FUNÇÃO UNIVERSAL PARA RENDERIZAR AS ABAS ESPECÍFICAS COM FILTROS E CARDS
         window.renderizarAbasEspecificas = function() {
-            // Predial
-            const listaPredial = demandas.filter(d => d.contratada && d.contratada.includes('PREDIAL'));
-            const tbodyPredial = document.querySelector('#tabela-predial tbody'); tbodyPredial.innerHTML = '';
-            listaPredial.forEach(d => { tbodyPredial.innerHTML += criarLinhaTabelaSimples(d); });
+            function renderizarAba(prefixo, palavraChave) {
+                // Pega os filtros específicos da aba
+                const mes = document.getElementById(`filtro-mes-${prefixo}`).value;
+                const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();
+                const status = document.getElementById(`filtro-status-${prefixo}`).value;
 
-            // Ar Condicionado
-            const listaAr = demandas.filter(d => d.contratada && d.contratada.includes('CONDICIONADO'));
-            const tbodyAr = document.querySelector('#tabela-ar tbody'); tbodyAr.innerHTML = '';
-            listaAr.forEach(d => { tbodyAr.innerHTML += criarLinhaTabelaSimples(d); });
+                // 1. Primeiro filtra apenas os itens daquela empresa
+                let listaBase = demandas.filter(d => d.contratada && d.contratada.includes(palavraChave));
 
-            // Limpeza
-            const listaLimpeza = demandas.filter(d => d.contratada && d.contratada.includes('LIMPEZA'));
-            const tbodyLimpeza = document.querySelector('#tabela-limpeza tbody'); tbodyLimpeza.innerHTML = '';
-            listaLimpeza.forEach(d => { tbodyLimpeza.innerHTML += criarLinhaTabelaSimples(d); });
+                // 2. Aplica os filtros de tela (Mes, Texto, Status) sobre a lista base
+                const listaFinal = listaBase.filter(d => {
+                    const bateMes = !mes || d.data.startsWith(mes);
+                    const bateBusca = !busca || (d.titulo + ' ' + d.setor + ' ' + d.solicitante).includes(busca);
+                    const bateStatus = !status || d.status === status;
+                    return bateMes && bateBusca && bateStatus;
+                });
+
+                // 3. Atualiza os Cards (Dashboards) daquela aba
+                document.getElementById(`dash-${prefixo}-total`).innerText = listaFinal.length;
+                document.getElementById(`dash-${prefixo}-pendente`).innerText = listaFinal.filter(d => d.status === 'Pendente').length;
+                document.getElementById(`dash-${prefixo}-andamento`).innerText = listaFinal.filter(d => d.status === 'Em Andamento').length;
+                document.getElementById(`dash-${prefixo}-concluido`).innerText = listaFinal.filter(d => d.status === 'Concluído').length;
+
+                // 4. Atualiza a Tabela
+                const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
+                tbody.innerHTML = '';
+                listaFinal.forEach(d => { tbody.innerHTML += criarLinhaTabelaSimples(d); });
+            }
+
+            // Chama para cada aba
+            renderizarAba('predial', 'PREDIAL');
+            renderizarAba('ar', 'CONDICIONADO');
+            renderizarAba('limpeza', 'LIMPEZA');
         }
 
         window.avancarStatus = async function(id) { 
@@ -1254,19 +1356,7 @@
             } 
         }
 
-        // Funções de Visitantes, Veiculos, Eventos e Crachás mantidas abaixo...
-        // (REPETIR O RESTANTE DO CÓDIGO DAS OUTRAS SEÇÕES IGUAL AO ANTERIOR)
-        // ...
-        
-        // --- COPIAR AQUI AS FUNÇÕES DE VISITANTES, VEÍCULOS, EVENTOS E CRACHÁS DO CÓDIGO ANTERIOR ---
-        // (Por limitação de tamanho da resposta, certifique-se de manter as funções abaixo:)
-        // formVis.addEventListener..., editarVisitante, deletarVisitante, renderizarApenasVisitantes...
-        // formVeiculo.addEventListener..., editarVeiculo, deletarVeiculo, renderizarApenasFrota...
-        // formEvento.addEventListener..., editarEvento, deletarEvento, renderizarApenasEventos...
-        // formCracha.addEventListener..., editarCracha, deletarCracha, renderizarApenasCrachas...
-        
-        // ATENÇÃO: As funções abaixo são essenciais. Se precisar, peça para eu enviar a parte 2.
-        
+        // --- MANTER TODO O CÓDIGO RESTANTE (VISITANTES, VEÍCULOS, ETC.) IGUAL ---
         const formVis = document.getElementById('form-visitante');
         formVis.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('visitante-id-edit').value; const id = idEdicao || Date.now(); const fotoBase64 = document.getElementById('vis-foto-base64').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(getDataHoraLocalParaInput()); const novoVisitante = { id: id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null }; if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); } const { error } = await sb.from('visitantes').upsert(novoVisitante); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); } });
         window.editarVisitante = function(id) { const v = visitantes.find(i => i.id == id); if(!v) return; document.getElementById('visitante-id-edit').value = v.id; document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc; document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato; document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade; if(v.entrada) { const dataLocal = new Date(v.entrada); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16); } const preview = document.getElementById('vis-preview'); const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; } document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-vis').style.display = "block"; const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status; document.getElementById('visitantes').scrollIntoView({behavior:'smooth'}); }
