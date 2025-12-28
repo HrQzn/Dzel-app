@@ -19,11 +19,20 @@
             --evento: #e74c3c; --coffee: #6f4e37;
             --excel: #217346;
             --cracha: #6c5ce7;
-            --print: #34495e; /* Cor do botão imprimir */
+            --print: #34495e;
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
         body { background-color: #f4f7f6; color: #333; padding-bottom: 50px;}
+
+        /* REGRA PARA FORÇAR MAIÚSCULAS NOS CAMPOS DE TEXTO */
+        input[type="text"], 
+        input[type="search"], 
+        textarea, 
+        select, 
+        input[list] {
+            text-transform: uppercase;
+        }
 
         /* LOGIN */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; }
@@ -67,7 +76,6 @@
         .card-evt-externo { border-left-color: var(--evento); }
         .card-evt-publico { border-left-color: var(--success); }
 
-        /* Cards Crachás */
         .card-cracha-solicitado { border-left-color: var(--warning); }
         .card-cracha-pronto { border-left-color: var(--info); }
         .card-cracha-entregue { border-left-color: var(--success); }
@@ -77,7 +85,6 @@
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         
-        /* FILTROS */
         .filter-container { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 1rem; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
         .filter-group label { font-weight: bold; color: var(--secondary); font-size: 0.85rem;}
@@ -119,7 +126,6 @@
         .bg-visitante-ativo { background-color: var(--recepcao); }
         .bg-interno { background-color: var(--primary); }
         .bg-externo { background-color: var(--evento); }
-        /* Badges Crachá */
         .bg-cracha-solicitado { background-color: var(--warning); }
         .bg-cracha-confeccionado { background-color: var(--info); }
         .bg-cracha-entregue { background-color: var(--success); }
@@ -144,12 +150,10 @@
         input[type="file"] { display: none; }
         .avatar-table { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; vertical-align: middle; margin-right: 10px; }
 
-        /* Estilo da Tabela de Auditoria */
         #tabela-logs td { font-size: 0.85rem; padding: 8px 12px; }
         .log-acao-edicao { color: var(--edit); font-weight: bold; }
         .log-acao-exclusao { color: var(--danger); font-weight: bold; }
 
-        /* Estilo da Tabela de Permissões */
         .perm-table th, .perm-table td { text-align: center; }
         .perm-table td:first-child { text-align: left; font-weight: bold; }
 
@@ -169,46 +173,21 @@
             .no-print { display: none !important; }
         }
 
-        /* Oculta área de impressão na tela normal */
         #area-impressao { display: none; border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto; }
         
-        /* CABEÇALHO DA O.S. ATUALIZADO (FLEX) */
         .os-header { 
-            display: flex; /* Alinha lado a lado */
-            align-items: center; /* Centraliza verticalmente */
-            justify-content: center; /* Centraliza na página */
-            gap: 20px; /* Espaço entre logo e texto */
-            border-bottom: 2px solid #000; 
-            margin-bottom: 20px; 
-            padding-bottom: 15px; 
+            display: flex; align-items: center; justify-content: center; 
+            gap: 20px; border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 15px; 
         }
-
-        .os-logo {
-            width: 80px; /* Tamanho do Brasão */
-            height: auto;
-            object-fit: contain;
-        }
-
-        .os-header-text {
-            text-align: center;
-        }
-
-        .os-header-text h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #000;
-        }
-
-        .os-header-text p {
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
-            color: #333;
-        }
+        .os-logo { width: 80px; height: auto; object-fit: contain; }
+        .os-header-text { text-align: center; }
+        .os-header-text h2 { margin: 0; font-size: 1.5rem; color: #000; }
+        .os-header-text p { margin: 5px 0 0 0; font-size: 0.9rem; color: #333; }
 
         .os-body { font-family: 'Arial', sans-serif; }
         .os-row { display: flex; border-bottom: 1px solid #ccc; padding: 12px 0; align-items: flex-start; }
         .os-label { font-weight: bold; width: 160px; color: #000; font-size: 0.9rem; text-transform: uppercase;}
-        .os-value { flex: 1; font-size: 1rem; }
+        .os-value { flex: 1; font-size: 1rem; text-transform: uppercase; } /* Força MAIÚSCULA na impressão */
         .os-signatures { margin-top: 80px; display: flex; justify-content: space-around; text-align: center; }
         .os-sig-box { flex: 1; padding: 0 20px; }
         .os-sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 40px; font-size: 0.9rem; }
@@ -229,9 +208,7 @@
         <div class="os-body">
             <div class="os-row"><span class="os-label">Nº O.S / ID:</span><span class="os-value" id="print-id"></span></div>
             <div class="os-row"><span class="os-label">Data Emissão:</span><span class="os-value" id="print-data-emissao"></span></div>
-            
             <div class="os-row"><span class="os-label">Data Solicitação:</span><span class="os-value" id="print-data"></span></div>
-            
             <div class="os-row"><span class="os-label">Solicitante:</span><span class="os-value" id="print-solicitante"></span></div>
             <div class="os-row"><span class="os-label">Setor / Local:</span><span class="os-value" id="print-setor"></span></div>
             <div class="os-row"><span class="os-label">Prioridade:</span><span class="os-value" id="print-prioridade"></span></div>
@@ -254,6 +231,7 @@
             <div class="os-sig-box"><div class="os-sig-line">Visto da Zeladoria</div></div>
         </div>
     </div>
+
     <div id="login-overlay">
         <div class="login-box">
             <h2><i class="fas fa-lock"></i> Acesso Restrito</h2>
@@ -320,14 +298,8 @@
                                 <option value="Alta">Prioridade Alta</option>
                             </select>
                             
-                            <div>
-                                <label style="font-size:0.8rem">Data</label>
-                                <input type="date" id="demanda-data" required>
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem">Horário</label>
-                                <input type="time" id="demanda-hora" required>
-                            </div>
+                            <div><label style="font-size:0.8rem">Data</label><input type="date" id="demanda-data" required></div>
+                            <div><label style="font-size:0.8rem">Horário</label><input type="time" id="demanda-hora" required></div>
 
                             <select id="demanda-status-edit" style="display:none">
                                 <option value="Pendente">Pendente</option>
@@ -354,7 +326,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-demandas" class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <button id="btn-export-demandas" class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-demandas">
@@ -412,7 +384,7 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
                         <div class="filter-group"><label>Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
-                        <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-visitantes">
@@ -460,7 +432,7 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
-                        <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-veiculos">
@@ -511,7 +483,7 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
-                        <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-eventos">
@@ -577,7 +549,7 @@
                                 <option value="Entregue">Entregues</option>
                             </select>
                         </div>
-                        <button id="btn-export-crachas" class="btn-excel" onclick="exportarExcel('crachas')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <button id="btn-export-crachas" class="btn-excel" onclick="exportarExcel('crachas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-crachas">
@@ -693,25 +665,21 @@
             }
         });
 
-        // VARIÁVEIS GLOBAIS
         let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [];
         let currentUserRole = null, currentUserData = null;
         let streamGeral = null; 
 
-        // VERIFICA SESSÃO AO INICIAR
         async function verificarSessao() {
             const { data } = await sb.auth.getSession();
             if (data.session) {
                 const user = data.session.user;
                 const meta = user.user_metadata;
-                
                 currentUserData = { 
                     nome: meta.nome || 'Usuário', 
                     email: user.email,
                     isAdmin: meta.is_admin === true,
                     perms: meta.permissoes || {} 
                 };
-                
                 iniciarSistema(currentUserData);
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
@@ -757,13 +725,11 @@
                 if(!document.querySelector('.section.active')) window.switchTab('demandas');
             } else {
                 let firstTab = null;
-                
                 if (userData.perms.demandas?.ver) { document.getElementById('tab-demandas').classList.remove('hidden-tab'); if(!firstTab) firstTab='demandas'; }
                 if (userData.perms.visitantes?.ver) { document.getElementById('tab-visitantes').classList.remove('hidden-tab'); if(!firstTab) firstTab='visitantes'; }
                 if (userData.perms.veiculos?.ver) { document.getElementById('tab-veiculos').classList.remove('hidden-tab'); if(!firstTab) firstTab='veiculos'; }
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
                 if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }
-                
                 if(firstTab) window.switchTab(firstTab);
                 else alert('Seu usuário não tem permissão para visualizar nenhuma aba.');
             }
@@ -808,7 +774,6 @@
             }
         }
 
-        // --- GESTÃO DE USUÁRIOS (ADMIN) ---
         async function carregarUsuarios() {
             if(!currentUserData.isAdmin) return;
             const { data, error } = await sb.rpc('admin_get_users');
@@ -828,7 +793,7 @@
         async function criarUsuario() {
             const email = document.getElementById('novo-user-email').value;
             const pass = document.getElementById('novo-user-pass').value;
-            const nome = document.getElementById('novo-user-nome').value;
+            const nome = document.getElementById('novo-user-nome').value.toUpperCase(); // FORCE UPPERCASE
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
 
@@ -852,7 +817,7 @@
         }
 
         async function editarUsuarioSalvar(id) {
-            const nome = document.getElementById('novo-user-nome').value;
+            const nome = document.getElementById('novo-user-nome').value.toUpperCase(); // FORCE UPPERCASE
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
             
@@ -889,7 +854,6 @@
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
 
-            // Preenche Permissões
             const p = meta.permissoes || {};
             const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas'];
             mods.forEach(m => {
@@ -898,7 +862,6 @@
                 document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
                 document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
             });
-            
             document.getElementById('usuarios').scrollIntoView({behavior: 'smooth'});
         }
 
@@ -907,7 +870,6 @@
             document.getElementById('titulo-user-form').innerHTML = '<i class="fas fa-user-shield"></i> Criar Novo Usuário';
             document.getElementById('btn-save-user').innerText = 'Criar Usuário';
             document.getElementById('btn-cancel-user').style.display = 'none';
-            
             document.getElementById('novo-user-email').value = '';
             document.getElementById('novo-user-email').disabled = false;
             document.getElementById('novo-user-pass').value = '';
@@ -915,7 +877,6 @@
             document.getElementById('novo-user-nome').value = '';
             document.getElementById('novo-user-admin').checked = false;
             togglePermissoes(document.getElementById('novo-user-admin'));
-            
             const cbs = document.querySelectorAll('.perm-table input[type="checkbox"]');
             cbs.forEach(cb => cb.checked = false);
         }
@@ -953,17 +914,7 @@
                 const tipo = meta.is_admin ? '<span class="badge" style="background:#27ae60">ADMIN</span>' : '<span class="badge" style="background:#7f8c8d">USUÁRIO</span>';
                 const lastLogin = u.usr_last_login ? new Date(u.usr_last_login).toLocaleString('pt-BR') : 'Nunca';
                 const userStr = encodeURIComponent(JSON.stringify(u));
-
-                tbody.innerHTML += `<tr>
-                    <td>${meta.nome}</td>
-                    <td>${u.usr_email}</td>
-                    <td>${tipo}</td>
-                    <td>${lastLogin}</td>
-                    <td>
-                        <button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>
-                        <button onclick="excluirUsuario('${u.usr_id}', '${u.usr_email}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td>${meta.nome}</td><td>${u.usr_email}</td><td>${tipo}</td><td>${lastLogin}</td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${u.usr_email}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -992,16 +943,14 @@
 
         document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR');
         document.getElementById('demanda-data').valueAsDate = new Date();
-        document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); // HORA PADRÃO
+        document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         document.getElementById('evento-data').valueAsDate = new Date();
         document.getElementById('cracha-data').valueAsDate = new Date();
         document.getElementById('vis-entrada').value = getLocalISO();
         document.getElementById('veiculo-hora-saida').value = getLocalISO();
 
         window.switchTab = function(tabId) {
-            if (document.getElementById('visitantes').classList.contains('active')) {
-                pararCamera();
-            }
+            if (document.getElementById('visitantes').classList.contains('active')) { pararCamera(); }
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
@@ -1025,13 +974,11 @@
             return currentUserData.perms[modulo] && currentUserData.perms[modulo][acao] === true;
         }
 
-        // --- WEBCAM ---
         async function iniciarCamera() {
             const video = document.getElementById('webcam-video');
             const imgPreview = document.getElementById('vis-preview');
             const btnCapturar = document.getElementById('btn-capturar-cam');
             const btnIniciar = document.getElementById('btn-iniciar-cam');
-
             try {
                 streamGeral = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = streamGeral;
@@ -1039,28 +986,22 @@
                 imgPreview.style.display = "none";
                 btnCapturar.style.display = "inline-block";
                 btnIniciar.style.display = "none";
-            } catch (err) {
-                alert("Erro ao acessar câmera: " + err.message);
-            }
+            } catch (err) { alert("Erro ao acessar câmera: " + err.message); }
         }
 
         function capturarFoto() {
             const video = document.getElementById('webcam-video');
             const canvas = document.getElementById('webcam-canvas');
             const imgPreview = document.getElementById('vis-preview');
-            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             document.getElementById('vis-foto-base64').value = dataUrl;
             imgPreview.src = dataUrl;
-
             pararCamera();
         }
 
@@ -1069,33 +1010,22 @@
             const imgPreview = document.getElementById('vis-preview');
             const btnCapturar = document.getElementById('btn-capturar-cam');
             const btnIniciar = document.getElementById('btn-iniciar-cam');
-
-            if(streamGeral) {
-                streamGeral.getTracks().forEach(track => track.stop());
-                streamGeral = null;
-            }
+            if(streamGeral) { streamGeral.getTracks().forEach(track => track.stop()); streamGeral = null; }
             video.style.display = "none";
             imgPreview.style.display = "block";
             btnCapturar.style.display = "none";
             btnIniciar.style.display = "inline-block";
         }
 
-        // --- EXPORTAR EXCEL ---
         function exportarExcel(tipo) {
             let data = [];
             let nomeArquivo = "";
 
-            if (tipo === 'demandas') {
-                data = demandas; nomeArquivo = "Relatorio_Demandas.xlsx";
-            } else if (tipo === 'visitantes') {
-                data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx";
-            } else if (tipo === 'frota') {
-                data = frota; nomeArquivo = "Relatorio_Frota.xlsx";
-            } else if (tipo === 'eventos') {
-                data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx";
-            } else if (tipo === 'crachas') {
-                data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx";
-            }
+            if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas.xlsx"; } 
+            else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; } 
+            else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; } 
+            else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; } 
+            else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
 
             if(data.length === 0) return alert("Não há dados para exportar.");
 
@@ -1105,6 +1035,7 @@
                 return novo;
             });
 
+            // Biblioteca SheetJS (xlsx.full.min.js) garante a criação de arquivo XLSX nativo
             const ws = XLSX.utils.json_to_sheet(cleanData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dados");
@@ -1112,7 +1043,6 @@
             registrarLog('Exportação', tipo, 'Gerou relatório Excel');
         }
 
-        // --- 1. DEMANDAS ---
         const formDemanda = document.getElementById('form-demanda');
         formDemanda.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1120,13 +1050,13 @@
             const id = idEdicao || Date.now(); 
             const novaDemanda = {
                 id: id,
-                titulo: document.getElementById('demanda-titulo').value,
-                setor: document.getElementById('demanda-setor').value,
-                solicitante: document.getElementById('demanda-solicitante').value,
-                contratada: document.getElementById('demanda-contratada').value, 
+                titulo: document.getElementById('demanda-titulo').value.toUpperCase(), // TOUPPERCASE
+                setor: document.getElementById('demanda-setor').value.toUpperCase(),
+                solicitante: document.getElementById('demanda-solicitante').value.toUpperCase(),
+                contratada: document.getElementById('demanda-contratada').value.toUpperCase(), 
                 prioridade: document.getElementById('demanda-prioridade').value,
                 data: document.getElementById('demanda-data').value,
-                hora: document.getElementById('demanda-hora').value, // <--- NOVO CAMPO HORA
+                hora: document.getElementById('demanda-hora').value, 
                 status: idEdicao ? document.getElementById('demanda-status-edit').value : 'Pendente',
                 data_fim: null 
             };
@@ -1143,12 +1073,13 @@
         window.editarDemanda = function(id) {
             const d = demandas.find(item => item.id == id); if (!d) return;
             document.getElementById('demanda-id-edit').value = d.id;
-            document.getElementById('demanda-titulo').value = d.titulo; document.getElementById('demanda-setor').value = d.setor;
+            document.getElementById('demanda-titulo').value = d.titulo; 
+            document.getElementById('demanda-setor').value = d.setor;
             document.getElementById('demanda-solicitante').value = d.solicitante; 
             document.getElementById('demanda-contratada').value = d.contratada || '';
             document.getElementById('demanda-prioridade').value = d.prioridade;
             document.getElementById('demanda-data').value = d.data;
-            document.getElementById('demanda-hora').value = d.hora || '00:00'; // CARREGA HORA
+            document.getElementById('demanda-hora').value = d.hora || '00:00';
             
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-edit"></i> Editando';
             document.getElementById('btn-submit-demanda').innerText = "Salvar"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--edit)";
@@ -1160,45 +1091,36 @@
         window.cancelarEdicaoDemanda = function() {
             document.getElementById('demanda-id-edit').value = ""; formDemanda.reset(); 
             document.getElementById('demanda-data').valueAsDate = new Date();
-            document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); // RESETA HORA
-            
+            document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação';
             document.getElementById('btn-submit-demanda').innerText = "Registrar Demanda"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--accent)";
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
-        // --- LÓGICA DE IMPRESSÃO ---
         window.imprimirOS = function(id) {
             const d = demandas.find(item => item.id == id);
             if (!d) return;
-
-            // Preenche o template oculto
             document.getElementById('print-id').innerText = d.id;
             document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
-            
-            // DATA + HORA NA IMPRESSÃO
             const horaTexto = d.hora ? ` às ${d.hora}` : '';
             document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
-            
-            document.getElementById('print-solicitante').innerText = d.solicitante;
-            document.getElementById('print-setor').innerText = d.setor;
+            document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
+            document.getElementById('print-setor').innerText = d.setor.toUpperCase();
             document.getElementById('print-prioridade').innerText = d.prioridade;
-            document.getElementById('print-titulo').innerText = d.titulo;
-            document.getElementById('print-contratada').innerText = d.contratada || 'Não informado';
+            document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
+            document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
             document.getElementById('print-status').innerText = d.status;
-
-            // Aciona a impressão do navegador
             window.print();
         }
 
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value; 
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
-            const filtroTexto = document.getElementById('filtro-texto-demanda').value.toLowerCase();
+            const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase(); // FILTRO EM UPPERCASE
             const lista = demandas.filter(d => {
                 const bateData = !filtroMes || d.data.startsWith(filtroMes);
                 const bateStatus = !filtroStatus || d.status === filtroStatus;
-                const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toLowerCase();
+                const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toUpperCase();
                 const bateTexto = !filtroTexto || textoGeral.includes(filtroTexto);
                 return bateData && bateStatus && bateTexto;
             });
@@ -1209,24 +1131,17 @@
             const tbody = document.querySelector('#tabela-demandas tbody'); tbody.innerHTML = '';
             
             const btnExport = document.getElementById('btn-export-demandas');
-            if (pode('demandas', 'exportar')) btnExport.style.display = 'inline-flex';
-            else btnExport.style.display = 'none';
+            if (pode('demandas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
 
             lista.forEach(d => {
                 const tr = document.createElement('tr');
                 let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
                 let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
                 const btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
-                
-                let buttons = '';
-                // BOTÃO IMPRIMIR O.S.
-                buttons += `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
-
+                let buttons = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
                 if (pode('demandas', 'editar')) buttons += `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('demandas', 'excluir')) buttons += `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-
                 const contratadaDisplay = d.contratada ? `<br><small style="color:#2980b9"><i class="fas fa-hard-hat"></i> ${d.contratada}</small>` : '';
-
                 tr.innerHTML = `<td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${buttons}</td>`;
                 tbody.appendChild(tr);
             });
@@ -1248,28 +1163,6 @@
             } 
         }
 
-        // 2. VISITANTES
-        const fileInput = document.getElementById('vis-foto-input');
-        fileInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                        const maxWidth = 500; const scale = maxWidth / img.width;
-                        const newWidth = (img.width > maxWidth) ? maxWidth : img.width; const newHeight = (img.width > maxWidth) ? img.height * scale : img.height;
-                        canvas.width = newWidth; canvas.height = newHeight; ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                        const base64String = canvas.toDataURL('image/jpeg', 0.7);
-                        document.getElementById('vis-foto-base64').value = base64String; document.getElementById('vis-preview').src = base64String;
-                    }
-                    img.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
         const formVis = document.getElementById('form-visitante');
         formVis.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1278,9 +1171,12 @@
             const fotoBase64 = document.getElementById('vis-foto-base64').value;
             const novoVisitante = {
                 id: id, foto: fotoBase64 || null, 
-                nome: document.getElementById('vis-nome').value, doc: document.getElementById('vis-doc').value,
-                empresa: document.getElementById('vis-empresa').value, contato: document.getElementById('vis-contato').value,
-                responsavel: document.getElementById('vis-responsavel').value, finalidade: document.getElementById('vis-finalidade').value,
+                nome: document.getElementById('vis-nome').value.toUpperCase(), // UPPERCASE
+                doc: document.getElementById('vis-doc').value.toUpperCase(),
+                empresa: document.getElementById('vis-empresa').value.toUpperCase(),
+                contato: document.getElementById('vis-contato').value.toUpperCase(),
+                responsavel: document.getElementById('vis-responsavel').value.toUpperCase(),
+                finalidade: document.getElementById('vis-finalidade').value.toUpperCase(),
                 entrada: document.getElementById('vis-entrada').value, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null
             };
             if(idEdicao) {
@@ -1330,10 +1226,10 @@
         }
 
         window.renderizarApenasVisitantes = function() {
-            const mes = document.getElementById('filtro-mes-vis').value; const termo = document.getElementById('filtro-busca-vis').value.toLowerCase();
+            const mes = document.getElementById('filtro-mes-vis').value; const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();
             const lista = visitantes.filter(v => {
                 const bateMes = !mes || v.entrada.startsWith(mes);
-                const bateTermo = !termo || v.nome.toLowerCase().includes(termo) || v.doc.includes(termo) || v.empresa.toLowerCase().includes(termo);
+                const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo);
                 return bateMes && bateTermo;
             });
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
@@ -1341,8 +1237,7 @@
             const tbody = document.querySelector('#tabela-visitantes tbody'); tbody.innerHTML = '';
             
             const btnExport = document.getElementById('btn-export-visitantes');
-            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex';
-            else btnExport.style.display = 'none';
+            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
 
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             lista.forEach(v => {
@@ -1351,11 +1246,9 @@
                 const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
                 const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
                 const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
-                
                 let buttons = '';
                 if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
-
                 const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
                 tr.innerHTML = `<td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`;
                 tbody.appendChild(tr);
@@ -1368,7 +1261,6 @@
             } 
         }
 
-        // 3. VEICULOS
         window.atualizarLabels = function() {
             const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
             const btn = document.getElementById('btn-submit-veiculo');
@@ -1384,9 +1276,12 @@
             const id = idEdicao || Date.now();
             const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
             const novoVeiculo = {
-                id: id, tipo: tipo, carro: document.getElementById('veiculo-carro').value,
-                motorista: document.getElementById('veiculo-motorista').value, setor: document.getElementById('veiculo-setor').value,
-                contato: document.getElementById('veiculo-contato').value, destino: document.getElementById('veiculo-destino').value,
+                id: id, tipo: tipo, 
+                carro: document.getElementById('veiculo-carro').value.toUpperCase(), // UPPERCASE
+                motorista: document.getElementById('veiculo-motorista').value.toUpperCase(),
+                setor: document.getElementById('veiculo-setor').value.toUpperCase(),
+                contato: document.getElementById('veiculo-contato').value.toUpperCase(),
+                destino: document.getElementById('veiculo-destino').value.toUpperCase(),
                 km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: document.getElementById('veiculo-hora-saida').value,
                 status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null
             };
@@ -1432,10 +1327,10 @@
         }
 
         window.renderizarApenasFrota = function() {
-            const mes = document.getElementById('filtro-mes-frota').value; const busca = document.getElementById('filtro-busca-frota').value.toLowerCase();
+            const mes = document.getElementById('filtro-mes-frota').value; const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();
             const lista = frota.filter(f => {
                 const bData = !mes || f.hora_inicial.startsWith(mes);
-                const bTexto = !busca || (f.motorista+f.carro+f.setor).toLowerCase().includes(busca);
+                const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca);
                 return bData && bTexto;
             });
             document.getElementById('dash-frota-total').innerText = lista.length;
@@ -1445,8 +1340,7 @@
             const tbody = document.querySelector('#tabela-veiculos tbody'); tbody.innerHTML = '';
             
             const btnExport = document.getElementById('btn-export-veiculos');
-            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex';
-            else btnExport.style.display = 'none';
+            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
 
             lista.forEach(f => {
                 const tr = document.createElement('tr');
@@ -1455,11 +1349,9 @@
                 const dIn = new Date(f.hora_inicial).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
                 const dOut = f.hora_final ? new Date(f.hora_final).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
                 const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
-                
                 let buttons = '';
                 if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
-
                 tr.innerHTML = `<td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`;
                 tbody.appendChild(tr);
             });
@@ -1472,7 +1364,6 @@
             }
         }
 
-        // 4. EVENTOS
         const formEvento = document.getElementById('form-evento');
         formEvento.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1480,10 +1371,12 @@
             const id = idEdicao || Date.now();
             const novoEvento = {
                 id: id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value,
-                nome: document.getElementById('evento-nome').value, organizador: document.getElementById('evento-organizador').value,
+                nome: document.getElementById('evento-nome').value.toUpperCase(), // UPPERCASE
+                organizador: document.getElementById('evento-organizador').value.toUpperCase(),
                 data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0,
-                local: document.getElementById('evento-local').value, coffee: document.getElementById('evento-coffee').checked,
-                obs: document.getElementById('evento-obs').value
+                local: document.getElementById('evento-local').value.toUpperCase(),
+                coffee: document.getElementById('evento-coffee').checked,
+                obs: document.getElementById('evento-obs').value.toUpperCase()
             };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
@@ -1523,10 +1416,10 @@
         }
 
         window.renderizarApenasEventos = function() {
-            const mes = document.getElementById('filtro-mes-evento').value; const busca = document.getElementById('filtro-busca-evento').value.toLowerCase();
+            const mes = document.getElementById('filtro-mes-evento').value; const busca = document.getElementById('filtro-busca-evento').value.toUpperCase();
             const lista = eventos.filter(ev => {
                 const bData = !mes || ev.data.startsWith(mes);
-                const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toLowerCase().includes(busca);
+                const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca);
                 return bData && bTexto;
             });
             document.getElementById('dash-eventos-qtd').innerText = lista.length;
@@ -1537,49 +1430,41 @@
             const tbody = document.querySelector('#tabela-eventos tbody'); tbody.innerHTML = '';
             
             const btnExport = document.getElementById('btn-export-eventos');
-            if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex';
-            else btnExport.style.display = 'none';
+            if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
 
             lista.forEach(ev => {
                 const tr = document.createElement('tr');
                 const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo'; const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`;
                 const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : '';
                 const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : '';
-                
                 let buttons = '';
                 if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-
                 tr.innerHTML = `<td>${formatarData(ev.data)}</td><td>${badge}</td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><i class="fas fa-user"></i> ${ev.publico}</td><td style="min-width:100px">${buttons}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- 5. CRACHÁS (SEPARADO E ORGANIZADO) ---
         const formCracha = document.getElementById('form-cracha');
         formCracha.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('cracha-id-edit').value;
             const id = idEdicao || Date.now();
-            
-            // Pega os valores dos novos campos
             const novoCracha = {
                 id: id,
-                nome: document.getElementById('cracha-nome').value,
-                doc_identidade: document.getElementById('cracha-doc').value,
-                setor: document.getElementById('cracha-setor').value,
-                cargo: document.getElementById('cracha-cargo').value,
-                sala: document.getElementById('cracha-sala').value,
-                ramal: document.getElementById('cracha-ramal').value,
+                nome: document.getElementById('cracha-nome').value.toUpperCase(),
+                doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(),
+                setor: document.getElementById('cracha-setor').value.toUpperCase(),
+                cargo: document.getElementById('cracha-cargo').value.toUpperCase(),
+                sala: document.getElementById('cracha-sala').value.toUpperCase(),
+                ramal: document.getElementById('cracha-ramal').value.toUpperCase(),
                 tipo: document.getElementById('cracha-tipo').value,
                 status: document.getElementById('cracha-status').value,
                 data_solicitacao: document.getElementById('cracha-data').value,
                 data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null
             };
-
             if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`);
             else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
-
             const { error } = await sb.from('crachas').upsert(novoCracha);
             if(error) alert('Erro ao salvar crachá: ' + error.message); 
             else { cancelarEdicaoCracha(); carregarDados(); }
@@ -1588,19 +1473,15 @@
         window.editarCracha = function(id) {
             const c = crachas.find(item => item.id == id); if (!c) return;
             document.getElementById('cracha-id-edit').value = c.id;
-            
-            // Preenche os campos separados
             document.getElementById('cracha-nome').value = c.nome;
             document.getElementById('cracha-doc').value = c.doc_identidade || '';
             document.getElementById('cracha-setor').value = c.setor;
             document.getElementById('cracha-cargo').value = c.cargo || '';
             document.getElementById('cracha-sala').value = c.sala || '';
             document.getElementById('cracha-ramal').value = c.ramal || '';
-            
             document.getElementById('cracha-tipo').value = c.tipo;
             document.getElementById('cracha-data').value = c.data_solicitacao;
             document.getElementById('cracha-status').value = c.status;
-
             document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-edit"></i> Editando Crachá';
             const btn = document.getElementById('btn-submit-cracha'); 
             btn.innerText = "Salvar Alterações"; 
@@ -1631,27 +1512,22 @@
         }
 
         window.renderizarApenasCrachas = function() {
-            const busca = document.getElementById('filtro-busca-cracha').value.toLowerCase();
+            const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase();
             const statusFiltro = document.getElementById('filtro-status-cracha').value;
-            
             const lista = crachas.filter(c => {
-                const termo = (c.nome + c.setor + (c.doc_identidade||'')).toLowerCase();
+                const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase();
                 const bateTexto = !busca || termo.includes(busca);
                 const bateStatus = !statusFiltro || c.status === statusFiltro;
                 return bateTexto && bateStatus;
             });
-
             document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length;
             document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length;
             document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length;
-
             const tbody = document.querySelector('#tabela-crachas tbody'); 
             tbody.innerHTML = '';
-
-            // Lógica de Permissão para o botão Exportar
+            
             const btnExport = document.getElementById('btn-export-crachas');
-            if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex';
-            else btnExport.style.display = 'none';
+            if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
 
             lista.forEach(c => {
                 const tr = document.createElement('tr');
@@ -1659,22 +1535,11 @@
                 if(c.status === 'Solicitado') badgeClass = 'bg-cracha-solicitado';
                 else if(c.status === 'Confeccionado') badgeClass = 'bg-cracha-confeccionado';
                 else badgeClass = 'bg-cracha-entregue';
-
                 const dataEnt = c.data_entrega ? `<br><small style="color:green"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : '';
-
                 let buttons = '';
                 if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-
-                // Organizando as colunas para caber tudo
-                tr.innerHTML = `
-                    <td>${formatarData(c.data_solicitacao)}</td>
-                    <td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td>
-                    <td>${c.setor}<br><small>${c.cargo || '-'}</small></td>
-                    <td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td>
-                    <td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td>
-                    <td>${buttons}</td>
-                `;
+                tr.innerHTML = `<td>${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small>${c.cargo || '-'}</small></td><td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td>`;
                 tbody.appendChild(tr);
             });
         }
