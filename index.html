@@ -83,10 +83,27 @@
         .card h2 { margin-bottom: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-        .filter-container { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 1rem; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; }
+        
+        /* ESTILO CORRIGIDO PARA O BOTÃO EXPORTAR */
+        .filter-container { 
+            display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; /* Alinha itens na base */
+            margin-bottom: 1rem; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; 
+        }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
         .filter-group label { font-weight: bold; color: var(--secondary); font-size: 0.85rem;}
-        .filter-group input, .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .filter-group input, .filter-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; height: 40px; } /* Altura fixa */
+        
+        /* BOTÃO EXPORTAR VERDE E VISÍVEL */
+        button.btn-excel { 
+            background: var(--excel); color: white; border: none; 
+            padding: 0 1.5rem; height: 40px; /* Mesma altura dos inputs */
+            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; 
+            display: inline-flex; align-items: center; gap: 8px; 
+            margin-left: auto; /* Empurra para a direita */
+            white-space: nowrap;
+        }
+        button.btn-excel:hover { filter: brightness(90%); }
+
         .tipo-selector { display: flex; gap: 20px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
         .radio-label { display: flex; align-items: center; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .radio-label input { width: auto; margin-right: 8px; }
@@ -102,9 +119,7 @@
         button.btn-primary { background: var(--accent); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
         button.btn-primary:hover { filter: brightness(90%); }
         button.btn-cancel { background: #95a5a6; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; }
-        button.btn-excel { background: var(--excel); color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: none; align-items: center; gap: 5px; margin-left: auto; }
-        button.btn-excel:hover { filter: brightness(90%); }
-
+        
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 8px; overflow: hidden; }
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
@@ -310,7 +325,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-demandas" class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-demandas">
@@ -359,7 +374,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-predial" class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar Predial</button>
                     </div>
 
                     <div class="table-container">
@@ -409,7 +424,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-ar" class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar Ar</button>
                     </div>
 
                     <div class="table-container">
@@ -459,7 +474,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-limpeza" class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar Limpeza</button>
                     </div>
 
                     <div class="table-container">
@@ -1301,8 +1316,8 @@
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
             
-            // Botões respeitando permissão da aba específica
-            let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
+            // CORREÇÃO: Adicionando Botão de AVANÇAR (Check)
+            let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Concluir/Avançar"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
@@ -1313,7 +1328,7 @@
                 <td>${d.solicitante}<br><small>${d.setor}</small></td>
                 <td><span class="badge ${badgeClass}">${d.status}</span></td>
                 <td>${tempoDisplay}</td>
-                <td>${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td>
+                <td style="min-width:160px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td>
             </tr>`;
         }
 
