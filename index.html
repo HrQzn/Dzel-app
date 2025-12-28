@@ -18,7 +18,8 @@
             --estacionado: #d35400; --edit: #e67e22; --info: #17a2b8;
             --evento: #e74c3c; --coffee: #6f4e37;
             --excel: #217346;
-            --cracha: #6c5ce7; /* Cor do módulo Crachás */
+            --cracha: #6c5ce7;
+            --print: #34495e; /* Cor do botão imprimir */
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
@@ -128,6 +129,7 @@
         .btn-delete { background-color: var(--danger); }
         .btn-edit { background-color: var(--edit); }
         .btn-baixa { background-color: var(--danger); }
+        .btn-print { background-color: var(--print); }
 
         .time-badge { background: #ecf0f1; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; border: 1px solid #bdc3c7; display: inline-flex; align-items: center; gap: 5px;}
         .time-badge i { font-size: 0.8rem; }
@@ -154,10 +156,102 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
+
+        /* --- ESTILOS DE IMPRESSÃO (O.S.) --- */
+        @media print {
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible; }
+            #area-impressao {
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                display: block !important; background: white; color: black; padding: 40px;
+                z-index: 99999;
+            }
+            .no-print { display: none !important; }
+        }
+
+        /* Oculta área de impressão na tela normal */
+        #area-impressao { display: none; border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto; }
+        
+        /* CABEÇALHO DA O.S. ATUALIZADO (FLEX) */
+        .os-header { 
+            display: flex; /* Alinha lado a lado */
+            align-items: center; /* Centraliza verticalmente */
+            justify-content: center; /* Centraliza na página */
+            gap: 20px; /* Espaço entre logo e texto */
+            border-bottom: 2px solid #000; 
+            margin-bottom: 20px; 
+            padding-bottom: 15px; 
+        }
+
+        .os-logo {
+            width: 80px; /* Tamanho do Brasão */
+            height: auto;
+            object-fit: contain;
+        }
+
+        .os-header-text {
+            text-align: center;
+        }
+
+        .os-header-text h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #000;
+        }
+
+        .os-header-text p {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .os-body { font-family: 'Arial', sans-serif; }
+        .os-row { display: flex; border-bottom: 1px solid #ccc; padding: 12px 0; align-items: flex-start; }
+        .os-label { font-weight: bold; width: 160px; color: #000; font-size: 0.9rem; text-transform: uppercase;}
+        .os-value { flex: 1; font-size: 1rem; }
+        .os-signatures { margin-top: 80px; display: flex; justify-content: space-around; text-align: center; }
+        .os-sig-box { flex: 1; padding: 0 20px; }
+        .os-sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 40px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
+    <div id="area-impressao">
+        <div class="os-header">
+            <img src="Entrada_e_Saída_de_Bens-1024 (3).jpg" class="os-logo" alt="Brasão SP">
+            
+            <div class="os-header-text">
+                <h2>ORDEM DE SERVIÇO - ZELADORIA</h2>
+                <p>Comprovante de Solicitação e Execução</p>
+            </div>
+        </div>
+        
+        <div class="os-body">
+            <div class="os-row"><span class="os-label">Nº O.S / ID:</span><span class="os-value" id="print-id"></span></div>
+            <div class="os-row"><span class="os-label">Data Emissão:</span><span class="os-value" id="print-data-emissao"></span></div>
+            <div class="os-row"><span class="os-label">Data Solicitação:</span><span class="os-value" id="print-data"></span></div>
+            <div class="os-row"><span class="os-label">Solicitante:</span><span class="os-value" id="print-solicitante"></span></div>
+            <div class="os-row"><span class="os-label">Setor / Local:</span><span class="os-value" id="print-setor"></span></div>
+            <div class="os-row"><span class="os-label">Prioridade:</span><span class="os-value" id="print-prioridade"></span></div>
+            <div class="os-row"><span class="os-label">Descrição do Serviço:</span><span class="os-value" id="print-titulo" style="font-weight:bold"></span></div>
+            
+            <div class="os-row" style="background-color: #f0f0f0;">
+                <span class="os-label">Contratada / Equipe:</span>
+                <span class="os-value" id="print-contratada" style="font-weight:bold; color: #c0392b;"></span>
+            </div>
+            
+            <div class="os-row"><span class="os-label">Status Atual:</span><span class="os-value" id="print-status"></span></div>
+            
+            <div class="os-row" style="height: 120px; margin-top: 20px; border: 1px solid #999; padding: 10px;">
+                <span class="os-label" style="width: 100%;">Observações / Parecer Técnico:</span>
+            </div>
+        </div>
+        <div class="os-signatures">
+            <div class="os-sig-box"><div class="os-sig-line">Assinatura do Solicitante</div></div>
+            <div class="os-sig-box"><div class="os-sig-line">Assinatura da Contratada</div></div>
+            <div class="os-sig-box"><div class="os-sig-line">Visto da Zeladoria</div></div>
+        </div>
+    </div>
     <div id="login-overlay">
         <div class="login-box">
             <h2><i class="fas fa-lock"></i> Acesso Restrito</h2>
@@ -170,7 +264,7 @@
     </div>
 
     <div id="app-content">
-        <header>
+        <header class="no-print">
             <h1><i class="fas fa-building"></i> COGESPA - DIVISÃO DE ZELADORIA <i class="fas fa-shield-alt" style="font-size:0.8rem; color: #27ae60;" title="Conexão Segura"></i></h1>
             <div style="text-align: right;">
                 <small id="user-display" style="display:block; font-weight:bold; color: var(--accent);"></small>
@@ -180,7 +274,7 @@
             </div>
         </header>
 
-        <nav class="nav-tabs">
+        <nav class="nav-tabs no-print">
             <button id="tab-demandas" class="tab-btn" onclick="switchTab('demandas')"><i class="fas fa-clipboard-list"></i> Demandas</button>
             <button id="tab-visitantes" class="tab-btn" onclick="switchTab('visitantes')"><i class="fas fa-users"></i> Recepção</button>
             <button id="tab-veiculos" class="tab-btn" onclick="switchTab('veiculos')"><i class="fas fa-car"></i> Garagem</button>
@@ -190,7 +284,7 @@
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')" style="border-bottom-color: #8e44ad;"><i class="fas fa-user-cog"></i> Usuários</button>
         </nav>
 
-        <main>
+        <main class="no-print">
             <section id="demandas" class="section">
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-demanda-total">...</p></div><i class="fas fa-folder-open metric-icon" style="color: var(--primary)"></i></div>
@@ -207,6 +301,17 @@
                             <input type="text" id="demanda-titulo" placeholder="Descrição do Serviço" required>
                             <input type="text" id="demanda-setor" placeholder="Local / Setor" required>
                             <input type="text" id="demanda-solicitante" placeholder="Nome do Solicitante" required>
+                            
+                            <input type="text" id="demanda-contratada" placeholder="Empresa Executante / Contratada" list="lista-contratadas">
+                            <datalist id="lista-contratadas">
+                                <option value="Equipe Interna">
+                                <option value="Limpeza (Terceirizada)">
+                                <option value="Manutenção Predial">
+                                <option value="Ar Condicionado">
+                                <option value="Elevadores">
+                                <option value="Vigilância">
+                            </datalist>
+
                             <select id="demanda-prioridade">
                                 <option value="Baixa">Prioridade Baixa</option>
                                 <option value="Média">Prioridade Média</option>
@@ -242,7 +347,7 @@
                     </div>
                     <div class="table-container">
                         <table id="tabela-demandas">
-                            <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+                            <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço / Contratada</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -1006,6 +1111,7 @@
                 titulo: document.getElementById('demanda-titulo').value,
                 setor: document.getElementById('demanda-setor').value,
                 solicitante: document.getElementById('demanda-solicitante').value,
+                contratada: document.getElementById('demanda-contratada').value, // NOVO CAMPO
                 prioridade: document.getElementById('demanda-prioridade').value,
                 data: document.getElementById('demanda-data').value,
                 status: idEdicao ? document.getElementById('demanda-status-edit').value : 'Pendente',
@@ -1025,7 +1131,9 @@
             const d = demandas.find(item => item.id == id); if (!d) return;
             document.getElementById('demanda-id-edit').value = d.id;
             document.getElementById('demanda-titulo').value = d.titulo; document.getElementById('demanda-setor').value = d.setor;
-            document.getElementById('demanda-solicitante').value = d.solicitante; document.getElementById('demanda-prioridade').value = d.prioridade;
+            document.getElementById('demanda-solicitante').value = d.solicitante; 
+            document.getElementById('demanda-contratada').value = d.contratada || ''; // CARREGA CAMPO NOVO
+            document.getElementById('demanda-prioridade').value = d.prioridade;
             document.getElementById('demanda-data').value = d.data;
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-edit"></i> Editando';
             document.getElementById('btn-submit-demanda').innerText = "Salvar"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--edit)";
@@ -1041,6 +1149,26 @@
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
+        // --- LÓGICA DE IMPRESSÃO ---
+        window.imprimirOS = function(id) {
+            const d = demandas.find(item => item.id == id);
+            if (!d) return;
+
+            // Preenche o template oculto
+            document.getElementById('print-id').innerText = d.id;
+            document.getElementById('print-data').innerText = formatarData(d.data);
+            document.getElementById('print-solicitante').innerText = d.solicitante;
+            document.getElementById('print-setor').innerText = d.setor;
+            document.getElementById('print-prioridade').innerText = d.prioridade;
+            document.getElementById('print-titulo').innerText = d.titulo;
+            document.getElementById('print-contratada').innerText = d.contratada || 'Não informado';
+            document.getElementById('print-status').innerText = d.status;
+            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
+
+            // Aciona a impressão do navegador
+            window.print();
+        }
+
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value; 
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
@@ -1048,7 +1176,7 @@
             const lista = demandas.filter(d => {
                 const bateData = !filtroMes || d.data.startsWith(filtroMes);
                 const bateStatus = !filtroStatus || d.status === filtroStatus;
-                const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante).toLowerCase();
+                const textoGeral = (d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toLowerCase();
                 const bateTexto = !filtroTexto || textoGeral.includes(filtroTexto);
                 return bateData && bateStatus && bateTexto;
             });
@@ -1069,10 +1197,15 @@
                 const btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
                 
                 let buttons = '';
+                // BOTÃO IMPRIMIR O.S.
+                buttons += `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
+
                 if (pode('demandas', 'editar')) buttons += `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                 if (pode('demandas', 'excluir')) buttons += `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
 
-                tr.innerHTML = `<td>${formatarData(d.data)}</td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:120px">${btnAvancar}${buttons}</td>`;
+                const contratadaDisplay = d.contratada ? `<br><small style="color:#2980b9"><i class="fas fa-hard-hat"></i> ${d.contratada}</small>` : '';
+
+                tr.innerHTML = `<td>${formatarData(d.data)}</td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${buttons}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -1526,4 +1659,3 @@
     </script>
 </body>
 </html>
-
