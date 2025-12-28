@@ -229,7 +229,9 @@
         <div class="os-body">
             <div class="os-row"><span class="os-label">Nº O.S / ID:</span><span class="os-value" id="print-id"></span></div>
             <div class="os-row"><span class="os-label">Data Emissão:</span><span class="os-value" id="print-data-emissao"></span></div>
+            
             <div class="os-row"><span class="os-label">Data Solicitação:</span><span class="os-value" id="print-data"></span></div>
+            
             <div class="os-row"><span class="os-label">Solicitante:</span><span class="os-value" id="print-solicitante"></span></div>
             <div class="os-row"><span class="os-label">Setor / Local:</span><span class="os-value" id="print-setor"></span></div>
             <div class="os-row"><span class="os-label">Prioridade:</span><span class="os-value" id="print-prioridade"></span></div>
@@ -317,7 +319,16 @@
                                 <option value="Média">Prioridade Média</option>
                                 <option value="Alta">Prioridade Alta</option>
                             </select>
-                            <input type="date" id="demanda-data" required>
+                            
+                            <div>
+                                <label style="font-size:0.8rem">Data</label>
+                                <input type="date" id="demanda-data" required>
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem">Horário</label>
+                                <input type="time" id="demanda-hora" required>
+                            </div>
+
                             <select id="demanda-status-edit" style="display:none">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option>
@@ -981,6 +992,7 @@
 
         document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR');
         document.getElementById('demanda-data').valueAsDate = new Date();
+        document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); // HORA PADRÃO
         document.getElementById('evento-data').valueAsDate = new Date();
         document.getElementById('cracha-data').valueAsDate = new Date();
         document.getElementById('vis-entrada').value = getLocalISO();
@@ -1111,9 +1123,10 @@
                 titulo: document.getElementById('demanda-titulo').value,
                 setor: document.getElementById('demanda-setor').value,
                 solicitante: document.getElementById('demanda-solicitante').value,
-                contratada: document.getElementById('demanda-contratada').value, // NOVO CAMPO
+                contratada: document.getElementById('demanda-contratada').value, 
                 prioridade: document.getElementById('demanda-prioridade').value,
                 data: document.getElementById('demanda-data').value,
+                hora: document.getElementById('demanda-hora').value, // <--- NOVO CAMPO HORA
                 status: idEdicao ? document.getElementById('demanda-status-edit').value : 'Pendente',
                 data_fim: null 
             };
@@ -1132,9 +1145,11 @@
             document.getElementById('demanda-id-edit').value = d.id;
             document.getElementById('demanda-titulo').value = d.titulo; document.getElementById('demanda-setor').value = d.setor;
             document.getElementById('demanda-solicitante').value = d.solicitante; 
-            document.getElementById('demanda-contratada').value = d.contratada || ''; // CARREGA CAMPO NOVO
+            document.getElementById('demanda-contratada').value = d.contratada || '';
             document.getElementById('demanda-prioridade').value = d.prioridade;
             document.getElementById('demanda-data').value = d.data;
+            document.getElementById('demanda-hora').value = d.hora || '00:00'; // CARREGA HORA
+            
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-edit"></i> Editando';
             document.getElementById('btn-submit-demanda').innerText = "Salvar"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--edit)";
             document.getElementById('btn-cancel-demanda').style.display = "block";
@@ -1143,7 +1158,10 @@
         }
 
         window.cancelarEdicaoDemanda = function() {
-            document.getElementById('demanda-id-edit').value = ""; formDemanda.reset(); document.getElementById('demanda-data').valueAsDate = new Date();
+            document.getElementById('demanda-id-edit').value = ""; formDemanda.reset(); 
+            document.getElementById('demanda-data').valueAsDate = new Date();
+            document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); // RESETA HORA
+            
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação';
             document.getElementById('btn-submit-demanda').innerText = "Registrar Demanda"; document.getElementById('btn-submit-demanda').style.backgroundColor = "var(--accent)";
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
@@ -1156,14 +1174,18 @@
 
             // Preenche o template oculto
             document.getElementById('print-id').innerText = d.id;
-            document.getElementById('print-data').innerText = formatarData(d.data);
+            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
+            
+            // DATA + HORA NA IMPRESSÃO
+            const horaTexto = d.hora ? ` às ${d.hora}` : '';
+            document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
+            
             document.getElementById('print-solicitante').innerText = d.solicitante;
             document.getElementById('print-setor').innerText = d.setor;
             document.getElementById('print-prioridade').innerText = d.prioridade;
             document.getElementById('print-titulo').innerText = d.titulo;
             document.getElementById('print-contratada').innerText = d.contratada || 'Não informado';
             document.getElementById('print-status').innerText = d.status;
-            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
 
             // Aciona a impressão do navegador
             window.print();
@@ -1205,7 +1227,7 @@
 
                 const contratadaDisplay = d.contratada ? `<br><small style="color:#2980b9"><i class="fas fa-hard-hat"></i> ${d.contratada}</small>` : '';
 
-                tr.innerHTML = `<td>${formatarData(d.data)}</td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${buttons}</td>`;
+                tr.innerHTML = `<td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${buttons}</td>`;
                 tbody.appendChild(tr);
             });
         }
