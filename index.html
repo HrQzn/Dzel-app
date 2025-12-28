@@ -1077,10 +1077,10 @@
         formDemanda.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('demanda-id-edit').value;
-            const id = idEdicao || Date.now(); 
+            
+            // Note: NO 'id' field in this object for new items
             const novaDemanda = {
-                id: id,
-                titulo: document.getElementById('demanda-titulo').value.toUpperCase(), 
+                titulo: document.getElementById('demanda-titulo').value.toUpperCase(),
                 setor: document.getElementById('demanda-setor').value.toUpperCase(),
                 solicitante: document.getElementById('demanda-solicitante').value.toUpperCase(),
                 contratada: document.getElementById('demanda-contratada').value.toUpperCase(), 
@@ -1090,14 +1090,41 @@
                 status: idEdicao ? document.getElementById('demanda-status-edit').value : 'Pendente',
                 data_fim: null 
             };
+
+            let error = null;
+
             if(idEdicao) {
-                const itemAntigo = demandas.find(d => d.id == id);
-                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) novaDemanda.data_fim = new Date().toISOString();
-                else if (itemAntigo && itemAntigo.data_fim) novaDemanda.data_fim = itemAntigo.data_fim;
-                registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${id} (${novaDemanda.titulo})`);
+                // MODO EDIÇÃO: Atualiza o registro existente (precisa do ID)
+                const itemAntigo = demandas.find(d => d.id == idEdicao);
+                
+                // Lógica de data fim se concluído
+                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) {
+                    novaDemanda.data_fim = new Date().toISOString();
+                } else if (itemAntigo && itemAntigo.data_fim) {
+                    novaDemanda.data_fim = itemAntigo.data_fim;
+                }
+                
+                registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
+                
+                // Atualiza no banco
+                const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao);
+                error = res.error;
+
+            } else {
+                // MODO CRIAÇÃO: Inserir NOVO (O Banco gera o ID sequencial 200, 201...)
+                // Não enviamos o campo 'id' aqui!
+                const res = await sb.from('demandas').insert(novaDemanda);
+                error = res.error;
+                
+                if(!error) registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`);
             }
-            const { error } = await sb.from('demandas').upsert(novaDemanda);
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
+
+            if(error) {
+                alert('Erro: ' + error.message);
+            } else {
+                cancelarEdicaoDemanda();
+                carregarDados(); // Recarrega a tabela para mostrar o novo ID gerado
+            }
         });
 
         window.editarDemanda = function(id) {
