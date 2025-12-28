@@ -1051,7 +1051,21 @@
             let data = [];
             let nomeArquivo = "";
 
-            if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas.xlsx"; } 
+            if (tipo === 'demandas') {
+                data = demandas.map(d => ({
+                    ID: d.id,
+                    TITULO: d.titulo,
+                    SETOR: d.setor,
+                    SOLICITANTE: d.solicitante,
+                    CONTRATADA: d.contratada, 
+                    PRIORIDADE: d.prioridade,
+                    DATA_ABERTURA: d.data,
+                    HORA_ABERTURA: d.hora,    
+                    STATUS: d.status,
+                    DATA_FIM: d.data_fim
+                }));
+                nomeArquivo = "Relatorio_Demandas.xlsx";
+            }
             else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; } 
             else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; } 
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; } 
@@ -1059,14 +1073,13 @@
 
             if(data.length === 0) return alert("Não há dados para exportar.");
 
-            const cleanData = data.map(item => {
-                const novo = {...item};
-                if(novo.foto) novo.foto = "(Imagem)"; 
+            const finalData = data.map(item => {
+                const novo = (tipo === 'demandas') ? item : {...item};
+                if(novo.foto) novo.foto = "(Imagem Salva no Sistema)"; 
                 return novo;
             });
 
-            // Biblioteca SheetJS (xlsx.full.min.js) garante a criação de arquivo XLSX nativo
-            const ws = XLSX.utils.json_to_sheet(cleanData);
+            const ws = XLSX.utils.json_to_sheet(finalData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dados");
             XLSX.writeFile(wb, nomeArquivo);
@@ -1078,7 +1091,6 @@
             e.preventDefault();
             const idEdicao = document.getElementById('demanda-id-edit').value;
             
-            // Note: NO 'id' field in this object for new items
             const novaDemanda = {
                 titulo: document.getElementById('demanda-titulo').value.toUpperCase(),
                 setor: document.getElementById('demanda-setor').value.toUpperCase(),
@@ -1094,28 +1106,18 @@
             let error = null;
 
             if(idEdicao) {
-                // MODO EDIÇÃO: Atualiza o registro existente (precisa do ID)
                 const itemAntigo = demandas.find(d => d.id == idEdicao);
-                
-                // Lógica de data fim se concluído
                 if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) {
                     novaDemanda.data_fim = new Date().toISOString();
                 } else if (itemAntigo && itemAntigo.data_fim) {
                     novaDemanda.data_fim = itemAntigo.data_fim;
                 }
-                
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
-                
-                // Atualiza no banco
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao);
                 error = res.error;
-
             } else {
-                // MODO CRIAÇÃO: Inserir NOVO (O Banco gera o ID sequencial 200, 201...)
-                // Não enviamos o campo 'id' aqui!
                 const res = await sb.from('demandas').insert(novaDemanda);
                 error = res.error;
-                
                 if(!error) registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`);
             }
 
@@ -1123,7 +1125,7 @@
                 alert('Erro: ' + error.message);
             } else {
                 cancelarEdicaoDemanda();
-                carregarDados(); // Recarrega a tabela para mostrar o novo ID gerado
+                carregarDados(); 
             }
         });
 
@@ -1238,7 +1240,7 @@
                 contato: document.getElementById('vis-contato').value.toUpperCase(),
                 responsavel: document.getElementById('vis-responsavel').value.toUpperCase(),
                 finalidade: document.getElementById('vis-finalidade').value.toUpperCase(),
-                entrada: horaEntrada, // Usa a hora corrigida
+                entrada: horaEntrada,
                 status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', 
                 saida: null
             };
