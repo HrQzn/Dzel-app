@@ -630,7 +630,7 @@
                                             <td><input type="checkbox" id="perm-eventos-exp"></td>
                                         </tr>
                                         <tr>
-                                            <td>Crachás</td>
+                                            <td style="color: var(--cracha)">Crachás</td>
                                             <td><input type="checkbox" id="perm-crachas-ver"></td>
                                             <td><input type="checkbox" id="perm-crachas-edit"></td>
                                             <td><input type="checkbox" id="perm-crachas-del"></td>
@@ -1211,7 +1211,7 @@
                 contato: document.getElementById('vis-contato').value.toUpperCase(),
                 responsavel: document.getElementById('vis-responsavel').value.toUpperCase(),
                 finalidade: document.getElementById('vis-finalidade').value.toUpperCase(),
-                entrada: horaEntrada,
+                entrada: horaEntrada, // Usa a hora corrigida
                 status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', 
                 saida: null
             };
