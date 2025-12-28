@@ -26,7 +26,7 @@
         body { background-color: #f4f7f6; color: #333; padding-bottom: 50px;}
 
         /* --- REGRA DE MAIÚSCULAS --- */
-        /* Força maiúsculas na maioria dos inputs */
+        /* Força visualmente maiúsculas na maioria dos inputs */
         input[type="text"], 
         input[type="search"], 
         textarea, 
@@ -35,8 +35,7 @@
             text-transform: uppercase;
         }
 
-        /* --- EXCEÇÕES (Permitir minúsculas) --- */
-        /* Campos de Login e Criação de Usuário ficam normais */
+        /* --- EXCEÇÕES (Permitir minúsculas no Login e Cadastro de Usuário) --- */
         #login-email, #login-pass,
         #novo-user-email, #novo-user-pass, #novo-user-nome {
             text-transform: none !important;
@@ -631,7 +630,7 @@
                                             <td><input type="checkbox" id="perm-eventos-exp"></td>
                                         </tr>
                                         <tr>
-                                            <td style="color: var(--cracha)">Crachás</td>
+                                            <td>Crachás</td>
                                             <td><input type="checkbox" id="perm-crachas-ver"></td>
                                             <td><input type="checkbox" id="perm-crachas-edit"></td>
                                             <td><input type="checkbox" id="perm-crachas-del"></td>
@@ -672,6 +671,20 @@
                 detectSessionInUrl: true
             }
         });
+
+        // Função para obter data/hora local formato ISO para preencher input datetime-local
+        function getDataHoraLocalParaInput() {
+            const agora = new Date();
+            agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+            return agora.toISOString().slice(0,16);
+        }
+
+        // Função para garantir que a data enviada ao Supabase seja UTC correta a partir do input local
+        function dataLocalParaISO(valorInput) {
+            if(!valorInput) return null;
+            const data = new Date(valorInput); 
+            return data.toISOString(); 
+        }
 
         let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [];
         let currentUserRole = null, currentUserData = null;
@@ -825,7 +838,7 @@
         }
 
         async function editarUsuarioSalvar(id) {
-            const nome = document.getElementById('novo-user-nome').value; // SEM UPPERCASE (Permite minúscula)
+            const nome = document.getElementById('novo-user-nome').value; // SEM UPPERCASE
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
             
@@ -878,6 +891,7 @@
             document.getElementById('titulo-user-form').innerHTML = '<i class="fas fa-user-shield"></i> Criar Novo Usuário';
             document.getElementById('btn-save-user').innerText = 'Criar Usuário';
             document.getElementById('btn-cancel-user').style.display = 'none';
+            
             document.getElementById('novo-user-email').value = '';
             document.getElementById('novo-user-email').disabled = false;
             document.getElementById('novo-user-pass').value = '';
@@ -954,8 +968,8 @@
         document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         document.getElementById('evento-data').valueAsDate = new Date();
         document.getElementById('cracha-data').valueAsDate = new Date();
-        document.getElementById('vis-entrada').value = getLocalISO();
-        document.getElementById('veiculo-hora-saida').value = getLocalISO();
+        document.getElementById('vis-entrada').value = getDataHoraLocalParaInput();
+        document.getElementById('veiculo-hora-saida').value = getDataHoraLocalParaInput();
 
         window.switchTab = function(tabId) {
             if (document.getElementById('visitantes').classList.contains('active')) { pararCamera(); }
@@ -963,6 +977,14 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
+
+            // ATUALIZAÇÃO AUTOMÁTICA DO HORÁRIO AO ENTRAR NA ABA
+            if(tabId === 'visitantes') {
+                 document.getElementById('vis-entrada').value = getDataHoraLocalParaInput();
+            }
+            if(tabId === 'veiculos') {
+                 document.getElementById('veiculo-hora-saida').value = getDataHoraLocalParaInput();
+            }
         }
 
         function calcularTempoDecorrido(dataInicio, dataFim = new Date()) {
@@ -1058,7 +1080,7 @@
             const id = idEdicao || Date.now(); 
             const novaDemanda = {
                 id: id,
-                titulo: document.getElementById('demanda-titulo').value.toUpperCase(), // TOUPPERCASE
+                titulo: document.getElementById('demanda-titulo').value.toUpperCase(), 
                 setor: document.getElementById('demanda-setor').value.toUpperCase(),
                 solicitante: document.getElementById('demanda-solicitante').value.toUpperCase(),
                 contratada: document.getElementById('demanda-contratada').value.toUpperCase(), 
@@ -1124,7 +1146,7 @@
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value; 
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
-            const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase(); // FILTRO EM UPPERCASE
+            const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase(); 
             const lista = demandas.filter(d => {
                 const bateData = !filtroMes || d.data.startsWith(filtroMes);
                 const bateStatus = !filtroStatus || d.status === filtroStatus;
@@ -1178,18 +1200,18 @@
             const id = idEdicao || Date.now();
             const fotoBase64 = document.getElementById('vis-foto-base64').value;
             
-            // CORREÇÃO: Pega a hora exata se for NOVO cadastro, ou mantém a hora do input se for EDIÇÃO.
-            const horaEntrada = idEdicao ? document.getElementById('vis-entrada').value : getLocalISO();
+            // CORREÇÃO DATA LOCAL
+            const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(getDataHoraLocalParaInput());
 
             const novoVisitante = {
                 id: id, foto: fotoBase64 || null, 
-                nome: document.getElementById('vis-nome').value.toUpperCase(), // UPPERCASE
+                nome: document.getElementById('vis-nome').value.toUpperCase(),
                 doc: document.getElementById('vis-doc').value.toUpperCase(),
                 empresa: document.getElementById('vis-empresa').value.toUpperCase(),
                 contato: document.getElementById('vis-contato').value.toUpperCase(),
                 responsavel: document.getElementById('vis-responsavel').value.toUpperCase(),
                 finalidade: document.getElementById('vis-finalidade').value.toUpperCase(),
-                entrada: horaEntrada, // Usa a hora corrigida
+                entrada: horaEntrada,
                 status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', 
                 saida: null
             };
@@ -1210,7 +1232,12 @@
             document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc;
             document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato;
             document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade;
-            document.getElementById('vis-entrada').value = v.entrada;
+            // Ajuste para exibir a data local corretamente ao editar
+            if(v.entrada) {
+                const dataLocal = new Date(v.entrada);
+                dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset());
+                document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16);
+            }
             const preview = document.getElementById('vis-preview');
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; }
@@ -1231,7 +1258,7 @@
         }
 
         window.cancelarEdicaoVisitante = function() {
-            document.getElementById('visitante-id-edit').value = ""; formVis.reset(); document.getElementById('vis-entrada').value = getLocalISO();
+            document.getElementById('visitante-id-edit').value = ""; formVis.reset(); document.getElementById('vis-entrada').value = getDataHoraLocalParaInput();
             document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante';
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)";
             document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none";
@@ -1257,6 +1284,7 @@
             lista.forEach(v => {
                 const tr = document.createElement('tr');
                 const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
+                // Conversão explícita para Locale PT-BR garante que o horário exibido seja o correto (-3h)
                 const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
                 const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
                 const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';
@@ -1289,6 +1317,10 @@
             const idEdicao = document.getElementById('veiculo-id-edit').value;
             const id = idEdicao || Date.now();
             const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
+            
+            // CORREÇÃO DATA LOCAL
+            const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(getDataHoraLocalParaInput());
+
             const novoVeiculo = {
                 id: id, tipo: tipo, 
                 carro: document.getElementById('veiculo-carro').value.toUpperCase(), // UPPERCASE
@@ -1296,7 +1328,8 @@
                 setor: document.getElementById('veiculo-setor').value.toUpperCase(),
                 contato: document.getElementById('veiculo-contato').value.toUpperCase(),
                 destino: document.getElementById('veiculo-destino').value.toUpperCase(),
-                km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: document.getElementById('veiculo-hora-saida').value,
+                km_inicial: document.getElementById('veiculo-km-saida').value || 0, 
+                hora_inicial: horaEntrada,
                 status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null
             };
             if(idEdicao) {
@@ -1315,7 +1348,14 @@
             document.getElementById('veiculo-carro').value = f.carro; document.getElementById('veiculo-motorista').value = f.motorista;
             document.getElementById('veiculo-setor').value = f.setor || ''; document.getElementById('veiculo-contato').value = f.contato || '';
             document.getElementById('veiculo-destino').value = f.destino; document.getElementById('veiculo-km-saida').value = f.km_inicial;
-            document.getElementById('veiculo-hora-saida').value = f.hora_inicial;
+            
+            // Ajuste data local na edição
+            if(f.hora_inicial) {
+                const dataLocal = new Date(f.hora_inicial);
+                dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset());
+                document.getElementById('veiculo-hora-saida').value = dataLocal.toISOString().slice(0,16);
+            }
+
             if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true;
             document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando';
             const btn = document.getElementById('btn-submit-veiculo'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)";
@@ -1334,7 +1374,7 @@
         }
 
         window.cancelarEdicaoVeiculo = function() {
-            document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset(); document.getElementById('veiculo-hora-saida').value = getLocalISO();
+            document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset(); document.getElementById('veiculo-hora-saida').value = getDataHoraLocalParaInput();
             document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-parking"></i> Registrar Entrada';
             document.getElementById('btn-cancel-veiculo').style.display = "none"; document.getElementById('container-status-veiculo').style.display = "none";
             document.getElementById('radio-servidor').checked = true; window.atualizarLabels();
