@@ -25,13 +25,21 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
         body { background-color: #f4f7f6; color: #333; padding-bottom: 50px;}
 
-        /* REGRA PARA FORÇAR MAIÚSCULAS NOS CAMPOS DE TEXTO */
+        /* --- REGRA DE MAIÚSCULAS --- */
+        /* Força maiúsculas na maioria dos inputs */
         input[type="text"], 
         input[type="search"], 
         textarea, 
         select, 
         input[list] {
             text-transform: uppercase;
+        }
+
+        /* --- EXCEÇÕES (Permitir minúsculas) --- */
+        /* Campos de Login e Criação de Usuário ficam normais */
+        #login-email, #login-pass,
+        #novo-user-email, #novo-user-pass, #novo-user-nome {
+            text-transform: none !important;
         }
 
         /* LOGIN */
@@ -187,7 +195,7 @@
         .os-body { font-family: 'Arial', sans-serif; }
         .os-row { display: flex; border-bottom: 1px solid #ccc; padding: 12px 0; align-items: flex-start; }
         .os-label { font-weight: bold; width: 160px; color: #000; font-size: 0.9rem; text-transform: uppercase;}
-        .os-value { flex: 1; font-size: 1rem; text-transform: uppercase; } /* Força MAIÚSCULA na impressão */
+        .os-value { flex: 1; font-size: 1rem; text-transform: uppercase; }
         .os-signatures { margin-top: 80px; display: flex; justify-content: space-around; text-align: center; }
         .os-sig-box { flex: 1; padding: 0 20px; }
         .os-sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 40px; font-size: 0.9rem; }
@@ -793,7 +801,7 @@
         async function criarUsuario() {
             const email = document.getElementById('novo-user-email').value;
             const pass = document.getElementById('novo-user-pass').value;
-            const nome = document.getElementById('novo-user-nome').value.toUpperCase(); // FORCE UPPERCASE
+            const nome = document.getElementById('novo-user-nome').value; // SEM UPPERCASE (Permite minúscula)
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
 
@@ -817,7 +825,7 @@
         }
 
         async function editarUsuarioSalvar(id) {
-            const nome = document.getElementById('novo-user-nome').value.toUpperCase(); // FORCE UPPERCASE
+            const nome = document.getElementById('novo-user-nome').value; // SEM UPPERCASE (Permite minúscula)
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
             
@@ -1169,6 +1177,10 @@
             const idEdicao = document.getElementById('visitante-id-edit').value;
             const id = idEdicao || Date.now();
             const fotoBase64 = document.getElementById('vis-foto-base64').value;
+            
+            // CORREÇÃO: Pega a hora exata se for NOVO cadastro, ou mantém a hora do input se for EDIÇÃO.
+            const horaEntrada = idEdicao ? document.getElementById('vis-entrada').value : getLocalISO();
+
             const novoVisitante = {
                 id: id, foto: fotoBase64 || null, 
                 nome: document.getElementById('vis-nome').value.toUpperCase(), // UPPERCASE
@@ -1177,7 +1189,9 @@
                 contato: document.getElementById('vis-contato').value.toUpperCase(),
                 responsavel: document.getElementById('vis-responsavel').value.toUpperCase(),
                 finalidade: document.getElementById('vis-finalidade').value.toUpperCase(),
-                entrada: document.getElementById('vis-entrada').value, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null
+                entrada: horaEntrada, // Usa a hora corrigida
+                status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', 
+                saida: null
             };
             if(idEdicao) {
                 const ant = visitantes.find(v => v.id == id);
