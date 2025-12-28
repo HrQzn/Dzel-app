@@ -359,7 +359,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-predial" class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar Predial</button>
+                        <button id="btn-export-predial" class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -409,7 +409,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-ar" class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar Ar</button>
+                        <button id="btn-export-ar" class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -459,7 +459,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button id="btn-export-limpeza" class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar Limpeza</button>
+                        <button id="btn-export-limpeza" class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -1302,6 +1302,7 @@
             let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
             
             // Botões respeitando permissão da aba específica
+            let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
@@ -1312,7 +1313,7 @@
                 <td>${d.solicitante}<br><small>${d.setor}</small></td>
                 <td><span class="badge ${badgeClass}">${d.status}</span></td>
                 <td>${tempoDisplay}</td>
-                <td>${btnPrint}${btnEdit}${btnDel}</td>
+                <td>${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td>
             </tr>`;
         }
 
