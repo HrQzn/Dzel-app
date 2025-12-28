@@ -357,7 +357,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar Predial</button>
+                        <button id="btn-export-predial" class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -405,7 +405,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar Ar</button>
+                        <button id="btn-export-ar" class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -453,7 +453,7 @@
                                 <option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar Limpeza</button>
+                        <button id="btn-export-limpeza" class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
                     </div>
 
                     <div class="table-container">
@@ -714,19 +714,22 @@
                                             <td style="color:var(--predial)">Predial</td>
                                             <td><input type="checkbox" id="perm-predial-ver"></td>
                                             <td><input type="checkbox" id="perm-predial-edit"></td>
-                                            <td colspan="2"><small>(Usa regra geral)</small></td>
+                                            <td><input type="checkbox" id="perm-predial-del"></td>
+                                            <td><input type="checkbox" id="perm-predial-exp"></td>
                                         </tr>
                                         <tr>
                                             <td style="color:var(--limpeza)">Limpeza</td>
                                             <td><input type="checkbox" id="perm-limpeza-ver"></td>
                                             <td><input type="checkbox" id="perm-limpeza-edit"></td>
-                                            <td colspan="2"><small>(Usa regra geral)</small></td>
+                                            <td><input type="checkbox" id="perm-limpeza-del"></td>
+                                            <td><input type="checkbox" id="perm-limpeza-exp"></td>
                                         </tr>
                                         <tr>
                                             <td style="color:var(--ar)">Ar Condicionado</td>
                                             <td><input type="checkbox" id="perm-ar-ver"></td>
                                             <td><input type="checkbox" id="perm-ar-edit"></td>
-                                            <td colspan="2"><small>(Usa regra geral)</small></td>
+                                            <td><input type="checkbox" id="perm-ar-del"></td>
+                                            <td><input type="checkbox" id="perm-ar-exp"></td>
                                         </tr>
                                         <tr>
                                             <td>Visitantes</td>
@@ -883,7 +886,7 @@
                 if(data) { 
                     demandas = data.sort((a,b) => b.id - a.id); 
                     window.renderizarApenasDemandas(); 
-                    window.renderizarAbasEspecificas(); // Renderiza as abas novas
+                    window.renderizarAbasEspecificas();
                 } 
             }
             if (admin || p.visitantes?.ver) { let { data } = await sb.from('visitantes').select('*'); if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); } }
@@ -919,7 +922,7 @@
         }
 
         async function editarUsuarioSalvar(id) {
-            const nome = document.getElementById('novo-user-nome').value; // Minúsculo permitido
+            const nome = document.getElementById('novo-user-nome').value;
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
             const { error } = await sb.rpc('admin_update_user_meta', { user_id_input: id, nome_input: nome, role_input: 'custom', is_admin_input: isAdmin, permissoes_input: perms });
@@ -954,6 +957,8 @@
             subMods.forEach(m => {
                  if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
                  if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
+                 if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
+                 if(document.getElementById(`perm-${m}-exp`)) document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
             });
 
             document.getElementById('usuarios').scrollIntoView({behavior: 'smooth'});
@@ -1088,6 +1093,12 @@
         }
 
         function exportarExcel(tipo) {
+            // Verifica permissão antes de exportar
+            if (!pode(tipo, 'exportar')) {
+                alert('Você não tem permissão para exportar estes dados.');
+                return;
+            }
+
             let data = [];
             let nomeArquivo = "";
 
@@ -1134,14 +1145,12 @@
 
         // --- LÓGICA PRINCIPAL DE DEMANDAS E SUB-ABAS ---
         
-        // Função Genérica para salvar nova O.S. das abas específicas
         async function salvarDemandaEspecifica(prefixo, contratadaFixa) {
             const titulo = document.getElementById(`${prefixo}-titulo`).value.toUpperCase();
             const setor = document.getElementById(`${prefixo}-setor`).value.toUpperCase();
             const solicitante = document.getElementById(`${prefixo}-solicitante`).value.toUpperCase();
             const prioridade = document.getElementById(`${prefixo}-prioridade`).value;
             
-            // Dados automáticos
             const dataHoje = new Date().toISOString().slice(0,10);
             const horaAgora = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
@@ -1160,13 +1169,10 @@
             }
         }
 
-        // Listeners para os formulários específicos
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
         document.getElementById('form-ar').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('ar', 'AR CONDICIONADO'); });
         document.getElementById('form-limpeza').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('limpeza', 'LIMPEZA'); });
 
-
-        // Formulário Geral de Demandas (Admin)
         const formDemanda = document.getElementById('form-demanda');
         formDemanda.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1198,9 +1204,9 @@
 
         window.editarDemanda = function(id) {
             const d = demandas.find(item => item.id == id); if (!d) return;
-            // Se tentar editar nas abas específicas, redireciona para a geral
+            
+            // Sempre redireciona para a aba GERAL para edição completa, pois o formulário completo está lá
             if(!document.getElementById('demandas').classList.contains('active')) {
-                alert("Redirecionando para a aba Geral para edição completa.");
                 switchTab('demandas');
             }
             document.getElementById('demanda-id-edit').value = d.id;
@@ -1268,18 +1274,20 @@
         }
 
         // Função Simplificada para as Abas Específicas
-        function criarLinhaTabelaSimples(d) {
+        function criarLinhaTabelaSimples(d, prefixo) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
+            
+            // Botões respeitando permissão da aba específica
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
-            // Botão editar manda para a aba principal
-            let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
+            let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
+            let btnDel = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
 
             return `<tr>
                 <td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td>
                 <td><strong>${d.titulo}</strong><br><small>Prioridade: ${d.prioridade}</small></td>
                 <td>${d.solicitante}<br><small>${d.setor}</small></td>
                 <td><span class="badge ${badgeClass}">${d.status}</span></td>
-                <td>${btnPrint}${btnEdit}</td>
+                <td>${btnPrint}${btnEdit}${btnDel}</td>
             </tr>`;
         }
 
@@ -1331,7 +1339,7 @@
                 // 4. Atualiza a Tabela
                 const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
                 tbody.innerHTML = '';
-                listaFinal.forEach(d => { tbody.innerHTML += criarLinhaTabelaSimples(d); });
+                listaFinal.forEach(d => { tbody.innerHTML += criarLinhaTabelaSimples(d, prefixo); });
             }
 
             // Chama para cada aba
@@ -1356,7 +1364,7 @@
             } 
         }
 
-        // --- MANTER TODO O CÓDIGO RESTANTE (VISITANTES, VEÍCULOS, ETC.) IGUAL ---
+        // --- MANTER O RESTANTE DAS FUNÇÕES (VISITANTES, VEICULOS, EVENTOS, CRACHÁS) ---
         const formVis = document.getElementById('form-visitante');
         formVis.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('visitante-id-edit').value; const id = idEdicao || Date.now(); const fotoBase64 = document.getElementById('vis-foto-base64').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(getDataHoraLocalParaInput()); const novoVisitante = { id: id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null }; if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); } const { error } = await sb.from('visitantes').upsert(novoVisitante); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); } });
         window.editarVisitante = function(id) { const v = visitantes.find(i => i.id == id); if(!v) return; document.getElementById('visitante-id-edit').value = v.id; document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc; document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato; document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade; if(v.entrada) { const dataLocal = new Date(v.entrada); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16); } const preview = document.getElementById('vis-preview'); const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; } document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-vis').style.display = "block"; const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status; document.getElementById('visitantes').scrollIntoView({behavior:'smooth'}); }
