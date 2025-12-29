@@ -1601,44 +1601,48 @@
         }
 
       window.imprimirOS = function(id) {
-            const d = demandas.find(item => item.id == id);
-            if (!d) return;
+    const d = demandas.find(item => item.id == id);
+    if (!d) return;
 
-            // Preenche os dados da O.S.
-            document.getElementById('print-id').innerText = d.id;
-            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
-            const horaTexto = d.hora ? ` às ${d.hora}` : '';
-            document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
-            document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
-            document.getElementById('print-setor').innerText = d.setor.toUpperCase();
-            document.getElementById('print-prioridade').innerText = d.prioridade;
-            document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
-            document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
-            document.getElementById('print-status').innerText = d.status;
+    // --- 1. Preenche os dados (Igual ao seu código) ---
+    document.getElementById('print-id').innerText = d.id;
+    document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
+    const horaTexto = d.hora ? ` às ${d.hora}` : '';
+    document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
+    document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
+    document.getElementById('print-setor').innerText = d.setor.toUpperCase();
+    document.getElementById('print-prioridade').innerText = d.prioridade;
+    document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
+    document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
+    document.getElementById('print-status').innerText = d.status;
 
-            // --- CORREÇÃO PARA CELULAR (ANDROID/IPHONE) ---
-            
-            // 1. Adiciona a classe que formata a tela para impressão
-            document.body.classList.add('printing-os');
+    // --- 2. TRUQUE PARA ANDROID (CORREÇÃO) ---
+    
+    // Adiciona a classe visual
+    document.body.classList.add('printing-os');
 
-            // 2. Dá um pequeno tempo para o navegador renderizar antes de abrir a janela de print
-            setTimeout(() => {
-                window.print();
-            }, 100);
+    // FORÇA O NAVEGADOR A ESPERAR MEIO SEGUNDO ANTES DE IMPRIMIR
+    // Isso dá tempo do Android renderizar o layout novo antes de gerar o PDF
+    setTimeout(function() {
+        window.print();
+    }, 500);
 
-            // 3. Só remove a classe DEPOIS que a impressão for finalizada ou cancelada
-            // O evento 'afterprint' funciona na maioria dos navegadores modernos
-            window.addEventListener('afterprint', () => {
-                document.body.classList.remove('printing-os');
-            }, { once: true });
+    // --- 3. REMOÇÃO SEGURA DA CLASSE ---
+    
+    // Tenta usar o evento nativo (funciona na maioria)
+    window.onafterprint = function() {
+        document.body.classList.remove('printing-os');
+        window.onafterprint = null; // Limpa o evento para não repetir
+    };
 
-            // Fallback de segurança: remove a classe após 5 segundos caso o 'afterprint' falhe em algum navegador antigo mobile
-            setTimeout(() => {
-                 if(document.body.classList.contains('printing-os')) {
-                     document.body.classList.remove('printing-os');
-                 }
-            }, 5000);
+    // PLANO B: Se o 'onafterprint' falhar no Android, remove a classe após 3 segundos
+    // Isso garante que o app não fique travado na tela de impressão
+    setTimeout(function() {
+        if(document.body.classList.contains('printing-os')) {
+            document.body.classList.remove('printing-os');
         }
+    }, 3500); // 3.5 segundos (tempo suficiente para o usuário ver o PDF)
+}
 
         // RENDERIZAÇÃO DAS TABELAS
         function criarLinhaTabela(d) {
