@@ -50,7 +50,20 @@
         header { background-color: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.5rem; }
         
-        .nav-tabs { display: flex; background: var(--secondary); padding: 0 2rem; overflow-x: auto;}
+        /* --- AQUI ESTÁ A ALTERAÇÃO DO MENU STICKY --- */
+        .nav-tabs { 
+            display: flex; 
+            background: var(--secondary); 
+            padding: 0 2rem; 
+            overflow-x: auto;
+            
+            /* Propriedades para fixar no topo */
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra leve para destacar */
+        }
+
         .tab-btn { background: none; border: none; color: #bdc3c7; padding: 1rem 2rem; cursor: pointer; font-weight: bold; transition: 0.3s; border-bottom: 4px solid transparent; white-space: nowrap; }
         .tab-btn:hover { color: white; background: rgba(255,255,255,0.05); }
         .tab-btn.active { color: white; border-bottom-color: var(--accent); }
@@ -171,46 +184,64 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
 
-        /* --- ESTILOS DE IMPRESSÃO ROBUSTOS (PC E MOBILE) --- */
-        
-        /* 1. Oculta área de impressão por padrão */
-        #area-impressao { display: none; }
-
-        /* 2. CLASSE MÁGICA: Quando adicionada ao BODY via JS, inverte a visibilidade NA TELA */
-        body.printing-os #app-content { display: none !important; }
-        body.printing-os #login-overlay { display: none !important; }
-        body.printing-os #area-impressao { 
-            display: block !important; 
-            background: white;
-            width: 100%;
-            height: auto;
-            position: static; /* Importante para o Android não cortar */
-            overflow: visible;
-        }
-
-        /* 3. Regras específicas para quando o papel for gerado */
+        /* --- ESTILOS DE IMPRESSÃO (CORRIGIDO PARA PDF) --- */
         @media print {
-            .no-print, .nav-tabs, .btn-container, .filter-container, #login-overlay { display: none !important; }
+            /* 1. Esconde tudo que não é conteúdo essencial */
+            .no-print, .nav-tabs, #login-overlay { display: none !important; }
             
-            /* Garante cores exatas (Chrome/Safari) */
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; font-size: 12px; }
+            /* 2. Ajustes globais da página */
+            body { 
+                background: white; 
+                -webkit-print-color-adjust: exact; /* Garante cores no Chrome */
+                print-color-adjust: exact; 
+                font-size: 12px;
+            }
 
-            /* Se estiver imprimindo O.S. */
-            body.printing-os #app-content { display: none !important; }
-            body.printing-os #area-impressao { display: block !important; }
+            /* 3. Garante que o conteúdo do app apareça */
+            #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
+            
+            /* 4. Força a Seção Ativa a aparecer e expandir */
+            .section { display: none !important; }
+            .section.active { 
+                display: block !important; 
+                position: relative !important; 
+                top: 0 !important; left: 0 !important;
+                width: 100% !important;
+                margin: 0 !important; padding: 0 !important;
+            }
 
-            /* Se estiver imprimindo DASHBOARD */
+            /* 5. Ajustes Específicos para Gráficos e Cards */
+            canvas { 
+                max-width: 100% !important; 
+                max-height: 100% !important; 
+                page-break-inside: avoid; 
+            }
+            .card, .metric-card, .dashboard-panel > div {
+                break-inside: avoid; 
+                page-break-inside: avoid;
+                border: 1px solid #ddd;
+                box-shadow: none !important;
+            }
+
+            /* 6. MODO ESPECIAL: Imprimir O.S. (Quando clicar no botão da O.S.) */
+            #area-impressao { display: none; }
+            
+            body.printing-os #app-content { display: none !important; } 
+            body.printing-os #area-impressao { 
+                display: block !important; 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                z-index: 9999; margin: 0; padding: 20px;
+                background: white;
+            }
+            body.printing-os * { visibility: visible; }
+            
+            /* 7. MODO ESPECIAL: Imprimir Dashboard */
             body.printing-dashboard #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
             body.printing-dashboard .section { display: none !important; }
             body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
-            
-            /* Ajustes de Gráficos e Cards */
-            canvas { max-width: 100% !important; page-break-inside: avoid; }
-            .card, .metric-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc; box-shadow: none !important; }
         }
 
-        /* Estilização da O.S. (Layout Fixo) */
-        #area-impressao { border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto; background: white; }
+        #area-impressao { display: none; border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto; }
         .os-header { display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 15px; }
         .os-logo { width: 80px; height: auto; object-fit: contain; }
         .os-header-text { text-align: center; }
