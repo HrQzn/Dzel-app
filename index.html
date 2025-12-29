@@ -1600,7 +1600,7 @@
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
-        window.imprimirOS = function(id) {
+      window.imprimirOS = function(id) {
             const d = demandas.find(item => item.id == id);
             if (!d) return;
 
@@ -1616,15 +1616,28 @@
             document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
             document.getElementById('print-status').innerText = d.status;
 
-            // --- TRUQUE NOVO PARA IMPRESSÃO ---
-            // Adiciona a classe que ativa o CSS da O.S.
-            document.body.classList.add('printing-os');
+            // --- CORREÇÃO PARA CELULAR (ANDROID/IPHONE) ---
             
-            // Manda imprimir
-            window.print();
+            // 1. Adiciona a classe que formata a tela para impressão
+            document.body.classList.add('printing-os');
 
-            // Remove a classe logo depois, para o site voltar ao normal
-            document.body.classList.remove('printing-os');
+            // 2. Dá um pequeno tempo para o navegador renderizar antes de abrir a janela de print
+            setTimeout(() => {
+                window.print();
+            }, 100);
+
+            // 3. Só remove a classe DEPOIS que a impressão for finalizada ou cancelada
+            // O evento 'afterprint' funciona na maioria dos navegadores modernos
+            window.addEventListener('afterprint', () => {
+                document.body.classList.remove('printing-os');
+            }, { once: true });
+
+            // Fallback de segurança: remove a classe após 5 segundos caso o 'afterprint' falhe em algum navegador antigo mobile
+            setTimeout(() => {
+                 if(document.body.classList.contains('printing-os')) {
+                     document.body.classList.remove('printing-os');
+                 }
+            }, 5000);
         }
 
         // RENDERIZAÇÃO DAS TABELAS
