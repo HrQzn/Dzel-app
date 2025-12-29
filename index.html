@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão | Portaria e Zeladoria</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -41,7 +40,7 @@
 
         /* LOGIN */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .login-box { background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box { background: white; padding: 2rem; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .login-box h2 { color: var(--primary); margin-bottom: 1.5rem; }
         .login-box input { margin-bottom: 1rem; }
         .login-error { color: var(--danger); font-size: 0.9rem; margin-top: 10px; display: none; }
@@ -171,141 +170,6 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
-
-        /* ==========================================================================
-           RESPONSIVIDADE E UX MOBILE
-           ========================================================================== */
-
-        /* 1. Melhora a rolagem no iOS e Android */
-        html, body {
-            -webkit-overflow-scrolling: touch; /* Rolagem elástica no iOS */
-            overflow-x: hidden; /* Evita rolagem lateral da página inteira */
-        }
-
-        /* 2. Ajuste de Fontes e Espaçamentos Gerais */
-        @media screen and (max-width: 768px) {
-            body { font-size: 14px; padding-bottom: 80px; } /* Mais espaço p/ scroll no fim */
-            main { padding: 1rem; }
-            h1 { font-size: 1.2rem; }
-            h2 { font-size: 1.1rem; }
-            
-            /* Header Compacto */
-            header { 
-                flex-direction: column; 
-                align-items: flex-start; 
-                padding: 1rem; 
-                gap: 10px; 
-            }
-            header div { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-        }
-
-        /* 3. Menu de Abas (Estilo App Scrollável) */
-        .nav-tabs {
-            padding: 0;
-            gap: 5px;
-            background: var(--primary); /* Fundo escuro para contraste */
-            position: sticky; /* Cola no topo para não perder o menu */
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .tab-btn {
-            flex: 0 0 auto; /* Não encolhe nem estica */
-            padding: 1rem 1.2rem;
-            font-size: 0.9rem;
-            opacity: 0.7;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .tab-btn.active {
-            opacity: 1;
-            background: rgba(255,255,255,0.1);
-            border-bottom-width: 3px;
-        }
-
-        /* Esconde a barra de rolagem visual mas mantém funcionalidade */
-        .nav-tabs::-webkit-scrollbar { height: 0px; background: transparent; }
-
-        /* 4. Dashboard e Grids em Mobile */
-        @media screen and (max-width: 600px) {
-            /* Força 1 coluna nos cards de métricas e formulários */
-            .dashboard-panel, .form-grid {
-                grid-template-columns: 1fr !important;
-                gap: 1rem;
-            }
-
-            /* Cards de Métricas menores */
-            .metric-card { padding: 1rem; }
-            .metric-info p { font-size: 1.5rem; }
-            
-            /* Gráficos: Altura fixa para não espremer */
-            .chart-container { height: 250px; position: relative; width: 100%; }
-        }
-
-        /* 5. Tabelas Responsivas (Container com Scroll) */
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            margin-top: 10px;
-            border: 1px solid #eee;
-        }
-        
-        table { margin-top: 0; min-width: 600px; /* Força largura mínima para ativar scroll */ }
-        
-        /* Cabeçalho da tabela fixo ou destacado */
-        th { white-space: nowrap; font-size: 0.75rem; padding: 12px 10px; }
-        td { font-size: 0.8rem; padding: 10px; vertical-align: middle; }
-
-        /* Botões de Ação na Tabela (Maiores para o dedo) */
-        .action-btn {
-            padding: 8px 12px;
-            margin: 2px;
-            font-size: 1rem; /* Ícone maior */
-        }
-
-        /* 6. Formulários e Inputs (Touch Friendly) */
-        input, select, textarea, button {
-            font-size: 16px !important; /* Evita zoom automático no iPhone */
-            min-height: 44px; /* Altura mínima recomendada pela Apple/Google */
-        }
-
-        /* Checkbox wrapper maior */
-        .checkbox-wrapper { padding: 12px; }
-        .checkbox-wrapper label { font-size: 0.95rem; }
-
-        /* 7. Câmera e Fotos */
-        .foto-container { width: 100%; padding: 5px; }
-        #webcam-video { width: 100%; height: auto; max-height: 400px; object-fit: cover; }
-        
-        /* 8. Ajustes de Botões Flutuantes ou Fixos */
-        .filter-container {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-        }
-        
-        .filter-group { min-width: 100%; }
-        
-        button.btn-excel {
-            width: 100%;
-            justify-content: center;
-            margin-left: 0;
-            margin-top: 10px;
-        }
-
-        /* Ajuste do Seletor de Tipo (Radio Buttons) */
-        .tipo-selector {
-            flex-direction: row; /* Mantém linha */
-            justify-content: space-around;
-            padding: 15px 5px;
-        }
-        .radio-label { font-size: 0.85rem; }
-
 
         /* --- ESTILOS DE IMPRESSÃO ROBUSTOS (PC E MOBILE) --- */
         
@@ -496,14 +360,14 @@
                     
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 16px;">Volume de Atendimento por Setor</h3>
-                        <div class="chart-container" style="height: 300px; width: 100%; position: relative;">
+                        <div style="height: 300px;">
                             <canvas id="chartVolumeSetor"></canvas>
                         </div>
                     </div>
 
                     <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 16px;">Garagem: Perfil de Acesso</h3>
-                        <div class="chart-container" style="height: 250px; display: flex; justify-content: center; width: 100%; position: relative;">
+                        <div style="height: 250px; display: flex; justify-content: center;">
                             <canvas id="chartGaragemPerfil"></canvas>
                         </div>
                         <div style="text-align: center; margin-top: 10px;">
