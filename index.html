@@ -459,7 +459,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" onkeyup="window.renderizarApenasDemandas()" placeholder="Ex: Lâmpada, Copa..."></div>
+                        <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Todos</option>
@@ -1600,49 +1600,42 @@
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
-      window.imprimirOS = function(id) {
-    const d = demandas.find(item => item.id == id);
-    if (!d) return;
+        // --- CORREÇÃO COMPLETA DA FUNÇÃO IMPRIMIR PARA ANDROID ---
+        window.imprimirOS = function(id) {
+            const d = demandas.find(item => item.id == id);
+            if (!d) return;
 
-    // --- 1. Preenche os dados (Igual ao seu código) ---
-    document.getElementById('print-id').innerText = d.id;
-    document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
-    const horaTexto = d.hora ? ` às ${d.hora}` : '';
-    document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
-    document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
-    document.getElementById('print-setor').innerText = d.setor.toUpperCase();
-    document.getElementById('print-prioridade').innerText = d.prioridade;
-    document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
-    document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
-    document.getElementById('print-status').innerText = d.status;
+            // 1. Preenche os dados
+            document.getElementById('print-id').innerText = d.id;
+            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
+            const horaTexto = d.hora ? ` às ${d.hora}` : '';
+            document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;
+            document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
+            document.getElementById('print-setor').innerText = d.setor.toUpperCase();
+            document.getElementById('print-prioridade').innerText = d.prioridade;
+            document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
+            document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
+            document.getElementById('print-status').innerText = d.status;
 
-    // --- 2. TRUQUE PARA ANDROID (CORREÇÃO) ---
-    
-    // Adiciona a classe visual
-    document.body.classList.add('printing-os');
+            // 2. Adiciona a classe e aguarda renderização (1s) antes de imprimir
+            document.body.classList.add('printing-os');
 
-    // FORÇA O NAVEGADOR A ESPERAR MEIO SEGUNDO ANTES DE IMPRIMIR
-    // Isso dá tempo do Android renderizar o layout novo antes de gerar o PDF
-    setTimeout(function() {
-        window.print();
-    }, 500);
+            setTimeout(function() {
+                window.print();
+            }, 1000);
 
-    // --- 3. REMOÇÃO SEGURA DA CLASSE ---
-    
-    // Tenta usar o evento nativo (funciona na maioria)
-    window.onafterprint = function() {
-        document.body.classList.remove('printing-os');
-        window.onafterprint = null; // Limpa o evento para não repetir
-    };
+            // 3. Remove a classe com segurança (espera o usuário voltar da tela de impressão)
+            window.onafterprint = function() {
+                document.body.classList.remove('printing-os');
+                window.onafterprint = null; 
+            };
 
-    // PLANO B: Se o 'onafterprint' falhar no Android, remove a classe após 3 segundos
-    // Isso garante que o app não fique travado na tela de impressão
-    setTimeout(function() {
-        if(document.body.classList.contains('printing-os')) {
-            document.body.classList.remove('printing-os');
+            setTimeout(function() {
+                if(document.body.classList.contains('printing-os')) {
+                    document.body.classList.remove('printing-os');
+                }
+            }, 5000); 
         }
-    }, 3500); // 3.5 segundos (tempo suficiente para o usuário ver o PDF)
-}
 
         // RENDERIZAÇÃO DAS TABELAS
         function criarLinhaTabela(d) {
@@ -1786,6 +1779,21 @@
         window.cancelarEdicaoCracha = function() { document.getElementById('cracha-id-edit').value = ""; formCracha.reset(); document.getElementById('cracha-data').valueAsDate = new Date(); document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-id-card"></i> Gestão de Crachás'; const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Crachá"; btn.style.backgroundColor = "var(--cracha)"; document.getElementById('btn-cancel-cracha').style.display = "none"; }
         window.deletarCracha = async function(id) { if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); } }
         window.renderizarApenasCrachas = function() { const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase(); const statusFiltro = document.getElementById('filtro-status-cracha').value; const lista = crachas.filter(c => { const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; }); document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length; document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length; document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length; const tbody = document.querySelector('#tabela-crachas tbody'); tbody.innerHTML = ''; const btnExport = document.getElementById('btn-export-crachas'); if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; lista.forEach(c => { const tr = document.createElement('tr'); let badgeClass = ''; if(c.status === 'Solicitado') badgeClass = 'bg-cracha-solicitado'; else if(c.status === 'Confeccionado') badgeClass = 'bg-cracha-confeccionado'; else badgeClass = 'bg-cracha-entregue'; const dataEnt = c.data_entrega ? `<br><small style="color:green"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : ''; let buttons = ''; if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; tr.innerHTML = `<td>${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small>${c.cargo || '-'}</small></td><td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td>`; tbody.appendChild(tr); }); }
+
+        // --- ADIÇÃO: Debounce para a Barra de Busca ---
+        // Variável de controle do tempo
+        let timeoutBusca = null;
+
+        // Adiciona o evento de digitação de forma inteligente para evitar delay
+        document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
+            // Cancela a busca anterior se o usuário ainda estiver digitando
+            clearTimeout(timeoutBusca);
+            
+            // Agenda uma nova busca para daqui a 500ms (meio segundo)
+            timeoutBusca = setTimeout(function() {
+                window.renderizarApenasDemandas();
+            }, 500);
+        });
     </script>
 </body>
 </html>
