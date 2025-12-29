@@ -35,6 +35,7 @@
 
         /* --- REGRA DE MAIÚSCULAS --- */
         input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; }
+        /* Exceções (Login e Cadastro de Usuário) */
         #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; }
 
         /* LOGIN */
@@ -49,16 +50,18 @@
         header { background-color: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.5rem; }
         
-        /* MENU STICKY */
+        /* --- AQUI ESTÁ A ALTERAÇÃO DO MENU STICKY --- */
         .nav-tabs { 
             display: flex; 
             background: var(--secondary); 
             padding: 0 2rem; 
             overflow-x: auto;
+            
+            /* Propriedades para fixar no topo */
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra leve para destacar */
         }
 
         .tab-btn { background: none; border: none; color: #bdc3c7; padding: 1rem 2rem; cursor: pointer; font-weight: bold; transition: 0.3s; border-bottom: 4px solid transparent; white-space: nowrap; }
@@ -181,56 +184,61 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
 
-        /* --- ESTILOS DE IMPRESSÃO (CORRIGIDO PARA MOBILE E PC) --- */
+        /* --- ESTILOS DE IMPRESSÃO (CORRIGIDO PARA PDF) --- */
         @media print {
-            /* 1. Oculta tudo por padrão para limpar a tela */
-            body * { visibility: hidden; }
+            /* 1. Esconde tudo que não é conteúdo essencial */
+            .no-print, .nav-tabs, #login-overlay { display: none !important; }
             
-            /* 2. Reseta o layout do body para garantir que caiba na folha */
-            body, html {
-                margin: 0; padding: 0;
-                width: 100%; height: 100%;
+            /* 2. Ajustes globais da página */
+            body { 
+                background: white; 
+                -webkit-print-color-adjust: exact; /* Garante cores no Chrome */
+                print-color-adjust: exact; 
+                font-size: 12px;
+            }
+
+            /* 3. Garante que o conteúdo do app apareça */
+            #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
+            
+            /* 4. Força a Seção Ativa a aparecer e expandir */
+            .section { display: none !important; }
+            .section.active { 
+                display: block !important; 
+                position: relative !important; 
+                top: 0 !important; left: 0 !important;
+                width: 100% !important;
+                margin: 0 !important; padding: 0 !important;
+            }
+
+            /* 5. Ajustes Específicos para Gráficos e Cards */
+            canvas { 
+                max-width: 100% !important; 
+                max-height: 100% !important; 
+                page-break-inside: avoid; 
+            }
+            .card, .metric-card, .dashboard-panel > div {
+                break-inside: avoid; 
+                page-break-inside: avoid;
+                border: 1px solid #ddd;
+                box-shadow: none !important;
+            }
+
+            /* 6. MODO ESPECIAL: Imprimir O.S. (Quando clicar no botão da O.S.) */
+            #area-impressao { display: none; }
+            
+            body.printing-os #app-content { display: none !important; } 
+            body.printing-os #area-impressao { 
+                display: block !important; 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                z-index: 9999; margin: 0; padding: 20px;
                 background: white;
             }
-
-            /* --- CASO A: IMPRIMIR O.S. (Classe .printing-os no body) --- */
-            body.printing-os #area-impressao, 
-            body.printing-os #area-impressao * {
-                visibility: visible;
-            }
-            body.printing-os #area-impressao {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-                display: block !important;
-                z-index: 99999;
-            }
-            body.printing-os #app-content { display: none !important; }
-
-            /* --- CASO B: IMPRIMIR DASHBOARD (Sem classe no body) --- */
-            body:not(.printing-os) #app-content, 
-            body:not(.printing-os) #app-content * {
-                visibility: visible;
-            }
-            body:not(.printing-os) .no-print, 
-            body:not(.printing-os) .nav-tabs, 
-            body:not(.printing-os) #login-overlay { 
-                display: none !important; 
-            }
-            body:not(.printing-os) .section { display: none !important; }
-            body:not(.printing-os) .section.active {
-                display: block !important;
-                position: absolute;
-                left: 0; top: 0;
-                width: 100%;
-            }
-            body:not(.printing-os) canvas {
-                max-width: 100% !important;
-                break-inside: avoid;
-            }
+            body.printing-os * { visibility: visible; }
+            
+            /* 7. MODO ESPECIAL: Imprimir Dashboard */
+            body.printing-dashboard #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
+            body.printing-dashboard .section { display: none !important; }
+            body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
         }
 
         #area-impressao { display: none; border: 2px solid #000; padding: 20px; max-width: 800px; margin: 0 auto; }
@@ -334,7 +342,7 @@
                             <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
                         </div>
                         
-                        <button onclick="window.print()" class="btn-primary" style="padding: 5px 15px; font-size: 0.8rem; height: 38px; margin-top: 14px;">
+                        <button onclick="imprimirDashboard()" class="btn-primary" style="padding: 5px 15px; font-size: 0.8rem; height: 38px; margin-top: 14px;">
                             <i class="fas fa-print"></i> Imprimir / PDF
                         </button>
                     </div>
@@ -877,14 +885,62 @@
                                 <table class="perm-table">
                                     <thead><tr><th>Módulo</th><th>Visualizar</th><th>Editar</th><th>Excluir</th><th>Exportar</th></tr></thead>
                                     <tbody>
-                                        <tr><td>Demandas (Geral)</td><td><input type="checkbox" id="perm-demandas-ver" checked></td><td><input type="checkbox" id="perm-demandas-edit"></td><td><input type="checkbox" id="perm-demandas-del"></td><td><input type="checkbox" id="perm-demandas-exp"></td></tr>
-                                        <tr><td style="color:var(--predial)">Predial</td><td><input type="checkbox" id="perm-predial-ver"></td><td><input type="checkbox" id="perm-predial-edit"></td><td><input type="checkbox" id="perm-predial-del"></td><td><input type="checkbox" id="perm-predial-exp"></td></tr>
-                                        <tr><td style="color:var(--limpeza)">Limpeza</td><td><input type="checkbox" id="perm-limpeza-ver"></td><td><input type="checkbox" id="perm-limpeza-edit"></td><td><input type="checkbox" id="perm-limpeza-del"></td><td><input type="checkbox" id="perm-limpeza-exp"></td></tr>
-                                        <tr><td style="color:var(--ar)">Ar Condicionado</td><td><input type="checkbox" id="perm-ar-ver"></td><td><input type="checkbox" id="perm-ar-edit"></td><td><input type="checkbox" id="perm-ar-del"></td><td><input type="checkbox" id="perm-ar-exp"></td></tr>
-                                        <tr><td>Visitantes</td><td><input type="checkbox" id="perm-visitantes-ver"></td><td><input type="checkbox" id="perm-visitantes-edit"></td><td><input type="checkbox" id="perm-visitantes-del"></td><td><input type="checkbox" id="perm-visitantes-exp"></td></tr>
-                                        <tr><td>Frota / Veículos</td><td><input type="checkbox" id="perm-veiculos-ver"></td><td><input type="checkbox" id="perm-veiculos-edit"></td><td><input type="checkbox" id="perm-veiculos-del"></td><td><input type="checkbox" id="perm-veiculos-exp"></td></tr>
-                                        <tr><td>Eventos</td><td><input type="checkbox" id="perm-eventos-ver"></td><td><input type="checkbox" id="perm-eventos-edit"></td><td><input type="checkbox" id="perm-eventos-del"></td><td><input type="checkbox" id="perm-eventos-exp"></td></tr>
-                                        <tr><td style="color: var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
+                                        <tr>
+                                            <td>Demandas (Geral)</td>
+                                            <td><input type="checkbox" id="perm-demandas-ver" checked></td>
+                                            <td><input type="checkbox" id="perm-demandas-edit"></td>
+                                            <td><input type="checkbox" id="perm-demandas-del"></td>
+                                            <td><input type="checkbox" id="perm-demandas-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color:var(--predial)">Predial</td>
+                                            <td><input type="checkbox" id="perm-predial-ver"></td>
+                                            <td><input type="checkbox" id="perm-predial-edit"></td>
+                                            <td><input type="checkbox" id="perm-predial-del"></td>
+                                            <td><input type="checkbox" id="perm-predial-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color:var(--limpeza)">Limpeza</td>
+                                            <td><input type="checkbox" id="perm-limpeza-ver"></td>
+                                            <td><input type="checkbox" id="perm-limpeza-edit"></td>
+                                            <td><input type="checkbox" id="perm-limpeza-del"></td>
+                                            <td><input type="checkbox" id="perm-limpeza-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color:var(--ar)">Ar Condicionado</td>
+                                            <td><input type="checkbox" id="perm-ar-ver"></td>
+                                            <td><input type="checkbox" id="perm-ar-edit"></td>
+                                            <td><input type="checkbox" id="perm-ar-del"></td>
+                                            <td><input type="checkbox" id="perm-ar-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Visitantes</td>
+                                            <td><input type="checkbox" id="perm-visitantes-ver"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-edit"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-del"></td>
+                                            <td><input type="checkbox" id="perm-visitantes-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Frota / Veículos</td>
+                                            <td><input type="checkbox" id="perm-veiculos-ver"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-edit"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-del"></td>
+                                            <td><input type="checkbox" id="perm-veiculos-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Eventos</td>
+                                            <td><input type="checkbox" id="perm-eventos-ver"></td>
+                                            <td><input type="checkbox" id="perm-eventos-edit"></td>
+                                            <td><input type="checkbox" id="perm-eventos-del"></td>
+                                            <td><input type="checkbox" id="perm-eventos-exp"></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: var(--cracha)">Crachás</td>
+                                            <td><input type="checkbox" id="perm-crachas-ver"></td>
+                                            <td><input type="checkbox" id="perm-crachas-edit"></td>
+                                            <td><input type="checkbox" id="perm-crachas-del"></td>
+                                            <td><input type="checkbox" id="perm-crachas-exp"></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -914,7 +970,10 @@
             auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
         });
 
+        // Registrar o plugin de labels para os gráficos
         Chart.register(ChartDataLabels);
+
+        // Variáveis globais para guardar os gráficos
         let chartVolume = null;
         let chartGaragem = null;
 
@@ -975,9 +1034,11 @@
             if (userData.isAdmin) {
                 allTabs.forEach(t => document.getElementById('tab-' + t).classList.remove('hidden-tab'));
                 carregarUsuarios(); 
+                // Se for admin, abre o dashboard primeiro
                 if(!document.querySelector('.section.active')) window.switchTab('dashboard');
             } else {
                 let firstTab = null;
+                // Lógica de Permissões para Abas
                 if (userData.perms.demandas?.ver) { document.getElementById('tab-demandas').classList.remove('hidden-tab'); if(!firstTab) firstTab='demandas'; }
                 if (userData.perms.predial?.ver) { document.getElementById('tab-predial').classList.remove('hidden-tab'); if(!firstTab) firstTab='predial'; }
                 if (userData.perms.limpeza?.ver) { document.getElementById('tab-limpeza').classList.remove('hidden-tab'); if(!firstTab) firstTab='limpeza'; }
@@ -988,6 +1049,7 @@
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
                 if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }
                 
+                // Dashboard visível para quem tem acesso a demandas ou visitantes
                 if(userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {
                      document.getElementById('tab-dashboard').classList.remove('hidden-tab');
                      if(!firstTab) firstTab = 'dashboard';
@@ -1014,12 +1076,13 @@
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
 
+            // Carrega Dados de Demandas se tiver acesso a QUALQUER aba relacionada
             if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { 
                 let { data } = await sb.from('demandas').select('*'); 
                 if(data) { 
                     demandas = data.sort((a,b) => b.id - a.id); 
                     window.renderizarApenasDemandas(); 
-                    window.renderizarAbasEspecificas(); 
+                    window.renderizarAbasEspecificas(); // Renderiza as abas novas
                 } 
             }
             if (admin || p.visitantes?.ver) { let { data } = await sb.from('visitantes').select('*'); if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); } }
@@ -1028,40 +1091,75 @@
             if (admin || p.crachas?.ver) { let { data } = await sb.from('crachas').select('*'); if(data) { crachas = data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); } }
             if(admin) { let { data: lData } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50); if(lData) { logs = lData; renderizarLogs(); } }
 
+            // Atualiza Dashboard se estiver na aba
             if(document.getElementById('dashboard').classList.contains('active')) {
                 renderizarDashboard();
             }
         }
 
+        // === NOVA FUNÇÃO: RENDERIZAR DASHBOARD INTELIGENTE COM FILTRO ===
         async function renderizarDashboard() {
-            const filtroMes = document.getElementById('dash-filtro-mes').value;
+            console.log("Gerando Relatório Gerencial com Filtro...");
+
+            // 1. PEGAR O MÊS SELECIONADO
+            const filtroMes = document.getElementById('dash-filtro-mes').value; // Ex: "2025-12"
+
+            // 2. CRIAR AS LISTAS FILTRADAS
+            // Se tiver mês selecionado, filtra. Se não, usa a lista completa.
+            
             const listaDemandas = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
+            
             const listaFrota = frota.filter(f => !filtroMes || f.hora_inicial.startsWith(filtroMes));
+            
             const listaVisitantes = visitantes.filter(v => !filtroMes || v.entrada.startsWith(filtroMes));
+            
             const listaEventos = eventos.filter(e => !filtroMes || e.data.startsWith(filtroMes));
+            
             const listaCrachas = crachas.filter(c => !filtroMes || c.data_solicitacao.startsWith(filtroMes));
 
+
+            // === 3. CÁLCULOS (USANDO AS LISTAS FILTRADAS AGORA) ===
+            
+            // A. CALCULANDO TOTAIS
             const totalFrota = listaFrota.length;
             const totalVisitantes = listaVisitantes.length;
             const totalEventos = listaEventos.length;
             const totalCrachas = listaCrachas.length;
             
-            let qtdPredial = 0; let qtdAr = 0; let qtdLimpeza = 0; let qtdCopas = 0; let qtdRamais = 0; let qtdOutros = 0;
+            // B. SEGMENTANDO AS DEMANDAS (Inteligência Artificial "Tabajara")
+            let qtdPredial = 0;
+            let qtdAr = 0;
+            let qtdLimpeza = 0;
+            let qtdCopas = 0;
+            let qtdRamais = 0;
+            let qtdOutros = 0;
 
             listaDemandas.forEach(d => {
                 const texto = (d.titulo + " " + d.setor + " " + (d.contratada || "")).toUpperCase();
-                if (texto.includes("AR CONDICIONADO")) { qtdAr++; } 
-                else if (texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("LÂMPADA") || texto.includes("PINTURA") || texto.includes("PORTA") || texto.includes("FECHADURA")) { qtdPredial++; } 
-                else if (texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) { qtdCopas++; } 
-                else if (texto.includes("LIMPEZA")) { qtdLimpeza++; } 
-                else if (texto.includes("RAMAL") || texto.includes("TELEFONE")) { qtdRamais++; } 
-                else { qtdOutros++; }
+                
+                if (texto.includes("AR CONDICIONADO")) {
+                    qtdAr++;
+                } else if (texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("LÂMPADA") || texto.includes("PINTURA") || texto.includes("PORTA") || texto.includes("FECHADURA")) {
+                    qtdPredial++;
+                } else if (texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) {
+                    qtdCopas++;
+                } else if (texto.includes("LIMPEZA")) {
+                    qtdLimpeza++;
+                } else if (texto.includes("RAMAL") || texto.includes("TELEFONE")) {
+                    qtdRamais++;
+                } else {
+                    qtdOutros++; 
+                }
             });
 
             const totalManutencao = qtdPredial + qtdAr;
             const totalGeral = totalFrota + totalVisitantes + listaDemandas.length + totalEventos + totalCrachas;
             const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
 
+
+            // === 4. ATUALIZANDO OS CARDS VISUAIS ===
+            
+            // Animação simples de números (opcional, mas fica chique)
             document.getElementById('kpi-total-geral').innerText = totalGeral.toLocaleString('pt-BR');
             document.getElementById('kpi-total-eventos').innerText = totalEventos;
             document.getElementById('kpi-publico-eventos').innerText = publicoEventos.toLocaleString('pt-BR') + " Participantes";
@@ -1069,10 +1167,15 @@
             document.getElementById('kpi-total-crachas').innerText = totalCrachas;
             document.getElementById('kpi-total-limpeza').innerText = qtdLimpeza + qtdCopas;
             
+            // Fluxo Diário (Se for mensal, divide por 30, senão divide por volume geral estimado)
             const divisor = filtroMes ? 30 : 365; 
-            const fluxoDiario = Math.ceil(totalFrota / (totalFrota > 0 ? divisor : 1)); 
+            const fluxoDiario = Math.ceil(totalFrota / (totalFrota > 0 ? divisor : 1)); // Evita divisão por zero
             document.getElementById('kpi-fluxo-garagem').innerText = fluxoDiario + " Veículos/Dia";
 
+
+            // === 5. ATUALIZANDO OS GRÁFICOS ===
+
+            // GRÁFICO 1: VOLUME POR SETOR
             const ctxVolume = document.getElementById('chartVolumeSetor').getContext('2d');
             if (chartVolume) chartVolume.destroy();
 
@@ -1107,13 +1210,14 @@
                         legend: { display: false },
                         datalabels: {
                             anchor: 'end', align: 'end', color: '#333', font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : '' 
+                            formatter: (value) => value > 0 ? value : '' // Esconde zeros
                         }
                     },
                     scales: { x: { display: false }, y: { grid: { display: false } } }
                 }
             });
 
+            // GRÁFICO 2: PERFIL GARAGEM
             const qtdServidor = listaFrota.filter(f => f.tipo === 'servidor').length;
             const qtdVisitante = listaFrota.filter(f => f.tipo === 'visitante').length;
             document.getElementById('total-garagem-label').innerText = totalFrota;
@@ -1154,6 +1258,7 @@
             });
         }
 
+
         async function carregarUsuarios() {
             if(!currentUserData.isAdmin) return;
             const { data, error } = await sb.rpc('admin_get_users');
@@ -1180,7 +1285,7 @@
         }
 
         async function editarUsuarioSalvar(id) {
-            const nome = document.getElementById('novo-user-nome').value;
+            const nome = document.getElementById('novo-user-nome').value; // Minúsculo permitido
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
             const { error } = await sb.rpc('admin_update_user_meta', { user_id_input: id, nome_input: nome, role_input: 'custom', is_admin_input: isAdmin, permissoes_input: perms });
@@ -1210,6 +1315,7 @@
                 if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
                 if(document.getElementById(`perm-${m}-exp`)) document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
             });
+            // Novas Abas
             const subMods = ['predial', 'limpeza', 'ar'];
             subMods.forEach(m => {
                  if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
@@ -1299,11 +1405,13 @@
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
             
+            // SE A ABA FOR DASHBOARD, CARREGA OS GRÁFICOS
             if(tabId === 'dashboard') { renderizarDashboard(); }
 
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = getDataHoraLocalParaInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = getDataHoraLocalParaInput(); }
             
+            // Inicializar Data/Hora nas abas específicas quando entra nelas
             if(tabId === 'predial') { document.getElementById('predial-data').valueAsDate = new Date(); document.getElementById('predial-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
             if(tabId === 'ar') { document.getElementById('ar-data').valueAsDate = new Date(); document.getElementById('ar-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
             if(tabId === 'limpeza') { document.getElementById('limpeza-data').valueAsDate = new Date(); document.getElementById('limpeza-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
@@ -1357,6 +1465,7 @@
         }
 
         function exportarExcel(tipo) {
+            // Verifica permissão antes de exportar
             if (!pode(tipo, 'exportar')) {
                 alert('Você não tem permissão para exportar estes dados.');
                 return;
@@ -1365,10 +1474,21 @@
             let data = [];
             let nomeArquivo = "";
 
-            if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx"; }
-            else if (tipo === 'predial') { data = demandas.filter(d => d.contratada && d.contratada.includes('PREDIAL')); nomeArquivo = "Relatorio_Predial.xlsx"; }
-            else if (tipo === 'ar') { data = demandas.filter(d => d.contratada && d.contratada.includes('CONDICIONADO')); nomeArquivo = "Relatorio_ArCondicionado.xlsx"; }
-            else if (tipo === 'limpeza') { data = demandas.filter(d => d.contratada && d.contratada.includes('LIMPEZA')); nomeArquivo = "Relatorio_Limpeza.xlsx"; }
+            if (tipo === 'demandas') {
+                data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx";
+            }
+            else if (tipo === 'predial') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('PREDIAL'));
+                nomeArquivo = "Relatorio_Predial.xlsx";
+            }
+            else if (tipo === 'ar') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('CONDICIONADO'));
+                nomeArquivo = "Relatorio_ArCondicionado.xlsx";
+            }
+            else if (tipo === 'limpeza') {
+                data = demandas.filter(d => d.contratada && d.contratada.includes('LIMPEZA'));
+                nomeArquivo = "Relatorio_Limpeza.xlsx";
+            }
             else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; } 
             else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; } 
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; } 
@@ -1376,6 +1496,7 @@
 
             if(data.length === 0) return alert("Não há dados para exportar.");
 
+            // Se for exportação de demandas (geral ou específica), formata as colunas
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
                  data = data.map(d => ({
                     ID: d.id, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante,
@@ -1383,6 +1504,7 @@
                     HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim
                 }));
             } else {
+                // Outros módulos
                 data = data.map(item => { const novo = {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });
             }
 
@@ -1393,11 +1515,16 @@
             registrarLog('Exportação', tipo, 'Gerou relatório Excel');
         }
 
+        // --- LÓGICA PRINCIPAL DE DEMANDAS E SUB-ABAS ---
+        
+        // Função Genérica para salvar nova O.S. das abas específicas
         async function salvarDemandaEspecifica(prefixo, contratadaFixa) {
             const titulo = document.getElementById(`${prefixo}-titulo`).value.toUpperCase();
             const setor = document.getElementById(`${prefixo}-setor`).value.toUpperCase();
             const solicitante = document.getElementById(`${prefixo}-solicitante`).value.toUpperCase();
             const prioridade = document.getElementById(`${prefixo}-prioridade`).value;
+            
+            // Dados automáticos pegos dos inputs específicos
             const dataInput = document.getElementById(`${prefixo}-data`).value;
             const horaInput = document.getElementById(`${prefixo}-hora`).value;
 
@@ -1416,16 +1543,20 @@
             else { 
                 alert('Solicitação Registrada!'); 
                 document.getElementById(`form-${prefixo}`).reset(); 
+                // Reinicia data/hora para agora
                 document.getElementById(`${prefixo}-data`).valueAsDate = new Date();
                 document.getElementById(`${prefixo}-hora`).value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                 carregarDados(); 
             }
         }
 
+        // Listeners para os formulários específicos
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
         document.getElementById('form-ar').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('ar', 'AR CONDICIONADO'); });
         document.getElementById('form-limpeza').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('limpeza', 'LIMPEZA'); });
 
+
+        // Formulário Geral de Demandas (Admin)
         const formDemanda = document.getElementById('form-demanda');
         formDemanda.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1457,6 +1588,7 @@
 
         window.editarDemanda = function(id) {
             const d = demandas.find(item => item.id == id); if (!d) return;
+            // Se tentar editar nas abas específicas, redireciona para a geral
             if(!document.getElementById('demandas').classList.contains('active')) {
                 alert("Redirecionando para a aba Geral para edição completa.");
                 switchTab('demandas');
@@ -1486,11 +1618,12 @@
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
-        // --- CORREÇÃO DA IMPRESSÃO O.S. ---
+        // --- FUNÇÃO ROBUSTA: IMPRIMIR O.S. (Corrige tela branca no Android) ---
         window.imprimirOS = function(id) {
             const d = demandas.find(item => item.id == id);
             if (!d) return;
 
+            // 1. Preenche os dados
             document.getElementById('print-id').innerText = d.id;
             document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');
             const horaTexto = d.hora ? ` às ${d.hora}` : '';
@@ -1502,25 +1635,70 @@
             document.getElementById('print-contratada').innerText = d.contratada ? d.contratada.toUpperCase() : 'NÃO INFORMADO';
             document.getElementById('print-status').innerText = d.status;
 
+            // 2. MODO TROCA DE TELA
+            // Rola a tela para o topo para garantir que o Android capture o início
             window.scrollTo(0, 0);
             
-            // Adiciona a classe que ativa o modo O.S. no CSS
+            // Aplica a classe que ESCONDE o App e MOSTRA a O.S.
             document.body.classList.add('printing-os');
 
+            // 3. Delay estratégico para o Android "desenhar" a tela nova
+            setTimeout(function() {
+                window.print();
+            }, 800); // 800ms é o ponto ideal entre rapidez e compatibilidade
+
+            // 4. Limpeza Segura
+            // Remove a classe assim que o usuário voltar da tela de impressão
+            const limparImpressao = () => {
+                document.body.classList.remove('printing-os');
+                // Restaura o scroll se necessário
+                window.scrollTo(0, 0);
+            };
+
+            window.onafterprint = limparImpressao;
+
+            // Garantia para Androids que não disparam onafterprint corretamente
+            setTimeout(function() {
+                if (document.hasFocus()) {
+                   limparImpressao();
+                } else {
+                   setTimeout(limparImpressao, 5000);
+                }
+            }, 2000);
+        }
+
+        // --- NOVA FUNÇÃO: IMPRIMIR DASHBOARD ---
+        window.imprimirDashboard = function() {
+            // 1. Adiciona classe para esconder menus e filtrar visualização
+            document.body.classList.add('printing-dashboard');
+            
+            // 2. Força redimensionamento dos gráficos para caber na folha A4
+            Object.values(Chart.instances).forEach(chart => chart.resize());
+
+            // 3. Pequeno delay para garantir que o layout se ajustou
             setTimeout(function() {
                 window.print();
             }, 500);
 
-            // Garante que a tela volte ao normal depois
-            const cleanup = () => { document.body.classList.remove('printing-os'); };
-            window.onafterprint = cleanup;
-            setTimeout(cleanup, 2000); // Fallback para mobile
+            // 4. Limpeza
+            window.onafterprint = function() {
+                document.body.classList.remove('printing-dashboard');
+                Object.values(Chart.instances).forEach(chart => chart.resize());
+            };
+
+            // Fallback de segurança
+            setTimeout(function() {
+                document.body.classList.remove('printing-dashboard');
+                Object.values(Chart.instances).forEach(chart => chart.resize());
+            }, 5000);
         }
 
+        // RENDERIZAÇÃO DAS TABELAS
         function criarLinhaTabela(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
             
+            // Botões de Ação
             let btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -1538,10 +1716,12 @@
             </tr>`;
         }
 
+        // Função Simplificada para as Abas Específicas
         function criarLinhaTabelaSimples(d, prefixo) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
             
+            // CORREÇÃO: Adicionando Botão de AVANÇAR (Check)
             let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Concluir/Avançar"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -1577,14 +1757,18 @@
             lista.forEach(d => { tbody.innerHTML += criarLinhaTabela(d); });
         }
 
+        // FUNÇÃO UNIVERSAL PARA RENDERIZAR AS ABAS ESPECÍFICAS COM FILTROS E CARDS
         window.renderizarAbasEspecificas = function() {
             function renderizarAba(prefixo, palavraChave) {
+                // Pega os filtros específicos da aba
                 const mes = document.getElementById(`filtro-mes-${prefixo}`).value;
                 const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();
                 const status = document.getElementById(`filtro-status-${prefixo}`).value;
 
+                // 1. Primeiro filtra apenas os itens daquela empresa
                 let listaBase = demandas.filter(d => d.contratada && d.contratada.includes(palavraChave));
 
+                // 2. Aplica os filtros de tela (Mes, Texto, Status) sobre a lista base
                 const listaFinal = listaBase.filter(d => {
                     const bateMes = !mes || d.data.startsWith(mes);
                     const bateBusca = !busca || (d.titulo + ' ' + d.setor + ' ' + d.solicitante).includes(busca);
@@ -1592,15 +1776,19 @@
                     return bateMes && bateBusca && bateStatus;
                 });
 
+                // 3. Atualiza os Cards (Dashboards) daquela aba
                 document.getElementById(`dash-${prefixo}-total`).innerText = listaFinal.length;
                 document.getElementById(`dash-${prefixo}-pendente`).innerText = listaFinal.filter(d => d.status === 'Pendente').length;
                 document.getElementById(`dash-${prefixo}-andamento`).innerText = listaFinal.filter(d => d.status === 'Em Andamento').length;
                 document.getElementById(`dash-${prefixo}-concluido`).innerText = listaFinal.filter(d => d.status === 'Concluído').length;
 
+                // 4. Atualiza a Tabela
                 const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
                 tbody.innerHTML = '';
                 listaFinal.forEach(d => { tbody.innerHTML += criarLinhaTabelaSimples(d, prefixo); });
             }
+
+            // Chama para cada aba
             renderizarAba('predial', 'PREDIAL');
             renderizarAba('ar', 'CONDICIONADO');
             renderizarAba('limpeza', 'LIMPEZA');
@@ -1622,10 +1810,45 @@
             } 
         }
 
+        // --- MANTER TODO O CÓDIGO RESTANTE (VISITANTES, VEÍCULOS, ETC.) IGUAL ---
+        const formVis = document.getElementById('form-visitante');
+        formVis.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('visitante-id-edit').value; const id = idEdicao || Date.now(); const fotoBase64 = document.getElementById('vis-foto-base64').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(getDataHoraLocalParaInput()); const novoVisitante = { id: id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null }; if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); } const { error } = await sb.from('visitantes').upsert(novoVisitante); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); } });
+        window.editarVisitante = function(id) { const v = visitantes.find(i => i.id == id); if(!v) return; document.getElementById('visitante-id-edit').value = v.id; document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc; document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato; document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade; if(v.entrada) { const dataLocal = new Date(v.entrada); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16); } const preview = document.getElementById('vis-preview'); const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; } document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-vis').style.display = "block"; const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status; document.getElementById('visitantes').scrollIntoView({behavior:'smooth'}); }
+        window.deletarVisitante = async function(id) { if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); } }
+        window.cancelarEdicaoVisitante = function() { document.getElementById('visitante-id-edit').value = ""; formVis.reset(); document.getElementById('vis-entrada').value = getDataHoraLocalParaInput(); document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)"; document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none"; document.getElementById('vis-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; document.getElementById('vis-foto-base64').value = ""; pararCamera(); }
+        window.renderizarApenasVisitantes = function() { const mes = document.getElementById('filtro-mes-vis').value; const termo = document.getElementById('filtro-busca-vis').value.toUpperCase(); const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; }); document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length; document.getElementById('dash-visitantes-total').innerText = lista.length; const tbody = document.querySelector('#tabela-visitantes tbody'); tbody.innerHTML = ''; const btnExport = document.getElementById('btn-export-visitantes'); if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; lista.forEach(v => { const tr = document.createElement('tr'); const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>'; const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; let buttons = ''; if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`; tr.innerHTML = `<td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`; tbody.appendChild(tr); }); }
+        window.baixaVisitante = async function(id) { if(confirm('Confirmar saída do visitante?')) { await sb.from('visitantes').update({ status: 'Saiu', saida: new Date().toISOString() }).eq('id', id); carregarDados(); } }
+        window.atualizarLabels = function() { const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value; const btn = document.getElementById('btn-submit-veiculo'); if (!document.getElementById('veiculo-id-edit').value) btn.innerText = "Registrar Entrada"; if (tipo === 'servidor') { btn.style.backgroundColor = "var(--servidor)"; document.getElementById('veiculo-setor').placeholder = "Setor de Origem"; } else { btn.style.backgroundColor = "var(--visitante)"; document.getElementById('veiculo-setor').placeholder = "Empresa / Setor Visitado"; } }
+        const formVeiculo = document.getElementById('form-veiculo'); formVeiculo.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('veiculo-id-edit').value; const id = idEdicao || Date.now(); const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(getDataHoraLocalParaInput()); const novoVeiculo = { id: id, tipo: tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null }; if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro} - ${novoVeiculo.motorista}`); } const { error } = await sb.from('frota').upsert(novoVeiculo); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); } });
+        window.editarVeiculo = function(id) { const f = frota.find(i => i.id == id); if (!f) return; document.getElementById('veiculo-id-edit').value = f.id; document.getElementById('veiculo-carro').value = f.carro; document.getElementById('veiculo-motorista').value = f.motorista; document.getElementById('veiculo-setor').value = f.setor || ''; document.getElementById('veiculo-contato').value = f.contato || ''; document.getElementById('veiculo-destino').value = f.destino; document.getElementById('veiculo-km-saida').value = f.km_inicial; if(f.hora_inicial) { const dataLocal = new Date(f.hora_inicial); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('veiculo-hora-saida').value = dataLocal.toISOString().slice(0,16); } if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true; document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando'; const btn = document.getElementById('btn-submit-veiculo'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-veiculo').style.display = "block"; document.getElementById('container-status-veiculo').style.display = "block"; document.getElementById('veiculo-status-edit').value = f.status; window.atualizarLabels(); document.getElementById('veiculos').scrollIntoView({behavior: 'smooth'}); }
+        window.deletarVeiculo = async function(id) { if(confirm('Tem certeza que deseja EXCLUIR este registro da garagem?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); } }
+        window.cancelarEdicaoVeiculo = function() { document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset(); document.getElementById('veiculo-hora-saida').value = getDataHoraLocalParaInput(); document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-parking"></i> Registrar Entrada'; document.getElementById('btn-cancel-veiculo').style.display = "none"; document.getElementById('container-status-veiculo').style.display = "none"; document.getElementById('radio-servidor').checked = true; window.atualizarLabels(); }
+        window.renderizarApenasFrota = function() { const mes = document.getElementById('filtro-mes-frota').value; const busca = document.getElementById('filtro-busca-frota').value.toUpperCase(); const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; }); document.getElementById('dash-frota-total').innerText = lista.length; document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length; document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length; document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length; const tbody = document.querySelector('#tabela-veiculos tbody'); tbody.innerHTML = ''; const btnExport = document.getElementById('btn-export-veiculos'); if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; lista.forEach(f => { const tr = document.createElement('tr'); const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>'; const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante'; const dIn = new Date(f.hora_inicial).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); const dOut = f.hora_final ? new Date(f.hora_final).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; let buttons = ''; if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; tr.innerHTML = `<td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td>`; tbody.appendChild(tr); }); }
+        window.baixaVeiculo = async function(id) { const km = prompt("KM de Saída (Opcional):", "0"); if (km !== null) { await sb.from('frota').update({ km_final: km, hora_final: new Date().toISOString(), status: 'Fechado' }).eq('id', id); carregarDados(); } }
+        const formEvento = document.getElementById('form-evento'); formEvento.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('evento-id-edit').value; const id = idEdicao || Date.now(); const novoEvento = { id: id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() }; if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`); const { error } = await sb.from('eventos').upsert(novoEvento); if(error) alert('Erro ao salvar evento: ' + error.message); else { cancelarEdicaoEvento(); carregarDados(); } });
+        window.editarEvento = function(id) { const ev = eventos.find(item => item.id == id); if (!ev) return; document.getElementById('evento-id-edit').value = ev.id; document.getElementById('evento-nome').value = ev.nome; document.getElementById('evento-organizador').value = ev.organizador; document.getElementById('evento-data').value = ev.data; document.getElementById('evento-publico').value = ev.publico; document.getElementById('evento-local').value = ev.local; document.getElementById('evento-coffee').checked = ev.coffee || false; document.getElementById('evento-obs').value = ev.obs || ""; const radios = document.getElementsByName('tipoEvento'); for(let i=0; i<radios.length; i++) { if(radios[i].value === ev.tipo) radios[i].checked = true; } document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento'; const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-evento').style.display = "block"; document.getElementById('eventos').scrollIntoView({behavior: 'smooth'}); }
+        window.cancelarEdicaoEvento = function() { document.getElementById('evento-id-edit').value = ""; formEvento.reset(); document.getElementById('evento-data').valueAsDate = new Date(); document.getElementById('evento-coffee').checked = false; document.getElementById('evento-obs').value = ""; document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-calendar-plus"></i> Registrar Evento'; const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--evento)"; document.getElementById('btn-cancel-evento').style.display = "none"; }
+        window.deletarEvento = async function(id) { if(confirm('Tem certeza que deseja EXCLUIR este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); } }
+        window.renderizarApenasEventos = function() { const mes = document.getElementById('filtro-mes-evento').value; const busca = document.getElementById('filtro-busca-evento').value.toUpperCase(); const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bTexto; }); document.getElementById('dash-eventos-qtd').innerText = lista.length; const qtdInterno = lista.filter(e => e.tipo === 'Interno').length; const qtdExterno = lista.filter(e => e.tipo === 'Externo').length; document.getElementById('dash-eventos-interno').innerText = qtdInterno; document.getElementById('dash-eventos-externo').innerText = qtdExterno; const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0); document.getElementById('dash-eventos-publico').innerText = totalPublico; const tbody = document.querySelector('#tabela-eventos tbody'); tbody.innerHTML = ''; const btnExport = document.getElementById('btn-export-eventos'); if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; lista.forEach(ev => { const tr = document.createElement('tr'); const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo'; const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`; const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : ''; const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : ''; let buttons = ''; if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; tr.innerHTML = `<td>${formatarData(ev.data)}</td><td>${badge}</td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><i class="fas fa-user"></i> ${ev.publico}</td><td style="min-width:100px">${buttons}</td>`; tbody.appendChild(tr); }); }
+        const formCracha = document.getElementById('form-cracha'); formCracha.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('cracha-id-edit').value; const id = idEdicao || Date.now(); const novoCracha = { id: id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null }; if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`); const { error } = await sb.from('crachas').upsert(novoCracha); if(error) alert('Erro ao salvar crachá: ' + error.message); else { cancelarEdicaoCracha(); carregarDados(); } });
+        window.editarCracha = function(id) { const c = crachas.find(item => item.id == id); if (!c) return; document.getElementById('cracha-id-edit').value = c.id; document.getElementById('cracha-nome').value = c.nome; document.getElementById('cracha-doc').value = c.doc_identidade || ''; document.getElementById('cracha-setor').value = c.setor; document.getElementById('cracha-cargo').value = c.cargo || ''; document.getElementById('cracha-sala').value = c.sala || ''; document.getElementById('cracha-ramal').value = c.ramal || ''; document.getElementById('cracha-tipo').value = c.tipo; document.getElementById('cracha-data').value = c.data_solicitacao; document.getElementById('cracha-status').value = c.status; document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-edit"></i> Editando Crachá'; const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Alterações"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-cracha').style.display = "block"; document.getElementById('crachas').scrollIntoView({behavior: 'smooth'}); }
+        window.cancelarEdicaoCracha = function() { document.getElementById('cracha-id-edit').value = ""; formCracha.reset(); document.getElementById('cracha-data').valueAsDate = new Date(); document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-id-card"></i> Gestão de Crachás'; const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Crachá"; btn.style.backgroundColor = "var(--cracha)"; document.getElementById('btn-cancel-cracha').style.display = "none"; }
+        window.deletarCracha = async function(id) { if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); } }
+        window.renderizarApenasCrachas = function() { const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase(); const statusFiltro = document.getElementById('filtro-status-cracha').value; const lista = crachas.filter(c => { const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; }); document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length; document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length; document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length; const tbody = document.querySelector('#tabela-crachas tbody'); tbody.innerHTML = ''; const btnExport = document.getElementById('btn-export-crachas'); if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; lista.forEach(c => { const tr = document.createElement('tr'); let badgeClass = ''; if(c.status === 'Solicitado') badgeClass = 'bg-cracha-solicitado'; else if(c.status === 'Confeccionado') badgeClass = 'bg-cracha-confeccionado'; else badgeClass = 'bg-cracha-entregue'; const dataEnt = c.data_entrega ? `<br><small style="color:green"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : ''; let buttons = ''; if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; tr.innerHTML = `<td>${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small>${c.cargo || '-'}</small></td><td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td>`; tbody.appendChild(tr); }); }
+
+        // --- ADIÇÃO: Debounce para a Barra de Busca ---
+        // Variável de controle do tempo
         let timeoutBusca = null;
+
+        // Adiciona o evento de digitação de forma inteligente para evitar delay
         document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
+            // Cancela a busca anterior se o usuário ainda estiver digitando
             clearTimeout(timeoutBusca);
-            timeoutBusca = setTimeout(function() { window.renderizarApenasDemandas(); }, 500);
+            
+            // Agenda uma nova busca para daqui a 500ms (meio segundo)
+            timeoutBusca = setTimeout(function() {
+                window.renderizarApenasDemandas();
+            }, 500);
         });
     </script>
 </body>
