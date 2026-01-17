@@ -74,7 +74,7 @@
         #tab-dashboard.active { border-bottom-color: #f1c40f; color: #f1c40f; }
 
         main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
-        .section { display: none; animation: fadeIn 0.3s; } /* Animação mais rápida */
+        .section { display: none; animation: fadeIn 0.3s; }
         .section.active { display: block; }
 
         /* CARDS E FORMULARIOS */
@@ -182,58 +182,19 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
 
-        /* --- ESTILOS DE IMPRESSÃO (CORRIGIDO PARA PDF) --- */
+        /* --- ESTILOS DE IMPRESSÃO --- */
         @media print {
-            /* 1. Esconde tudo que não é conteúdo essencial */
             .no-print, .nav-tabs, #login-overlay { display: none !important; }
-            
-            /* 2. Ajustes globais da página */
-            body { 
-                background: white; 
-                -webkit-print-color-adjust: exact; /* Garante cores no Chrome */
-                print-color-adjust: exact; 
-                font-size: 12px;
-            }
-
-            /* 3. Garante que o conteúdo do app apareça */
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
             #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
-            
-            /* 4. Força a Seção Ativa a aparecer e expandir */
             .section { display: none !important; }
-            .section.active { 
-                display: block !important; 
-                position: relative !important; 
-                top: 0 !important; left: 0 !important;
-                width: 100% !important;
-                margin: 0 !important; padding: 0 !important;
-            }
-
-            /* 5. Ajustes Específicos para Gráficos e Cards */
-            canvas { 
-                max-width: 100% !important; 
-                max-height: 100% !important; 
-                page-break-inside: avoid; 
-            }
-            .card, .metric-card, .dashboard-panel > div {
-                break-inside: avoid; 
-                page-break-inside: avoid;
-                border: 1px solid #ddd;
-                box-shadow: none !important;
-            }
-
-            /* 6. MODO ESPECIAL: Imprimir O.S. (Quando clicar no botão da O.S.) */
+            .section.active { display: block !important; position: relative !important; top: 0 !important; left: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            canvas { max-width: 100% !important; max-height: 100% !important; page-break-inside: avoid; }
+            .card, .metric-card, .dashboard-panel > div { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd; box-shadow: none !important; }
             #area-impressao { display: none; }
-            
             body.printing-os #app-content { display: none !important; } 
-            body.printing-os #area-impressao { 
-                display: block !important; 
-                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-                z-index: 9999; margin: 0; padding: 20px;
-                background: white;
-            }
+            body.printing-os #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; margin: 0; padding: 20px; background: white; }
             body.printing-os * { visibility: visible; }
-            
-            /* 7. MODO ESPECIAL: Imprimir Dashboard */
             body.printing-dashboard #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
             body.printing-dashboard .section { display: none !important; }
             body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
@@ -1006,7 +967,7 @@
                 return localDate.toISOString(); 
             },
             
-            // Retorna data atual pronta para o DB
+            // Retorna data atual pronta para o DB (Carimbo de tempo exato)
             getNowDatabaseISO: () => {
                 return DateUtils.toDatabaseISO(DateUtils.getToInput());
             }
@@ -1433,6 +1394,7 @@
             
             if(tabId === 'dashboard') { renderizarDashboard(); }
 
+            // RESET AUTOMÁTICO DE HORÁRIO AO TROCAR DE ABA
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = DateUtils.getToInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); }
             
@@ -1441,14 +1403,34 @@
             if(tabId === 'limpeza') { document.getElementById('limpeza-data').valueAsDate = new Date(); document.getElementById('limpeza-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
         }
 
-        function calcularTempoDecorrido(dataInicio, dataFim = new Date()) {
-            const inicio = new Date(dataInicio);
-            const fim = new Date(dataFim);
+        // --- CORREÇÃO: CÁLCULO PRECISO (DATA + HORA vs DATA FIM) ---
+        function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
+            // Cria a data de início combinando os campos
+            let inicio = new Date(dataStr + 'T' + (horaStr || '00:00'));
+            
+            // Se a dataFimStr existir, usa ela. Se não, usa AGORA (para tempo decorrido em tempo real)
+            let fim = dataFimStr ? new Date(dataFimStr) : new Date();
+
+            // Ajuste fino para garantir que o "AGORA" esteja no mesmo fuso se for via JS
+            if (!dataFimStr) {
+                // Se não tem data fim, é "tempo decorrido". 
+                // Como 'inicio' foi criado sem timezone explícito (local), 'fim' deve ser local também.
+                // New Date() já é local.
+            } else {
+                // Se tem data fim vindo do banco (ISO), precisamos converter 'inicio' para comparar corretamente
+                // O banco salva ISO. O input salva Local.
+                // A melhor forma é converter tudo para milissegundos
+            }
+
             const diffMs = fim - inicio;
-            const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHoras = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            if (diffDias > 0) return `${diffDias}d ${diffHoras}h`;
-            return `${diffHoras} horas`;
+            
+            // Tratamento para datas futuras ou erros
+            if (diffMs < 0) return "00m";
+
+            const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            return `${String(diffHoras).padStart(2, '0')}h ${String(diffMinutos).padStart(2, '0')}m`;
         }
 
         function formatarData(dataISO) { if(!dataISO) return ''; const [ano, mes, dia] = dataISO.split('-'); return `${dia}/${mes}/${ano}`; }
@@ -1587,8 +1569,12 @@
             let error = null;
             if(idEdicao) {
                 const itemAntigo = demandas.find(d => d.id == idEdicao);
-                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) { novaDemanda.data_fim = new Date().toISOString(); } 
+                // Se está concluindo agora, pega a hora exata do servidor/iso
+                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) { 
+                    novaDemanda.data_fim = DateUtils.getNowDatabaseISO(); 
+                } 
                 else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }
+                
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
             } else {
@@ -1673,7 +1659,12 @@
 
         function criarLinhaTabela(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
-            let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
+            // USA A NOVA FUNÇÃO DE CÁLCULO PRECISO
+            let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
+            let tempoDisplay = (d.status === 'Concluído') 
+                ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` 
+                : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
+            
             let btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -1692,7 +1683,12 @@
 
         function criarLinhaTabelaSimples(d, prefixo) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
-            let tempoDisplay = (d.status === 'Concluído' && d.data_fim) ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${calcularTempoDecorrido(d.data, d.data_fim)} (Total)</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${calcularTempoDecorrido(d.data)}</span>`;
+            // USA A NOVA FUNÇÃO DE CÁLCULO PRECISO
+            let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
+            let tempoDisplay = (d.status === 'Concluído') 
+                ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` 
+                : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
+            
             let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Concluir/Avançar"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -1758,7 +1754,15 @@
         window.avancarStatus = async function(id) { 
             const item = demandas.find(d => d.id == id); if(!item) return;
             let novoStatus = item.status, novaDataFim = item.data_fim;
-            if(item.status === 'Pendente') novoStatus = 'Em Andamento'; else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = new Date().toISOString(); }
+            
+            // Lógica de Avanço
+            if(item.status === 'Pendente') {
+                novoStatus = 'Em Andamento'; 
+            } else if(item.status === 'Em Andamento') { 
+                novoStatus = 'Concluído'; 
+                // CORREÇÃO: Captura data exata de conclusão
+                novaDataFim = DateUtils.getNowDatabaseISO(); 
+            }
             await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id); carregarDados();
         }
 
@@ -1808,7 +1812,13 @@
             }
         }
 
-        window.baixaVisitante = async function(id) { if(confirm('Confirmar saída do visitante?')) { await sb.from('visitantes').update({ status: 'Saiu', saida: new Date().toISOString() }).eq('id', id); carregarDados(); } }
+        window.baixaVisitante = async function(id) { 
+            if(confirm('Confirmar saída do visitante?')) { 
+                // CORREÇÃO: Hora exata de saída
+                await sb.from('visitantes').update({ status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }).eq('id', id); 
+                carregarDados(); 
+            } 
+        }
         
         window.atualizarLabels = function() { const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value; const btn = document.getElementById('btn-submit-veiculo'); if (!document.getElementById('veiculo-id-edit').value) btn.innerText = "Registrar Entrada"; if (tipo === 'servidor') { btn.style.backgroundColor = "var(--servidor)"; document.getElementById('veiculo-setor').placeholder = "Setor de Origem"; } else { btn.style.backgroundColor = "var(--visitante)"; document.getElementById('veiculo-setor').placeholder = "Empresa / Setor Visitado"; } }
         
@@ -1849,7 +1859,14 @@
             }
         }
 
-        window.baixaVeiculo = async function(id) { const km = prompt("KM de Saída (Opcional):", "0"); if (km !== null) { await sb.from('frota').update({ km_final: km, hora_final: new Date().toISOString(), status: 'Fechado' }).eq('id', id); carregarDados(); } }
+        window.baixaVeiculo = async function(id) { 
+            const km = prompt("KM de Saída (Opcional):", "0"); 
+            if (km !== null) { 
+                // CORREÇÃO: Hora exata de saída
+                await sb.from('frota').update({ km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }).eq('id', id); 
+                carregarDados(); 
+            } 
+        }
         
         const formEvento = document.getElementById('form-evento'); formEvento.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('evento-id-edit').value; const id = idEdicao || Date.now(); const novoEvento = { id: id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() }; if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`); const { error } = await sb.from('eventos').upsert(novoEvento); if(error) alert('Erro ao salvar evento: ' + error.message); else { cancelarEdicaoEvento(); carregarDados(); } });
         
