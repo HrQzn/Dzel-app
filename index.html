@@ -1131,12 +1131,14 @@
             let qtdPredial = 0; let qtdAr = 0; let qtdLimpeza = 0; let qtdCopas = 0; let qtdRamais = 0; let qtdOutros = 0;
 
             listaDemandas.forEach(d => {
-                const texto = (d.titulo + " " + d.setor + " " + (d.contratada || "")).toUpperCase();
-                if (texto.includes("AR CONDICIONADO")) { qtdAr++; } 
-                else if (texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("LÂMPADA") || texto.includes("PINTURA") || texto.includes("PORTA") || texto.includes("FECHADURA")) { qtdPredial++; } 
-                else if (texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) { qtdCopas++; } 
-                else if (texto.includes("LIMPEZA")) { qtdLimpeza++; } 
-                else if (texto.includes("RAMAL") || texto.includes("TELEFONE")) { qtdRamais++; } 
+                const texto = (d.titulo + " " + d.setor).toUpperCase();
+                const contratada = (d.contratada || "").toUpperCase();
+
+                // CORREÇÃO: Prioriza o campo CONTRATADA para não errar a categoria
+                if (contratada.includes("AR CONDICIONADO") || texto.includes("AR CONDICIONADO")) { qtdAr++; } 
+                else if (contratada.includes("PREDIAL") || texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("PINTURA")) { qtdPredial++; } 
+                else if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ")) { qtdLimpeza++; } 
+                else if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) { qtdRamais++; } 
                 else { qtdOutros++; }
             });
 
@@ -1163,7 +1165,6 @@
                 { label: 'Recepção', valor: totalVisitantes },
                 { label: 'Limpeza', valor: qtdLimpeza },
                 { label: 'Manut. Predial', valor: qtdPredial },
-                { label: 'Copas', valor: qtdCopas },
                 { label: 'Crachás', valor: totalCrachas },
                 { label: 'Ramais', valor: qtdRamais },
                 { label: 'Ar Cond.', valor: qtdAr }
@@ -1403,29 +1404,23 @@
             if(tabId === 'limpeza') { document.getElementById('limpeza-data').valueAsDate = new Date(); document.getElementById('limpeza-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
         }
 
-        // --- CORREÇÃO: CÁLCULO PRECISO (DATA + HORA vs DATA FIM) ---
+        // --- CORREÇÃO FINAL: CÁLCULO EXATO DE HORAS (IGNORA UTC) ---
         function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
-            // Cria a data de início combinando os campos
+            // Cria a data de início (assume local)
             let inicio = new Date(dataStr + 'T' + (horaStr || '00:00'));
             
-            // Se a dataFimStr existir, usa ela. Se não, usa AGORA (para tempo decorrido em tempo real)
-            let fim = dataFimStr ? new Date(dataFimStr) : new Date();
-
-            // Ajuste fino para garantir que o "AGORA" esteja no mesmo fuso se for via JS
-            if (!dataFimStr) {
-                // Se não tem data fim, é "tempo decorrido". 
-                // Como 'inicio' foi criado sem timezone explícito (local), 'fim' deve ser local também.
-                // New Date() já é local.
+            let fim;
+            if (dataFimStr) {
+                // Truque: Remove o "Z" (UTC) da string do banco para forçar o navegador a tratar como Local
+                // Isso garante que 13:00 no banco seja lido como 13:00 na tela
+                fim = new Date(dataFimStr.slice(0, 19)); 
             } else {
-                // Se tem data fim vindo do banco (ISO), precisamos converter 'inicio' para comparar corretamente
-                // O banco salva ISO. O input salva Local.
-                // A melhor forma é converter tudo para milissegundos
+                fim = new Date(); // Agora
             }
 
             const diffMs = fim - inicio;
             
-            // Tratamento para datas futuras ou erros
-            if (diffMs < 0) return "00m";
+            if (diffMs < 0) return "00m"; // Evita tempo negativo
 
             const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
             const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
