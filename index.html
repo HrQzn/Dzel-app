@@ -929,24 +929,18 @@
             auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
         });
 
-        // Registrar o plugin de labels para os gráficos
         Chart.register(ChartDataLabels);
 
-        // Variáveis globais para guardar os gráficos
         let chartVolume = null;
         let chartGaragem = null;
 
-        // --- CORREÇÃO 2: DATA E HORA (Fuso Horário Brasil - Robustez) ---
+        // --- MÓDULO DE DATA/HORA (Previsão: Exatidão Absoluta) ---
         const DateUtils = {
-            // Retorna Date object configurado para o fuso do Brasil
             getNowBRT: () => {
                 const now = new Date();
-                // Força a conversão para o fuso de SP mantendo o valor numérico do tempo
                 const brtString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
                 return new Date(brtString);
             },
-
-            // Formata para o input type="datetime-local" (YYYY-MM-DDTHH:mm)
             getToInput: () => {
                 const now = DateUtils.getNowBRT();
                 const ano = now.getFullYear();
@@ -956,24 +950,18 @@
                 const min = String(now.getMinutes()).padStart(2, '0');
                 return `${ano}-${mes}-${dia}T${hora}:${min}`;
             },
-
-            // Formata para salvar no Banco (ISO String preservando o horário local BR)
             toDatabaseISO: (valorInput) => {
                 if (!valorInput) return null;
                 const data = new Date(valorInput);
-                // Ajuste fino para evitar conversão automática para UTC do navegador
                 const offset = data.getTimezoneOffset() * 60000;
                 const localDate = new Date(data.getTime() - offset);
                 return localDate.toISOString(); 
             },
-            
-            // Retorna data atual pronta para o DB (Carimbo de tempo exato)
             getNowDatabaseISO: () => {
                 return DateUtils.toDatabaseISO(DateUtils.getToInput());
             }
         };
 
-        // Substitutos diretos para manter compatibilidade
         function getDataHoraLocalParaInput() { return DateUtils.getToInput(); }
         function dataLocalParaISO(val) { return DateUtils.toDatabaseISO(val); }
 
@@ -1029,7 +1017,6 @@
                 if (userData.perms.predial?.ver) { document.getElementById('tab-predial').classList.remove('hidden-tab'); if(!firstTab) firstTab='predial'; }
                 if (userData.perms.limpeza?.ver) { document.getElementById('tab-limpeza').classList.remove('hidden-tab'); if(!firstTab) firstTab='limpeza'; }
                 if (userData.perms.ar?.ver) { document.getElementById('tab-ar').classList.remove('hidden-tab'); if(!firstTab) firstTab='ar'; }
-                
                 if (userData.perms.visitantes?.ver) { document.getElementById('tab-visitantes').classList.remove('hidden-tab'); if(!firstTab) firstTab='visitantes'; }
                 if (userData.perms.veiculos?.ver) { document.getElementById('tab-veiculos').classList.remove('hidden-tab'); if(!firstTab) firstTab='veiculos'; }
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
@@ -1039,7 +1026,6 @@
                      document.getElementById('tab-dashboard').classList.remove('hidden-tab');
                      if(!firstTab) firstTab = 'dashboard';
                 }
-
                 if(firstTab) window.switchTab(firstTab); else alert('Seu usuário não tem permissão para visualizar nenhuma aba.');
             }
         }
@@ -1064,36 +1050,18 @@
             const promises = [];
             const keys = [];
 
-            // Adiciona as requisições em uma fila para executar TUDO junto
             if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { 
                 keys.push('demandas');
                 promises.push(sb.from('demandas').select('*'));
             }
-            if (admin || p.visitantes?.ver) { 
-                keys.push('visitantes');
-                promises.push(sb.from('visitantes').select('*')); 
-            }
-            if (admin || p.veiculos?.ver) { 
-                keys.push('frota');
-                promises.push(sb.from('frota').select('*')); 
-            }
-            if (admin || p.eventos?.ver) { 
-                keys.push('eventos');
-                promises.push(sb.from('eventos').select('*')); 
-            }
-            if (admin || p.crachas?.ver) { 
-                keys.push('crachas');
-                promises.push(sb.from('crachas').select('*')); 
-            }
-            if (admin) { 
-                keys.push('logs');
-                promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); 
-            }
+            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*')); }
+            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*')); }
+            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*')); }
+            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*')); }
+            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
 
-            // Aguarda todas as requisições voltarem ao mesmo tempo
             const results = await Promise.all(promises);
 
-            // Distribui os resultados
             results.forEach((res, index) => {
                 const key = keys[index];
                 if(res.data) {
@@ -1115,6 +1083,19 @@
             }
         }
 
+        // --- SISTEMA DE CLASSIFICAÇÃO UNIFICADO (CORREÇÃO DE CONTAGEM) ---
+        function getCategoriaDemanda(d) {
+            const texto = (d.titulo + " " + d.setor).toUpperCase();
+            const contratada = (d.contratada || "").toUpperCase();
+
+            // Lógica Unificada: Se a contratada ou o título dizem "Limpeza", É Limpeza.
+            if (contratada.includes("AR CONDICIONADO") || texto.includes("AR CONDICIONADO")) return 'AR';
+            if (contratada.includes("PREDIAL") || texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("PINTURA")) return 'PREDIAL';
+            if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) return 'LIMPEZA';
+            if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) return 'RAMAL';
+            return 'OUTROS';
+        }
+
         async function renderizarDashboard() {
             const filtroMes = document.getElementById('dash-filtro-mes').value; 
             const listaDemandas = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
@@ -1128,21 +1109,16 @@
             const totalEventos = listaEventos.length;
             const totalCrachas = listaCrachas.length;
             
-            let qtdPredial = 0; let qtdAr = 0; let qtdLimpeza = 0; let qtdCopas = 0; let qtdRamais = 0; let qtdOutros = 0;
+            let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
 
+            // Usa a função unificada para contar
             listaDemandas.forEach(d => {
-                const texto = (d.titulo + " " + d.setor).toUpperCase();
-                const contratada = (d.contratada || "").toUpperCase();
-
-                // CORREÇÃO: Prioriza o campo CONTRATADA para não errar a categoria
-                if (contratada.includes("AR CONDICIONADO") || texto.includes("AR CONDICIONADO")) { qtdAr++; } 
-                else if (contratada.includes("PREDIAL") || texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("PINTURA")) { qtdPredial++; } 
-                else if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ")) { qtdLimpeza++; } 
-                else if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) { qtdRamais++; } 
-                else { qtdOutros++; }
+                const cat = getCategoriaDemanda(d);
+                if(counts[cat] !== undefined) counts[cat]++; else counts['OUTROS']++;
             });
 
-            const totalManutencao = qtdPredial + qtdAr;
+            // "Copa" entra em Limpeza na lógica unificada
+            const totalManutencao = counts['PREDIAL'] + counts['AR'];
             const totalGeral = totalFrota + totalVisitantes + listaDemandas.length + totalEventos + totalCrachas;
             const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
 
@@ -1151,7 +1127,7 @@
             document.getElementById('kpi-publico-eventos').innerText = publicoEventos.toLocaleString('pt-BR') + " Participantes";
             document.getElementById('kpi-total-manutencao').innerText = totalManutencao;
             document.getElementById('kpi-total-crachas').innerText = totalCrachas;
-            document.getElementById('kpi-total-limpeza').innerText = qtdLimpeza + qtdCopas;
+            document.getElementById('kpi-total-limpeza').innerText = counts['LIMPEZA'];
             
             const divisor = filtroMes ? 30 : 365; 
             const fluxoDiario = Math.ceil(totalFrota / (totalFrota > 0 ? divisor : 1)); 
@@ -1163,11 +1139,11 @@
             const dadosSetor = [
                 { label: 'Garagem', valor: totalFrota },
                 { label: 'Recepção', valor: totalVisitantes },
-                { label: 'Limpeza', valor: qtdLimpeza },
-                { label: 'Manut. Predial', valor: qtdPredial },
+                { label: 'Limpeza/Copa', valor: counts['LIMPEZA'] },
+                { label: 'Manut. Predial', valor: counts['PREDIAL'] },
                 { label: 'Crachás', valor: totalCrachas },
-                { label: 'Ramais', valor: qtdRamais },
-                { label: 'Ar Cond.', valor: qtdAr }
+                { label: 'Ramais', valor: counts['RAMAL'] },
+                { label: 'Ar Cond.', valor: counts['AR'] }
             ].sort((a, b) => b.valor - a.valor);
 
             chartVolume = new Chart(ctxVolume, {
@@ -1186,13 +1162,7 @@
                     indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            anchor: 'end', align: 'end', color: '#333', font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : '' 
-                        }
-                    },
+                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: '#333', font: { weight: 'bold' }, formatter: (value) => value > 0 ? value : '' } },
                     scales: { x: { display: false }, y: { grid: { display: false } } }
                 }
             });
@@ -1206,34 +1176,8 @@
 
             chartGaragem = new Chart(ctxGaragem, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Servidores', 'Visitantes'],
-                    datasets: [{
-                        data: [qtdServidor, qtdVisitante],
-                        backgroundColor: ['#2ecc71', '#f39c12'],
-                        borderWidth: 0,
-                        cutout: '60%'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        datalabels: {
-                            color: '#fff',
-                            font: { weight: 'bold' },
-                            formatter: (value, ctx) => {
-                                let sum = 0;
-                                let dataArr = ctx.chart.data.datasets[0].data;
-                                dataArr.map(data => { sum += data; });
-                                if (sum === 0) return "";
-                                let percentage = (value*100 / sum).toFixed(0)+"%";
-                                return percentage;
-                            }
-                        }
-                    }
-                }
+                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor, qtdVisitante], backgroundColor: ['#2ecc71', '#f39c12'], borderWidth: 0, cutout: '60%' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum+=d); return sum===0?"":(value*100/sum).toFixed(0)+"%"; } } } }
             });
         }
 
@@ -1254,9 +1198,7 @@
             const nome = document.getElementById('novo-user-nome').value; 
             const isAdmin = document.getElementById('novo-user-admin').checked;
             const perms = montarPermissoesJSON();
-
             if(!email || !pass || !nome) return alert("Preencha todos os campos obrigatórios!");
-
             const { data, error } = await sb.rpc('admin_create_user', { email_input: email, pass_input: pass, nome_input: nome, is_admin_input: isAdmin, permissoes_input: perms });
             if(error) alert("Erro ao criar: " + error.message);
             else { alert("Usuário criado com sucesso!"); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`); }
@@ -1284,7 +1226,6 @@
             document.getElementById('novo-user-nome').value = meta.nome || '';
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
-
             const p = meta.permissoes || {};
             const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas'];
             mods.forEach(m => {
@@ -1300,7 +1241,6 @@
                  if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
                  if(document.getElementById(`perm-${m}-exp`)) document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
             });
-
             document.getElementById('usuarios').scrollIntoView({behavior: 'smooth'});
         }
 
@@ -1341,10 +1281,8 @@
             }
         }
 
-        // 8. Otimização Tabela Usuários (NOVA VERSÃO RÁPIDA)
         function renderizarTabelaUsuarios() {
             const tbody = document.querySelector('#tabela-usuarios-app tbody'); 
-            
             const htmlRows = appUsers.map(u => {
                 const meta = u.usr_meta || {};
                 const tipo = meta.is_admin ? '<span class="badge" style="background:#27ae60">ADMIN</span>' : '<span class="badge" style="background:#7f8c8d">USUÁRIO</span>';
@@ -1352,7 +1290,6 @@
                 const userStr = encodeURIComponent(JSON.stringify(u));
                 return `<tr><td>${meta.nome}</td><td>${u.usr_email}</td><td>${tipo}</td><td>${lastLogin}</td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${u.usr_email}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button></td></tr>`;
             }).join('');
-
             tbody.innerHTML = htmlRows;
         }
 
@@ -1360,21 +1297,14 @@
             sb.channel('mudancas-db').on('postgres_changes', { event: '*', schema: 'public' }, (payload) => { carregarDados(); }).subscribe();
         }
 
-        // 7. Otimização Logs de Auditoria (NOVA VERSÃO RÁPIDA)
         function renderizarLogs() {
             const tbody = document.querySelector('#tabela-logs tbody'); 
-            
-            if (logs.length === 0) {
-                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum log registrado.</td></tr>';
-                 return;
-            }
-
+            if (logs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum log registrado.</td></tr>'; return; }
             const htmlRows = logs.map(l => {
                 const data = new Date(l.data_hora).toLocaleString('pt-BR');
                 const classAcao = l.acao === 'Exclusão' ? 'log-acao-exclusao' : (l.acao === 'Edição' ? 'log-acao-edicao' : '');
                 return `<tr><td>${data}</td><td>${l.usuario}</td><td>${l.secao}</td><td class="${classAcao}">${l.acao}</td><td>${l.detalhes}</td></tr>`;
             }).join('');
-
             tbody.innerHTML = htmlRows;
         }
 
@@ -1395,7 +1325,6 @@
             
             if(tabId === 'dashboard') { renderizarDashboard(); }
 
-            // RESET AUTOMÁTICO DE HORÁRIO AO TROCAR DE ABA
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = DateUtils.getToInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); }
             
@@ -1404,27 +1333,20 @@
             if(tabId === 'limpeza') { document.getElementById('limpeza-data').valueAsDate = new Date(); document.getElementById('limpeza-hora').value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); }
         }
 
-        // --- CORREÇÃO FINAL: CÁLCULO EXATO DE HORAS (IGNORA UTC) ---
+        // --- CÁLCULO EXATO DE HORAS (Correção Relógio Suíço) ---
         function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
-            // Cria a data de início (assume local)
             let inicio = new Date(dataStr + 'T' + (horaStr || '00:00'));
-            
             let fim;
             if (dataFimStr) {
-                // Truque: Remove o "Z" (UTC) da string do banco para forçar o navegador a tratar como Local
-                // Isso garante que 13:00 no banco seja lido como 13:00 na tela
+                // Remove Z para tratar como local
                 fim = new Date(dataFimStr.slice(0, 19)); 
             } else {
-                fim = new Date(); // Agora
+                fim = new Date(); 
             }
-
             const diffMs = fim - inicio;
-            
-            if (diffMs < 0) return "00m"; // Evita tempo negativo
-
+            if (diffMs < 0) return "00m"; 
             const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
             const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
             return `${String(diffHoras).padStart(2, '0')}h ${String(diffMinutos).padStart(2, '0')}m`;
         }
 
@@ -1470,25 +1392,12 @@
                 alert('Você não tem permissão para exportar estes dados.');
                 return;
             }
-
             let data = [];
             let nomeArquivo = "";
-
-            if (tipo === 'demandas') {
-                data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx";
-            }
-            else if (tipo === 'predial') {
-                data = demandas.filter(d => d.contratada && d.contratada.includes('PREDIAL'));
-                nomeArquivo = "Relatorio_Predial.xlsx";
-            }
-            else if (tipo === 'ar') {
-                data = demandas.filter(d => d.contratada && d.contratada.includes('CONDICIONADO'));
-                nomeArquivo = "Relatorio_ArCondicionado.xlsx";
-            }
-            else if (tipo === 'limpeza') {
-                data = demandas.filter(d => d.contratada && d.contratada.includes('LIMPEZA'));
-                nomeArquivo = "Relatorio_Limpeza.xlsx";
-            }
+            if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx"; }
+            else if (tipo === 'predial') { data = demandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL'); nomeArquivo = "Relatorio_Predial.xlsx"; }
+            else if (tipo === 'ar') { data = demandas.filter(d => getCategoriaDemanda(d) === 'AR'); nomeArquivo = "Relatorio_ArCondicionado.xlsx"; }
+            else if (tipo === 'limpeza') { data = demandas.filter(d => getCategoriaDemanda(d) === 'LIMPEZA'); nomeArquivo = "Relatorio_Limpeza.xlsx"; }
             else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; } 
             else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; } 
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; } 
@@ -1505,7 +1414,6 @@
             } else {
                 data = data.map(item => { const novo = {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });
             }
-
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dados");
@@ -1520,26 +1428,10 @@
             const prioridade = document.getElementById(`${prefixo}-prioridade`).value;
             const dataInput = document.getElementById(`${prefixo}-data`).value;
             const horaInput = document.getElementById(`${prefixo}-hora`).value;
-
-            const novaDemanda = {
-                titulo: titulo, setor: setor, solicitante: solicitante,
-                contratada: contratadaFixa.toUpperCase(), 
-                prioridade: prioridade, 
-                data: dataInput, 
-                hora: horaInput, 
-                status: 'Pendente', 
-                data_fim: null
-            };
-
+            const novaDemanda = { titulo: titulo, setor: setor, solicitante: solicitante, contratada: contratadaFixa.toUpperCase(), prioridade: prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };
             const { error } = await sb.from('demandas').insert(novaDemanda);
             if(error) alert('Erro: ' + error.message);
-            else { 
-                alert('Solicitação Registrada!'); 
-                document.getElementById(`form-${prefixo}`).reset(); 
-                document.getElementById(`${prefixo}-data`).valueAsDate = new Date();
-                document.getElementById(`${prefixo}-hora`).value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                carregarDados(); 
-            }
+            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); document.getElementById(`${prefixo}-data`).valueAsDate = new Date(); document.getElementById(`${prefixo}-hora`).value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); carregarDados(); }
         }
 
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
@@ -1564,12 +1456,10 @@
             let error = null;
             if(idEdicao) {
                 const itemAntigo = demandas.find(d => d.id == idEdicao);
-                // Se está concluindo agora, pega a hora exata do servidor/iso
                 if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) { 
                     novaDemanda.data_fim = DateUtils.getNowDatabaseISO(); 
                 } 
                 else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }
-                
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
             } else {
@@ -1625,81 +1515,43 @@
             document.getElementById('print-status').innerText = d.status;
             window.scrollTo(0, 0);
             document.body.classList.add('printing-os');
-            setTimeout(function() {
-                window.print();
-            }, 800); 
-            const limparImpressao = () => {
-                document.body.classList.remove('printing-os');
-                window.scrollTo(0, 0);
-            };
+            setTimeout(function() { window.print(); }, 800); 
+            const limparImpressao = () => { document.body.classList.remove('printing-os'); window.scrollTo(0, 0); };
             window.onafterprint = limparImpressao;
-            setTimeout(function() {
-                if (document.hasFocus()) { limparImpressao(); } else { setTimeout(limparImpressao, 5000); }
-            }, 2000);
+            setTimeout(function() { if (document.hasFocus()) { limparImpressao(); } else { setTimeout(limparImpressao, 5000); } }, 2000);
         }
 
         window.imprimirDashboard = function() {
             document.body.classList.add('printing-dashboard');
             Object.values(Chart.instances).forEach(chart => chart.resize());
             setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() {
-                document.body.classList.remove('printing-dashboard');
-                Object.values(Chart.instances).forEach(chart => chart.resize());
-            };
-            setTimeout(function() {
-                document.body.classList.remove('printing-dashboard');
-                Object.values(Chart.instances).forEach(chart => chart.resize());
-            }, 5000);
+            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
+            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
         }
 
         function criarLinhaTabela(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
-            // USA A NOVA FUNÇÃO DE CÁLCULO PRECISO
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
-            let tempoDisplay = (d.status === 'Concluído') 
-                ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` 
-                : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
-            
+            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel = (pode('demandas', 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
             const contratadaDisplay = d.contratada ? `<br><small style="color:#2980b9"><i class="fas fa-hard-hat"></i> ${d.contratada}</small>` : '';
-
-            return `<tr>
-                <td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td>
-                <td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td>
-                <td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td>
-                <td><span class="badge ${badgeClass}">${d.status}</span></td>
-                <td>${tempoDisplay}</td>
-                <td style="min-width:140px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td>
-            </tr>`;
+            return `<tr><td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td><td><span class="badge" style="background:#7f8c8d">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small>${d.solicitante} (${d.setor})</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         function criarLinhaTabelaSimples(d, prefixo) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
-            // USA A NOVA FUNÇÃO DE CÁLCULO PRECISO
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
-            let tempoDisplay = (d.status === 'Concluído') 
-                ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` 
-                : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
-            
+            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Concluir/Avançar"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="imprimirOS(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
-
-            return `<tr>
-                <td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td>
-                <td><strong>${d.titulo}</strong><br><small>Prioridade: ${d.prioridade}</small></td>
-                <td>${d.solicitante}<br><small>${d.setor}</small></td>
-                <td><span class="badge ${badgeClass}">${d.status}</span></td>
-                <td>${tempoDisplay}</td>
-                <td style="min-width:160px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td>
-            </tr>`;
+            return `<tr><td>${formatarData(d.data)}<br><small>${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small>Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small>${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:160px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Demandas ---
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value; 
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
@@ -1720,13 +1572,16 @@
             else { const htmlRows = lista.map(d => criarLinhaTabela(d)).join(''); tbody.innerHTML = htmlRows; }
         }
 
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Abas Específicas ---
+        // --- CORREÇÃO DE CONTAGEM: USA A LÓGICA UNIFICADA ---
         window.renderizarAbasEspecificas = function() {
-            function renderizarAba(prefixo, palavraChave) {
+            function renderizarAba(prefixo, categoriaAlvo) {
                 const mes = document.getElementById(`filtro-mes-${prefixo}`).value;
                 const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();
                 const status = document.getElementById(`filtro-status-${prefixo}`).value;
-                let listaBase = demandas.filter(d => d.contratada && d.contratada.includes(palavraChave));
+                
+                // Agora filtra usando getCategoriaDemanda
+                let listaBase = demandas.filter(d => getCategoriaDemanda(d) === categoriaAlvo);
+                
                 const listaFinal = listaBase.filter(d => {
                     const bateMes = !mes || d.data.startsWith(mes);
                     const bateBusca = !busca || (d.titulo + ' ' + d.setor + ' ' + d.solicitante).includes(busca);
@@ -1742,22 +1597,14 @@
                 else { const htmlRows = listaFinal.map(d => criarLinhaTabelaSimples(d, prefixo)).join(''); tbody.innerHTML = htmlRows; }
             }
             renderizarAba('predial', 'PREDIAL');
-            renderizarAba('ar', 'CONDICIONADO');
+            renderizarAba('ar', 'AR');
             renderizarAba('limpeza', 'LIMPEZA');
         }
 
         window.avancarStatus = async function(id) { 
             const item = demandas.find(d => d.id == id); if(!item) return;
             let novoStatus = item.status, novaDataFim = item.data_fim;
-            
-            // Lógica de Avanço
-            if(item.status === 'Pendente') {
-                novoStatus = 'Em Andamento'; 
-            } else if(item.status === 'Em Andamento') { 
-                novoStatus = 'Concluído'; 
-                // CORREÇÃO: Captura data exata de conclusão
-                novaDataFim = DateUtils.getNowDatabaseISO(); 
-            }
+            if(item.status === 'Pendente') novoStatus = 'Em Andamento'; else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = DateUtils.getNowDatabaseISO(); }
             await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id); carregarDados();
         }
 
@@ -1772,173 +1619,28 @@
 
         const formVis = document.getElementById('form-visitante');
         formVis.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('visitante-id-edit').value; const id = idEdicao || Date.now(); const fotoBase64 = document.getElementById('vis-foto-base64').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(DateUtils.getToInput()); const novoVisitante = { id: id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null }; if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); } const { error } = await sb.from('visitantes').upsert(novoVisitante); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); } });
-        
         window.editarVisitante = function(id) { const v = visitantes.find(i => i.id == id); if(!v) return; document.getElementById('visitante-id-edit').value = v.id; document.getElementById('vis-nome').value = v.nome; document.getElementById('vis-doc').value = v.doc; document.getElementById('vis-empresa').value = v.empresa; document.getElementById('vis-contato').value = v.contato; document.getElementById('vis-responsavel').value = v.responsavel; document.getElementById('vis-finalidade').value = v.finalidade; if(v.entrada) { const dataLocal = new Date(v.entrada); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16); } const preview = document.getElementById('vis-preview'); const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; } document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-edit"></i> Editando Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-vis').style.display = "block"; const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status; document.getElementById('visitantes').scrollIntoView({behavior:'smooth'}); }
-        
         window.deletarVisitante = async function(id) { if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); } }
-        
         window.cancelarEdicaoVisitante = function() { document.getElementById('visitante-id-edit').value = ""; formVis.reset(); document.getElementById('vis-entrada').value = DateUtils.getToInput(); document.getElementById('titulo-form-visitante').innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar Visitante'; const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Registrar Entrada"; btn.style.background = "var(--accent)"; document.getElementById('btn-cancel-vis').style.display = "none"; document.getElementById('vis-status-edit').style.display="none"; document.getElementById('vis-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; document.getElementById('vis-foto-base64').value = ""; pararCamera(); }
-        
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Visitantes ---
-        window.renderizarApenasVisitantes = function() { 
-            const mes = document.getElementById('filtro-mes-vis').value; 
-            const termo = document.getElementById('filtro-busca-vis').value.toUpperCase(); 
-            const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; }); 
-            document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length; 
-            document.getElementById('dash-visitantes-total').innerText = lista.length; 
-            const tbody = document.querySelector('#tabela-visitantes tbody'); 
-            const btnExport = document.getElementById('btn-export-visitantes'); 
-            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; 
-            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; 
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum visitante encontrado.</td></tr>'; }
-            else {
-                const htmlRows = lista.map(v => {
-                    const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>'; 
-                    const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); 
-                    const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; 
-                    const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; 
-                    let buttons = ''; 
-                    if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; 
-                    if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; 
-                    const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`; 
-                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`; 
-                }).join('');
-                tbody.innerHTML = htmlRows;
-            }
-        }
-
-        window.baixaVisitante = async function(id) { 
-            if(confirm('Confirmar saída do visitante?')) { 
-                // CORREÇÃO: Hora exata de saída
-                await sb.from('visitantes').update({ status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }).eq('id', id); 
-                carregarDados(); 
-            } 
-        }
-        
+        window.renderizarApenasVisitantes = function() { const mes = document.getElementById('filtro-mes-vis').value; const termo = document.getElementById('filtro-busca-vis').value.toUpperCase(); const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; }); document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length; document.getElementById('dash-visitantes-total').innerText = lista.length; const tbody = document.querySelector('#tabela-visitantes tbody'); const btnExport = document.getElementById('btn-export-visitantes'); if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E"; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum visitante encontrado.</td></tr>'; } else { const htmlRows = lista.map(v => { const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>'; const dataEnt = new Date(v.entrada).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); const dataSai = v.saida ? new Date(v.saida).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; let buttons = ''; if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`; return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`; }).join(''); tbody.innerHTML = htmlRows; } }
+        window.baixaVisitante = async function(id) { if(confirm('Confirmar saída do visitante?')) { await sb.from('visitantes').update({ status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }).eq('id', id); carregarDados(); } }
         window.atualizarLabels = function() { const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value; const btn = document.getElementById('btn-submit-veiculo'); if (!document.getElementById('veiculo-id-edit').value) btn.innerText = "Registrar Entrada"; if (tipo === 'servidor') { btn.style.backgroundColor = "var(--servidor)"; document.getElementById('veiculo-setor').placeholder = "Setor de Origem"; } else { btn.style.backgroundColor = "var(--visitante)"; document.getElementById('veiculo-setor').placeholder = "Empresa / Setor Visitado"; } }
-        
         const formVeiculo = document.getElementById('form-veiculo'); formVeiculo.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('veiculo-id-edit').value; const id = idEdicao || Date.now(); const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value; const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(DateUtils.getToInput()); const novoVeiculo = { id: id, tipo: tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null }; if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro} - ${novoVeiculo.motorista}`); } const { error } = await sb.from('frota').upsert(novoVeiculo); if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); } });
-        
         window.editarVeiculo = function(id) { const f = frota.find(i => i.id == id); if (!f) return; document.getElementById('veiculo-id-edit').value = f.id; document.getElementById('veiculo-carro').value = f.carro; document.getElementById('veiculo-motorista').value = f.motorista; document.getElementById('veiculo-setor').value = f.setor || ''; document.getElementById('veiculo-contato').value = f.contato || ''; document.getElementById('veiculo-destino').value = f.destino; document.getElementById('veiculo-km-saida').value = f.km_inicial; if(f.hora_inicial) { const dataLocal = new Date(f.hora_inicial); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('veiculo-hora-saida').value = dataLocal.toISOString().slice(0,16); } if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true; document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando'; const btn = document.getElementById('btn-submit-veiculo'); btn.innerText = "Salvar"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-veiculo').style.display = "block"; document.getElementById('container-status-veiculo').style.display = "block"; document.getElementById('veiculo-status-edit').value = f.status; window.atualizarLabels(); document.getElementById('veiculos').scrollIntoView({behavior: 'smooth'}); }
-        
         window.deletarVeiculo = async function(id) { if(confirm('Tem certeza que deseja EXCLUIR este registro da garagem?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); } }
-        
         window.cancelarEdicaoVeiculo = function() { document.getElementById('veiculo-id-edit').value = ""; formVeiculo.reset(); document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-parking"></i> Registrar Entrada'; document.getElementById('btn-cancel-veiculo').style.display = "none"; document.getElementById('container-status-veiculo').style.display = "none"; document.getElementById('radio-servidor').checked = true; window.atualizarLabels(); }
-        
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Frota ---
-        window.renderizarApenasFrota = function() { 
-            const mes = document.getElementById('filtro-mes-frota').value; 
-            const busca = document.getElementById('filtro-busca-frota').value.toUpperCase(); 
-            const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; }); 
-            document.getElementById('dash-frota-total').innerText = lista.length; 
-            document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length; 
-            document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length; 
-            document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length; 
-            const tbody = document.querySelector('#tabela-veiculos tbody'); 
-            const btnExport = document.getElementById('btn-export-veiculos'); 
-            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; 
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Nenhum veículo encontrado.</td></tr>'; }
-            else {
-                const htmlRows = lista.map(f => {
-                    const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>'; 
-                    const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante'; 
-                    const dIn = new Date(f.hora_inicial).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); 
-                    const dOut = f.hora_final ? new Date(f.hora_final).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; 
-                    const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; 
-                    let buttons = ''; 
-                    if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; 
-                    if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; 
-                    return `<tr><td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`; 
-                }).join('');
-                tbody.innerHTML = htmlRows;
-            }
-        }
-
-        window.baixaVeiculo = async function(id) { 
-            const km = prompt("KM de Saída (Opcional):", "0"); 
-            if (km !== null) { 
-                // CORREÇÃO: Hora exata de saída
-                await sb.from('frota').update({ km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }).eq('id', id); 
-                carregarDados(); 
-            } 
-        }
-        
+        window.renderizarApenasFrota = function() { const mes = document.getElementById('filtro-mes-frota').value; const busca = document.getElementById('filtro-busca-frota').value.toUpperCase(); const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; }); document.getElementById('dash-frota-total').innerText = lista.length; document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length; document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length; document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length; const tbody = document.querySelector('#tabela-veiculos tbody'); const btnExport = document.getElementById('btn-export-veiculos'); if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Nenhum veículo encontrado.</td></tr>'; } else { const htmlRows = lista.map(f => { const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>'; const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante'; const dIn = new Date(f.hora_inicial).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); const dOut = f.hora_final ? new Date(f.hora_final).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'; const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>'; let buttons = ''; if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`; return `<tr><td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`; }).join(''); tbody.innerHTML = htmlRows; } }
+        window.baixaVeiculo = async function(id) { const km = prompt("KM de Saída (Opcional):", "0"); if (km !== null) { await sb.from('frota').update({ km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }).eq('id', id); carregarDados(); } }
         const formEvento = document.getElementById('form-evento'); formEvento.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('evento-id-edit').value; const id = idEdicao || Date.now(); const novoEvento = { id: id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() }; if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`); const { error } = await sb.from('eventos').upsert(novoEvento); if(error) alert('Erro ao salvar evento: ' + error.message); else { cancelarEdicaoEvento(); carregarDados(); } });
-        
         window.editarEvento = function(id) { const ev = eventos.find(item => item.id == id); if (!ev) return; document.getElementById('evento-id-edit').value = ev.id; document.getElementById('evento-nome').value = ev.nome; document.getElementById('evento-organizador').value = ev.organizador; document.getElementById('evento-data').value = ev.data; document.getElementById('evento-publico').value = ev.publico; document.getElementById('evento-local').value = ev.local; document.getElementById('evento-coffee').checked = ev.coffee || false; document.getElementById('evento-obs').value = ev.obs || ""; const radios = document.getElementsByName('tipoEvento'); for(let i=0; i<radios.length; i++) { if(radios[i].value === ev.tipo) radios[i].checked = true; } document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento'; const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-evento').style.display = "block"; document.getElementById('eventos').scrollIntoView({behavior: 'smooth'}); }
-        
         window.cancelarEdicaoEvento = function() { document.getElementById('evento-id-edit').value = ""; formEvento.reset(); document.getElementById('evento-data').valueAsDate = new Date(); document.getElementById('evento-coffee').checked = false; document.getElementById('evento-obs').value = ""; document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-calendar-plus"></i> Registrar Evento'; const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.backgroundColor = "var(--evento)"; document.getElementById('btn-cancel-evento').style.display = "none"; }
-        
         window.deletarEvento = async function(id) { if(confirm('Tem certeza que deseja EXCLUIR este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); } }
-        
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Eventos ---
-        window.renderizarApenasEventos = function() { 
-            const mes = document.getElementById('filtro-mes-evento').value; 
-            const busca = document.getElementById('filtro-busca-evento').value.toUpperCase(); 
-            const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bTexto; }); 
-            document.getElementById('dash-eventos-qtd').innerText = lista.length; 
-            const qtdInterno = lista.filter(e => e.tipo === 'Interno').length; 
-            const qtdExterno = lista.filter(e => e.tipo === 'Externo').length; 
-            document.getElementById('dash-eventos-interno').innerText = qtdInterno; 
-            document.getElementById('dash-eventos-externo').innerText = qtdExterno; 
-            const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0); 
-            document.getElementById('dash-eventos-publico').innerText = totalPublico; 
-            const tbody = document.querySelector('#tabela-eventos tbody'); 
-            const btnExport = document.getElementById('btn-export-eventos'); 
-            if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; 
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum evento encontrado.</td></tr>'; }
-            else {
-                const htmlRows = lista.map(ev => {
-                    const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo'; 
-                    const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`; 
-                    const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : ''; 
-                    const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : ''; 
-                    let buttons = ''; 
-                    if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; 
-                    if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; 
-                    return `<tr><td>${formatarData(ev.data)}</td><td>${badge}</td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><i class="fas fa-user"></i> ${ev.publico}</td><td style="min-width:100px">${buttons}</td></tr>`; 
-                }).join('');
-                tbody.innerHTML = htmlRows;
-            }
-        }
-
+        window.renderizarApenasEventos = function() { const mes = document.getElementById('filtro-mes-evento').value; const busca = document.getElementById('filtro-busca-evento').value.toUpperCase(); const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bTexto; }); document.getElementById('dash-eventos-qtd').innerText = lista.length; const qtdInterno = lista.filter(e => e.tipo === 'Interno').length; const qtdExterno = lista.filter(e => e.tipo === 'Externo').length; document.getElementById('dash-eventos-interno').innerText = qtdInterno; document.getElementById('dash-eventos-externo').innerText = qtdExterno; const totalPublico = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0); document.getElementById('dash-eventos-publico').innerText = totalPublico; const tbody = document.querySelector('#tabela-eventos tbody'); const btnExport = document.getElementById('btn-export-eventos'); if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum evento encontrado.</td></tr>'; } else { const htmlRows = lista.map(ev => { const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo'; const badge = `<span class="badge ${badgeClass}">${ev.tipo}</span>`; const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" title="Terá Coffee Break" style="color:#6f4e37; margin-left:5px"></i>' : ''; const obsText = ev.obs ? `<div style="font-size:0.75rem; color:#666; font-style:italic; margin-top:3px; border-top:1px dashed #eee; padding-top:2px"><i class="fas fa-comment-alt" style="font-size:0.7rem"></i> ${ev.obs}</div>` : ''; let buttons = ''; if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; return `<tr><td>${formatarData(ev.data)}</td><td>${badge}</td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small>${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><i class="fas fa-user"></i> ${ev.publico}</td><td style="min-width:100px">${buttons}</td></tr>`; }).join(''); tbody.innerHTML = htmlRows; } }
         const formCracha = document.getElementById('form-cracha'); formCracha.addEventListener('submit', async (e) => { e.preventDefault(); const idEdicao = document.getElementById('cracha-id-edit').value; const id = idEdicao || Date.now(); const novoCracha = { id: id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null }; if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`); const { error } = await sb.from('crachas').upsert(novoCracha); if(error) alert('Erro ao salvar crachá: ' + error.message); else { cancelarEdicaoCracha(); carregarDados(); } });
-        
         window.editarCracha = function(id) { const c = crachas.find(item => item.id == id); if (!c) return; document.getElementById('cracha-id-edit').value = c.id; document.getElementById('cracha-nome').value = c.nome; document.getElementById('cracha-doc').value = c.doc_identidade || ''; document.getElementById('cracha-setor').value = c.setor; document.getElementById('cracha-cargo').value = c.cargo || ''; document.getElementById('cracha-sala').value = c.sala || ''; document.getElementById('cracha-ramal').value = c.ramal || ''; document.getElementById('cracha-tipo').value = c.tipo; document.getElementById('cracha-data').value = c.data_solicitacao; document.getElementById('cracha-status').value = c.status; document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-edit"></i> Editando Crachá'; const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Alterações"; btn.style.backgroundColor = "var(--edit)"; document.getElementById('btn-cancel-cracha').style.display = "block"; document.getElementById('crachas').scrollIntoView({behavior: 'smooth'}); }
-        
         window.cancelarEdicaoCracha = function() { document.getElementById('cracha-id-edit').value = ""; formCracha.reset(); document.getElementById('cracha-data').valueAsDate = new Date(); document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-id-card"></i> Gestão de Crachás'; const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Crachá"; btn.style.backgroundColor = "var(--cracha)"; document.getElementById('btn-cancel-cracha').style.display = "none"; }
-        
         window.deletarCracha = async function(id) { if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); } }
-        
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Crachás ---
-        window.renderizarApenasCrachas = function() { 
-            const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase(); 
-            const statusFiltro = document.getElementById('filtro-status-cracha').value; 
-            const lista = crachas.filter(c => { const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; }); 
-            document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length; 
-            document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length; 
-            document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length; 
-            const tbody = document.querySelector('#tabela-crachas tbody'); 
-            const btnExport = document.getElementById('btn-export-crachas'); 
-            if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; 
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum crachá encontrado.</td></tr>'; }
-            else {
-                const htmlRows = lista.map(c => {
-                    let badgeClass = ''; 
-                    if(c.status === 'Solicitado') badgeClass = 'bg-cracha-solicitado'; 
-                    else if(c.status === 'Confeccionado') badgeClass = 'bg-cracha-confeccionado'; 
-                    else badgeClass = 'bg-cracha-entregue'; 
-                    const dataEnt = c.data_entrega ? `<br><small style="color:green"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : ''; 
-                    let buttons = ''; 
-                    if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; 
-                    if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; 
-                    return `<tr><td>${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small>${c.cargo || '-'}</small></td><td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`; 
-                }).join('');
-                tbody.innerHTML = htmlRows;
-            }
-        }
-
-        // --- ADIÇÃO: Debounce para a Barra de Busca (REDUZIDO PARA 200ms) ---
+        window.renderizarApenasCrachas = function() { const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase(); const statusFiltro = document.getElementById('filtro-status-cracha').value; const lista = crachas.filter(c => { const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; }); document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length; document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length; document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length; const tbody = document.querySelector('#tabela-crachas tbody'); const btnExport = document.getElementById('btn-export-crachas'); if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none'; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum crachá encontrado.</td></tr>'; } else { const htmlRows = lista.map(c => { let badgeClass = ''; if(c.status === 'Solicitado') badgeClass = 'bg-cracha-solicitado'; else if(c.status === 'Confeccionado') badgeClass = 'bg-cracha-confeccionado'; else badgeClass = 'bg-cracha-entregue'; const dataEnt = c.data_entrega ? `<br><small style="color:green"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : ''; let buttons = ''; if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`; if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`; return `<tr><td>${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small>DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small>${c.cargo || '-'}</small></td><td>Sala: ${c.sala || '-'}<br><small>Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`; }).join(''); tbody.innerHTML = htmlRows; } }
         let timeoutBusca = null;
         document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
             clearTimeout(timeoutBusca);
