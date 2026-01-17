@@ -50,18 +50,16 @@
         header { background-color: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.5rem; }
         
-        /* --- AQUI ESTÁ A ALTERAÇÃO DO MENU STICKY --- */
+        /* --- MENU STICKY --- */
         .nav-tabs { 
             display: flex; 
             background: var(--secondary); 
             padding: 0 2rem; 
             overflow-x: auto;
-            
-            /* Propriedades para fixar no topo */
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra leve para destacar */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         }
 
         .tab-btn { background: none; border: none; color: #bdc3c7; padding: 1rem 2rem; cursor: pointer; font-weight: bold; transition: 0.3s; border-bottom: 4px solid transparent; white-space: nowrap; }
@@ -76,7 +74,7 @@
         #tab-dashboard.active { border-bottom-color: #f1c40f; color: #f1c40f; }
 
         main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
-        .section { display: none; animation: fadeIn 0.4s; }
+        .section { display: none; animation: fadeIn 0.3s; } /* Animação mais rápida */
         .section.active { display: block; }
 
         /* CARDS E FORMULARIOS */
@@ -1098,23 +1096,58 @@
             await sb.from('logs_auditoria').insert({ usuario: currentUserData.nome, acao: acao, secao: secao, detalhes: detalhes });
         }
 
+        // --- CORREÇÃO DE VELOCIDADE: CARREGAMENTO PARALELO (Promise.all) ---
         async function carregarDados() {
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
+            const promises = [];
+            const keys = [];
 
+            // Adiciona as requisições em uma fila para executar TUDO junto
             if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { 
-                let { data } = await sb.from('demandas').select('*'); 
-                if(data) { 
-                    demandas = data.sort((a,b) => b.id - a.id); 
-                    window.renderizarApenasDemandas(); 
-                    window.renderizarAbasEspecificas(); 
-                } 
+                keys.push('demandas');
+                promises.push(sb.from('demandas').select('*'));
             }
-            if (admin || p.visitantes?.ver) { let { data } = await sb.from('visitantes').select('*'); if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); } }
-            if (admin || p.veiculos?.ver) { let { data } = await sb.from('frota').select('*'); if(data) { frota = data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); } }
-            if (admin || p.eventos?.ver) { let { data } = await sb.from('eventos').select('*'); if(data) { eventos = data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); } }
-            if (admin || p.crachas?.ver) { let { data } = await sb.from('crachas').select('*'); if(data) { crachas = data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); } }
-            if(admin) { let { data: lData } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50); if(lData) { logs = lData; renderizarLogs(); } }
+            if (admin || p.visitantes?.ver) { 
+                keys.push('visitantes');
+                promises.push(sb.from('visitantes').select('*')); 
+            }
+            if (admin || p.veiculos?.ver) { 
+                keys.push('frota');
+                promises.push(sb.from('frota').select('*')); 
+            }
+            if (admin || p.eventos?.ver) { 
+                keys.push('eventos');
+                promises.push(sb.from('eventos').select('*')); 
+            }
+            if (admin || p.crachas?.ver) { 
+                keys.push('crachas');
+                promises.push(sb.from('crachas').select('*')); 
+            }
+            if (admin) { 
+                keys.push('logs');
+                promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); 
+            }
+
+            // Aguarda todas as requisições voltarem ao mesmo tempo
+            const results = await Promise.all(promises);
+
+            // Distribui os resultados
+            results.forEach((res, index) => {
+                const key = keys[index];
+                if(res.data) {
+                    if(key === 'demandas') {
+                        demandas = res.data.sort((a,b) => b.id - a.id); 
+                        window.renderizarApenasDemandas(); 
+                        window.renderizarAbasEspecificas();
+                    }
+                    if(key === 'visitantes') { visitantes = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); }
+                    if(key === 'frota') { frota = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
+                    if(key === 'eventos') { eventos = res.data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
+                    if(key === 'crachas') { crachas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
+                    if(key === 'logs') { logs = res.data; renderizarLogs(); }
+                }
+            });
 
             if(document.getElementById('dashboard').classList.contains('active')) {
                 renderizarDashboard();
@@ -1893,11 +1926,11 @@
             }
         }
 
-        // --- ADIÇÃO: Debounce para a Barra de Busca ---
+        // --- ADIÇÃO: Debounce para a Barra de Busca (REDUZIDO PARA 200ms) ---
         let timeoutBusca = null;
         document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
             clearTimeout(timeoutBusca);
-            timeoutBusca = setTimeout(function() { window.renderizarApenasDemandas(); }, 500);
+            timeoutBusca = setTimeout(function() { window.renderizarApenasDemandas(); }, 200);
         });
     </script>
 </body>
