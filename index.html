@@ -201,19 +201,19 @@
         .card h2 { margin-bottom: 1.5rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 0.8rem; font-size: 1.2rem;}
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }                
-        .filter-container {             
-            display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;             
+        .filter-container {              
+            display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;              
             margin-bottom: 1.5rem; background: #f8f9fa; padding: 15px 20px; border-radius: 8px; border: 1px solid #e9ecef;         
         }        
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }        
         .filter-group label { font-weight: bold; color: var(--secondary); font-size: 0.85rem;}        
         .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; height: 40px; }                 
-        button.btn-excel {             
-            background: var(--excel); color: white; border: none;             
-            padding: 0 1.5rem; height: 40px;             
-            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;             
-            display: inline-flex; align-items: center; gap: 8px;             
-            margin-left: auto;             
+        button.btn-excel {              
+            background: var(--excel); color: white; border: none;              
+            padding: 0 1.5rem; height: 40px;              
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;              
+            display: inline-flex; align-items: center; gap: 8px;              
+            margin-left: auto;              
             white-space: nowrap; transition: 0.2s;        
         }        
         button.btn-excel:hover { filter: brightness(90%); transform: translateY(-1px); }
@@ -294,7 +294,7 @@
             canvas { max-width: 100% !important; max-height: 100% !important; page-break-inside: avoid; }            
             .card, .metric-card, .dashboard-panel > div { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd; box-shadow: none !important; }            
             #area-impressao { display: none; }            
-            body.printing-os #app-content { display: none !important; }             
+            body.printing-os #app-content { display: none !important; }              
             body.printing-os #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; margin: 0; padding: 20px; background: white; }            
             body.printing-os * { visibility: visible; }            
             body.printing-dashboard #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }            
@@ -496,9 +496,10 @@
                     <form id="form-demanda">                        
                         <input type="hidden" id="demanda-id-edit" value="">                        
                         <div class="form-grid">                            
+                            <input type="text" id="demanda-numero-os" placeholder="Nº da O.S. (Opcional)">                            
                             <input type="text" id="demanda-titulo" placeholder="Descrição do Serviço" required>                            
                             <input type="text" id="demanda-setor" placeholder="Local / Setor" required>                            
-                            <input type="text" id="demanda-solicitante" placeholder="Nome do Solicitante" required>                                                        
+                            <input type="text" id="demanda-solicitante" placeholder="Nome do Solicitante" required>                                                                                
                             <input type="text" id="demanda-contratada" placeholder="Empresa Executante / Contratada" list="lista-contratadas">                            
                             <datalist id="lista-contratadas">                                
                                 <option value="EQUIPE INTERNA">                                
@@ -562,6 +563,7 @@
                     <h2 style="color: var(--predial);"><i class="fas fa-hammer"></i> Nova Solicitação - Manutenção Predial</h2>                    
                     <form id="form-predial">                        
                         <div class="form-grid">                            
+                            <input type="text" id="predial-numero-os" placeholder="Nº da O.S. (Opcional)">                            
                             <input type="text" id="predial-titulo" placeholder="Descrição do Serviço" required>                            
                             <input type="text" id="predial-setor" placeholder="Local / Setor" required>                            
                             <input type="text" id="predial-solicitante" placeholder="Nome do Solicitante" required>                            
@@ -612,6 +614,7 @@
                     <h2 style="color: var(--ar);"><i class="fas fa-snowflake"></i> Nova Solicitação - Ar Condicionado</h2>                    
                     <form id="form-ar">                        
                         <div class="form-grid">                            
+                            <input type="text" id="ar-numero-os" placeholder="Nº da O.S. (Opcional)">                            
                             <input type="text" id="ar-titulo" placeholder="Descrição do Serviço" required>                            
                             <input type="text" id="ar-setor" placeholder="Local / Setor" required>                            
                             <input type="text" id="ar-solicitante" placeholder="Nome do Solicitante" required>                            
@@ -662,6 +665,7 @@
                     <h2 style="color: var(--limpeza);"><i class="fas fa-broom"></i> Nova Solicitação - Limpeza</h2>                    
                     <form id="form-limpeza">                        
                         <div class="form-grid">                            
+                            <input type="text" id="limpeza-numero-os" placeholder="Nº da O.S. (Opcional)">                            
                             <input type="text" id="limpeza-titulo" placeholder="Descrição do Serviço" required>                            
                             <input type="text" id="limpeza-setor" placeholder="Local / Setor" required>                            
                             <input type="text" id="limpeza-solicitante" placeholder="Nome do Solicitante" required>                            
@@ -818,7 +822,7 @@
                             <input type="text" id="evento-organizador" placeholder="Organizador / Responsável" required>                            
                             <div><label style="font-size:0.8rem">Data do Evento</label><input type="date" id="evento-data" required></div>                            
                             <div><label style="font-size:0.8rem">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>                            
-                            <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>                                                        
+                            <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>                                                                                
                             <div class="checkbox-wrapper">                                
                                 <input type="checkbox" id="evento-coffee">                                
                                 <label for="evento-coffee"><i class="fas fa-coffee"></i> Servir Coffee Break?</label>                            
@@ -922,7 +926,7 @@
                         <input type="hidden" id="edit-user-id">                        
                         <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>                        
                         <input type="password" id="novo-user-pass" placeholder="Senha" required>                        
-                        <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>                                                        
+                        <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>                                                                                
                         <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select>
                         <div class="checkbox-wrapper" style="grid-column: 1 / -1; background: #e8f6f3; border-color: #27ae60;">                            
                             <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">                            
@@ -1041,7 +1045,7 @@
                 const data = new Date(valorInput);                
                 const offset = data.getTimezoneOffset() * 60000;                
                 const localDate = new Date(data.getTime() - offset);                
-                return localDate.toISOString();             
+                return localDate.toISOString();              
             },            
             getNowDatabaseISO: () => {                
                 return DateUtils.toDatabaseISO(DateUtils.getToInput());            
@@ -1071,7 +1075,7 @@
                 const meta = user.user_metadata;                
                 currentUserData = {                    
                     nome: meta.nome || 'Usuário',                    
-                    email: user.email,                   
+                    email: user.email,                    
                     isAdmin: meta.is_admin === true,                    
                     perms: meta.permissoes || {}                 
                 };                
@@ -1114,9 +1118,9 @@
                 if (userData.perms.visitantes?.ver) { document.getElementById('tab-visitantes').classList.remove('hidden-tab'); if(!firstTab) firstTab='visitantes'; }                
                 if (userData.perms.veiculos?.ver) { document.getElementById('tab-veiculos').classList.remove('hidden-tab'); if(!firstTab) firstTab='veiculos'; }                
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }                
-                if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }                                                
-                if(userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {                     
-                    document.getElementById('tab-dashboard').classList.remove('hidden-tab');                     
+                if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }                                                                
+                if(userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {                    
+                    document.getElementById('tab-dashboard').classList.remove('hidden-tab');                    
                     if(!firstTab) firstTab = 'dashboard';                
                 }                
                 if(firstTab) window.switchTab(firstTab); else alert('Seu usuário não tem permissão para visualizar nenhuma aba.');            
@@ -1288,7 +1292,7 @@
         async function criarUsuario() {            
             const email = document.getElementById('novo-user-email').value;            
             const pass = document.getElementById('novo-user-pass').value;            
-            const nome = document.getElementById('novo-user-nome').value;             
+            const nome = document.getElementById('novo-user-nome').value;              
             const isAdmin = document.getElementById('novo-user-admin').checked;            
             const perms = montarPermissoesJSON();            
             if(!email || !pass || !nome) return alert("Preencha todos os campos obrigatórios!");            
@@ -1314,8 +1318,8 @@
             document.getElementById('btn-save-user').innerText = 'Salvar Alterações';            
             document.getElementById('btn-cancel-user').style.display = 'block';            
             document.getElementById('novo-user-email').value = u.usr_email;            
-            document.getElementById('novo-user-email').disabled = true;             
-            document.getElementById('novo-user-pass').style.display = 'none';             
+            document.getElementById('novo-user-email').disabled = true;              
+            document.getElementById('novo-user-pass').style.display = 'none';              
             document.getElementById('novo-user-nome').value = meta.nome || '';            
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;            
             togglePermissoes(document.getElementById('novo-user-admin'));            
@@ -1491,18 +1495,26 @@
             else if (tipo === 'predial') { data = demandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL'); nomeArquivo = "Relatorio_Predial.xlsx"; }            
             else if (tipo === 'ar') { data = demandas.filter(d => getCategoriaDemanda(d) === 'AR'); nomeArquivo = "Relatorio_ArCondicionado.xlsx"; }            
             else if (tipo === 'limpeza') { data = demandas.filter(d => getCategoriaDemanda(d) === 'LIMPEZA'); nomeArquivo = "Relatorio_Limpeza.xlsx"; }            
-            else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; }             
-            else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; }             
-            else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; }             
+            else if (tipo === 'visitantes') { data = visitantes; nomeArquivo = "Relatorio_Visitantes.xlsx"; }              
+            else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; }              
+            else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; }              
             else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
             
             if(data.length === 0) return alert("Não há dados para exportar.");
             
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {                 
                 data = data.map(d => ({                    
-                    ID: d.id, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante,                    
-                    CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data,                    
-                    HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim                
+                    ID: d.id, 
+                    NUMERO_OS: d.numero_os, // NOVO CAMPO ADICIONADO
+                    TITULO: d.titulo, 
+                    SETOR: d.setor, 
+                    SOLICITANTE: d.solicitante,                    
+                    CONTRATADA: d.contratada, 
+                    PRIORIDADE: d.prioridade, 
+                    DATA_ABERTURA: d.data,                    
+                    HORA_ABERTURA: d.hora, 
+                    STATUS: d.status, 
+                    DATA_FIM: d.data_fim                
                 }));            
             } else {                
                 data = data.map(item => { const novo = {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });            
@@ -1515,13 +1527,14 @@
         }
         
         async function salvarDemandaEspecifica(prefixo, contratadaFixa) {            
+            const numero_os = document.getElementById(`${prefixo}-numero-os`).value.toUpperCase(); // NOVO CAMPO
             const titulo = document.getElementById(`${prefixo}-titulo`).value.toUpperCase();            
             const setor = document.getElementById(`${prefixo}-setor`).value.toUpperCase();            
             const solicitante = document.getElementById(`${prefixo}-solicitante`).value.toUpperCase();            
             const prioridade = document.getElementById(`${prefixo}-prioridade`).value;            
             const dataInput = document.getElementById(`${prefixo}-data`).value;            
             const horaInput = document.getElementById(`${prefixo}-hora`).value;            
-            const novaDemanda = { titulo: titulo, setor: setor, solicitante: solicitante, contratada: contratadaFixa.toUpperCase(), prioridade: prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };            
+            const novaDemanda = { numero_os: numero_os, titulo: titulo, setor: setor, solicitante: solicitante, contratada: contratadaFixa.toUpperCase(), prioridade: prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };            
             const { error } = await sb.from('demandas').insert(novaDemanda);            
             if(error) alert('Erro: ' + error.message);            
             else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); document.getElementById(`${prefixo}-data`).valueAsDate = new Date(); document.getElementById(`${prefixo}-hora`).value = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); carregarDados(); }        
@@ -1536,6 +1549,7 @@
             e.preventDefault();            
             const idEdicao = document.getElementById('demanda-id-edit').value;            
             const novaDemanda = {                
+                numero_os: document.getElementById('demanda-numero-os').value.toUpperCase(), // NOVO CAMPO ADICIONADO
                 titulo: document.getElementById('demanda-titulo').value.toUpperCase(),                
                 setor: document.getElementById('demanda-setor').value.toUpperCase(),                
                 solicitante: document.getElementById('demanda-solicitante').value.toUpperCase(),                
@@ -1549,7 +1563,7 @@
             let error = null;            
             if(idEdicao) {                
                 const itemAntigo = demandas.find(d => d.id == idEdicao);                
-                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) {                     
+                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) {                    
                     novaDemanda.data_fim = DateUtils.getNowDatabaseISO();                 
                 }                 
                 else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }                
@@ -1569,9 +1583,10 @@
                 switchTab('demandas');            
             }            
             document.getElementById('demanda-id-edit').value = d.id;            
-            document.getElementById('demanda-titulo').value = d.titulo;             
+            document.getElementById('demanda-numero-os').value = d.numero_os || ''; // NOVO CAMPO PREENCHIDO
+            document.getElementById('demanda-titulo').value = d.titulo;              
             document.getElementById('demanda-setor').value = d.setor;            
-            document.getElementById('demanda-solicitante').value = d.solicitante;             
+            document.getElementById('demanda-solicitante').value = d.solicitante;              
             document.getElementById('demanda-contratada').value = d.contratada || '';            
             document.getElementById('demanda-prioridade').value = d.prioridade;            
             document.getElementById('demanda-data').value = d.data;            
@@ -1585,7 +1600,7 @@
         }
         
         window.cancelarEdicaoDemanda = function() {            
-            document.getElementById('demanda-id-edit').value = ""; formDemanda.reset();             
+            document.getElementById('demanda-id-edit').value = ""; formDemanda.reset();              
             document.getElementById('demanda-data').valueAsDate = new Date();            
             document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});            
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação (Geral)';            
@@ -1596,7 +1611,7 @@
         window.imprimirOS = function(id) {            
             const d = demandas.find(item => item.id == id);            
             if (!d) return;            
-            document.getElementById('print-id').innerText = d.id;            
+            document.getElementById('print-id').innerText = d.numero_os ? `${d.numero_os} (ID Sist: ${d.id})` : d.id; // IMPRESSÃO COM NOVO CAMPO
             document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');            
             const horaTexto = d.hora ? ` às ${d.hora}` : '';            
             document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;            
@@ -1665,14 +1680,13 @@
             else { const htmlRows = lista.map(d => criarLinhaTabela(d)).join(''); tbody.innerHTML = htmlRows; }        
         }
         
-        // --- CORREÇÃO DE CONTAGEM: USA A LÓGICA UNIFICADA ---        
         window.renderizarAbasEspecificas = function() {            
             function renderizarAba(prefixo, categoriaAlvo) {                
                 const mes = document.getElementById(`filtro-mes-${prefixo}`).value;                
                 const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();                
-                const status = document.getElementById(`filtro-status-${prefixo}`).value;                                                                
-                // Agora filtra usando getCategoriaDemanda                
-                let listaBase = demandas.filter(d => getCategoriaDemanda(d) === categoriaAlvo);                                                                
+                const status = document.getElementById(`filtro-status-${prefixo}`).value;                                                                                                                                
+                
+                let listaBase = demandas.filter(d => getCategoriaDemanda(d) === categoriaAlvo);                                                                                                                                
                 const listaFinal = listaBase.filter(d => {                    
                     const bateMes = !mes || d.data.startsWith(mes);                    
                     const bateBusca = !busca || (d.titulo + ' ' + d.setor + ' ' + d.solicitante).includes(busca);                    
@@ -1791,33 +1805,31 @@
             pararCamera(); 
         }                
         
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Visitantes ---        
-        window.renderizarApenasVisitantes = function() {             
-            const mes = document.getElementById('filtro-mes-vis').value;             
-            const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();             
+        window.renderizarApenasVisitantes = function() {              
+            const mes = document.getElementById('filtro-mes-vis').value;              
+            const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();              
             const lista = visitantes.filter(v => { 
                 const bateMes = !mes || v.entrada.startsWith(mes); 
                 const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); 
                 return bateMes && bateTermo; 
-            });             
-            document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;             
-            document.getElementById('dash-visitantes-total').innerText = lista.length;             
-            const tbody = document.querySelector('#tabela-visitantes tbody');             
-            const btnExport = document.getElementById('btn-export-visitantes');             
-            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';             
-            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";             
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum visitante encontrado.</td></tr>'; }             
+            });              
+            document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;              
+            document.getElementById('dash-visitantes-total').innerText = lista.length;              
+            const tbody = document.querySelector('#tabela-visitantes tbody');              
+            const btnExport = document.getElementById('btn-export-visitantes');              
+            if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';              
+            const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";              
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum visitante encontrado.</td></tr>'; }              
             else {                
                 const htmlRows = lista.map(v => {                    
-                    const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';                     
-                    // CORREÇÃO: Usa formatador real                    
+                    const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';                      
                     const dataEnt = formatarDataHoraReal(v.entrada);                    
                     const dataSai = v.saida ? formatarDataHoraReal(v.saida) : '-';                    
-                    const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';                     
-                    let buttons = '';                     
-                    if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;                     
-                    if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;                     
-                    const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;                     
+                    const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar Saída"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';                      
+                    let buttons = '';                      
+                    if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;                      
+                    if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;                      
+                    const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;                      
                     return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small>${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small>${v.doc}</small></td><td>${v.responsavel}<br><small>${v.finalidade}</small></td><td>Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;                 
                 }).join('');                
                 tbody.innerHTML = htmlRows;            
@@ -1925,34 +1937,32 @@
             window.atualizarLabels(); 
         }                
         
-        // --- CORREÇÃO 1: PERFORMANCE (Batch Rendering) - Frota ---        
-        window.renderizarApenasFrota = function() {             
-            const mes = document.getElementById('filtro-mes-frota').value;             
-            const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();             
+        window.renderizarApenasFrota = function() {              
+            const mes = document.getElementById('filtro-mes-frota').value;              
+            const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();              
             const lista = frota.filter(f => { 
                 const bData = !mes || f.hora_inicial.startsWith(mes); 
                 const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); 
                 return bData && bTexto; 
-            });             
-            document.getElementById('dash-frota-total').innerText = lista.length;             
-            document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;             
-            document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;             
-            document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length;             
-            const tbody = document.querySelector('#tabela-veiculos tbody');             
-            const btnExport = document.getElementById('btn-export-veiculos');             
-            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';             
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Nenhum veículo encontrado.</td></tr>'; }             
+            });              
+            document.getElementById('dash-frota-total').innerText = lista.length;              
+            document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;              
+            document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;              
+            document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length;              
+            const tbody = document.querySelector('#tabela-veiculos tbody');              
+            const btnExport = document.getElementById('btn-export-veiculos');              
+            if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';              
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Nenhum veículo encontrado.</td></tr>'; }              
             else {                
                 const htmlRows = lista.map(f => {                    
-                    const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';                     
-                    const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante';                     
-                    // CORREÇÃO: Formatação Real                    
+                    const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';                      
+                    const icon = f.tipo === 'servidor' ? '<i class="fas fa-id-badge" style="color:var(--servidor)"></i> Servidor' : '<i class="fas fa-user-tag" style="color:var(--visitante)"></i> Visitante';                      
                     const dIn = formatarDataHoraReal(f.hora_inicial);                    
                     const dOut = f.hora_final ? formatarDataHoraReal(f.hora_final) : '-';                    
-                    const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';                     
-                    let buttons = '';                     
-                    if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;                     
-                    if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;                     
+                    const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:green; margin-right:5px"></i>';                      
+                    let buttons = '';                      
+                    if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;                      
+                    if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;                      
                     return `<tr><td>${badge}</td><td><small>${icon}</small></td><td><strong>${f.motorista}</strong><br><small>${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-size:0.85rem">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;                 
                 }).join('');                
                 tbody.innerHTML = htmlRows;            
