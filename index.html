@@ -1611,7 +1611,7 @@
         window.imprimirOS = function(id) {            
             const d = demandas.find(item => item.id == id);            
             if (!d) return;            
-            document.getElementById('print-id').innerText = d.numero_os ? `${d.numero_os} (ID Sist: ${d.id})` : d.id; // IMPRESSÃO COM NOVO CAMPO
+            document.getElementById('print-id').innerText = d.numero_os ? d.numero_os : d.id;
             document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-BR');            
             const horaTexto = d.hora ? ` às ${d.hora}` : '';            
             document.getElementById('print-data').innerText = formatarData(d.data) + horaTexto;            
@@ -2181,3 +2181,4 @@
     </script>
 </body>
 </html>
+
