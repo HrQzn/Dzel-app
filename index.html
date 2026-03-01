@@ -759,53 +759,62 @@
 
         /* ======== PRINT ======== */
         @media print {
+            @page { size: A4 portrait; margin: 5mm; } /* Margem reduzida para garantir que caiba em 1 página */
             .no-print, .nav-tabs, #login-overlay { display: none !important; }
-            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; margin: 0; padding: 0; }
             #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
             .section { display: none !important; }
             .section.active { display: block !important; position: relative !important; top: 0 !important; left: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             canvas { max-width: 100% !important; max-height: 100% !important; page-break-inside: avoid; }
             .card, .metric-card, .kpi-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd; box-shadow: none !important; }
-            #area-impressao { display: none; }
+            
             body.printing-os #app-content { display: none !important; }
-            body.printing-os #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; margin: 0; padding: 20px; background: white; }
+            body.printing-os #area-impressao { 
+                display: flex !important; 
+                flex-direction: column; 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; 
+                margin: 0; padding: 0; background: white; 
+            }
             body.printing-dashboard #app-content { display: block !important; width: 100%; }
             body.printing-dashboard .section { display: none !important; }
             body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
         }
 
-        /* ======== OS PRINT ======== */
-        #area-impressao { display: none; margin: 0 auto; max-width: 800px; font-family: Arial, sans-serif; color: #000; }
-        .os-container { border: 2px solid #000; display: flex; flex-direction: column; }
-        .os-grid-row { display: flex; width: 100%; }
+        /* ======== OS PRINT STYLES ======== */
+        #area-impressao { display: none; margin: 0 auto; width: 100%; font-family: Arial, sans-serif; color: #000; box-sizing: border-box; }
+        .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 100%; min-height: 265mm; width: 100%; box-sizing: border-box; } /* Altura ajustada para caber no A4 perfeitamente */
+        .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; box-sizing: border-box; }
+        .os-grid-row:last-child { border-bottom: none; }
+        .os-grid-row.border-thick { border-bottom: 2px solid #000; }
+        .os-grid-row.row-expand { flex-grow: 1; align-items: stretch; }
         .os-logo-box { width: 15%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; }
         .os-logo-box img { max-height: 70px; width: auto; }
         .os-header-center { width: 65%; text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
-        .os-header-center h3 { margin: 0; font-size: 14px; }
-        .os-header-center h4 { margin: 3px 0; font-size: 12px; }
+        .os-header-center h3 { margin: 0; font-size: 15px; }
+        .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
         .os-header-right { width: 20%; text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
-        .os-header-right p { margin: 0; font-size: 11px; font-weight: bold; }
+        .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; }
         .os-numero { margin: 5px 0 0 0; color: #c0392b; font-size: 18px; }
-        .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 4px; }
-        .os-cell { padding: 6px; display: flex; flex-direction: column; }
-        .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 3px; }
-        .os-value { font-size: 12px; font-weight: normal; text-transform: uppercase; }
+        .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
+        .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
+        .os-cell { padding: 8px; display: flex; flex-direction: column; box-sizing: border-box; }
+        .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
+        .os-value { font-size: 13px; font-weight: normal; text-transform: uppercase; }
         .os-value.destaque { font-size: 14px; font-weight: bold; padding-top: 5px; }
-        .os-checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
+        .os-checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; margin-top: 5px; }
         .os-checkbox-grid.locais { grid-template-columns: repeat(4, 1fr); }
-        .os-signatures { min-height: 120px; align-items: flex-end; padding-bottom: 15px; }
+        .os-signatures { min-height: 90px; align-items: flex-end; padding-bottom: 15px; padding-top: 20px; }
         .os-sig-box { flex: 1; text-align: center; padding: 0 15px; }
-        .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 4px; margin-top: 60px; }
-        .os-sig-line span { font-size: 9px; font-weight: normal; color: #555; }
-        .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 10px; color: #555; }
+        .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
+        .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px;}
+        .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
     </style>
 </head>
 <body>
-    <!-- ======== OS PRINT AREA ======== -->
     <div id="area-impressao">
         <div class="os-container">
-            <div class="os-grid-row" style="border-bottom: 2px solid #000;">
+            <div class="os-grid-row border-thick">
                 <div class="os-logo-box"><img src="brasao.jpg" alt="Logo SP"></div>
                 <div class="os-header-center">
                     <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
@@ -817,27 +826,44 @@
                     <h3 class="os-numero">Nº <span id="print-id"></span></h3>
                 </div>
             </div>
+
             <div class="os-secao-titulo">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
-            <div class="os-grid-row" style="border-bottom: 1px solid #000;">
-                <div class="os-cell" style="flex: 1.2; border-right: 1px solid #000;"><div class="os-label">DATA E HORA DE ABERTURA</div><div class="os-value" id="print-data-hora"></div></div>
-                <div class="os-cell" style="flex: 2; border-right: 1px solid #000;"><div class="os-label">SOLICITANTE / CONTATO</div><div class="os-value" id="print-solicitante"></div></div>
-                <div class="os-cell" style="flex: 1;"><div class="os-label">PRIORIDADE NO SISTEMA</div><div class="os-value" id="print-prioridade"></div></div>
+            <div class="os-grid-row">
+                <div class="os-cell" style="width: 25%; border-right: 1px solid #000;">
+                    <div class="os-label">DATA E HORA DE ABERTURA</div><div class="os-value" id="print-data-hora"></div>
+                </div>
+                <div class="os-cell" style="width: 50%; border-right: 1px solid #000;">
+                    <div class="os-label">SOLICITANTE / CONTATO</div><div class="os-value" id="print-solicitante"></div>
+                </div>
+                <div class="os-cell" style="width: 25%;">
+                    <div class="os-label">PRIORIDADE NO SISTEMA</div><div class="os-value" id="print-prioridade"></div>
+                </div>
             </div>
-            <div class="os-grid-row" style="border-bottom: 2px solid #000;">
-                <div class="os-cell" style="flex: 3.2; border-right: 1px solid #000;"><div class="os-label">UNIDADE / SETOR DE ORIGEM</div><div class="os-value" id="print-setor"></div></div>
-                <div class="os-cell" style="flex: 1;"><div class="os-label">STATUS ATUAL</div><div class="os-value" id="print-status"></div></div>
+            <div class="os-grid-row border-thick">
+                <div class="os-cell" style="width: 75%; border-right: 1px solid #000;">
+                    <div class="os-label">UNIDADE / SETOR DE ORIGEM</div><div class="os-value" id="print-setor"></div>
+                </div>
+                <div class="os-cell" style="width: 25%;">
+                    <div class="os-label">STATUS ATUAL</div><div class="os-value" id="print-status"></div>
+                </div>
             </div>
+
             <div class="os-secao-titulo">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
-            <div class="os-grid-row" style="border-bottom: 2px solid #000; min-height: 70px;"><div class="os-cell"><div class="os-value destaque" id="print-titulo"></div></div></div>
+            <div class="os-grid-row border-thick" style="min-height: 80px;">
+                <div class="os-cell">
+                    <div class="os-value destaque" id="print-titulo"></div>
+                </div>
+            </div>
+
             <div class="os-secao-titulo">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
-            <div class="os-grid-row" style="border-bottom: 1px solid #000;">
+            <div class="os-grid-row">
                 <div class="os-cell">
                     <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
                     <div class="os-checkbox-grid">
                         <div><span id="chk-limpeza">☐</span> LIMPEZA PREDIAL</div>
                         <div><span id="chk-ar">☐</span> AR CONDICIONADO</div>
                         <div><span id="chk-manut">☐</span> MANUTENÇÃO PREDIAL</div>
-                        <div><span id="chk-elevador">☐</span> MANUTENÇÃO DE ELEVADORES</div>
+                        <div><span id="chk-elevador">☐</span> MANUT. DE ELEVADORES</div>
                         <div><span id="chk-ti">☐</span> SUPORTE TI</div>
                         <div><span id="chk-telefonia">☐</span> TELEFONIA</div>
                         <div><span id="chk-extintores">☐</span> MANUT. E RECARGA EXTINTORES</div>
@@ -845,7 +871,7 @@
                     </div>
                 </div>
             </div>
-            <div class="os-grid-row" style="border-bottom: 1px solid #000;">
+            <div class="os-grid-row border-thick">
                 <div class="os-cell">
                     <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
                     <div class="os-checkbox-grid locais">
@@ -856,26 +882,40 @@
                     </div>
                 </div>
             </div>
-            <div class="os-grid-row" style="border-bottom: 2px solid #000; min-height: 150px;">
-                <div class="os-cell" style="flex: 1; border-right: 1px solid #000;"><div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div></div>
-                <div class="os-cell" style="flex: 1;"><div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div></div>
+
+            <div class="os-grid-row row-expand">
+                <div class="os-cell" style="width: 50%; border-right: 1px solid #000;">
+                    <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
+                </div>
+                <div class="os-cell" style="width: 50%;">
+                    <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
+                </div>
             </div>
-            <div class="os-secao-titulo">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
-            <div class="os-grid-row" style="border-bottom: 1px solid #000;">
-                <div class="os-cell" style="flex: 1; border-right: 1px solid #000; text-align: center;"><div class="os-label" style="text-align: center;">INÍCIO DO ATENDIMENTO</div><div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div></div>
-                <div class="os-cell" style="flex: 1; border-right: 1px solid #000; text-align: center;"><div class="os-label" style="text-align: center;">TÉRMINO DO ATENDIMENTO</div><div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div></div>
-                <div class="os-cell" style="flex: 2;"><div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div></div>
+
+            <div class="os-secao-titulo top-border">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
+            <div class="os-grid-row">
+                <div class="os-cell" style="width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
+                    <div class="os-label" style="text-align: center;">INÍCIO DO ATENDIMENTO</div>
+                    <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
+                </div>
+                <div class="os-cell" style="width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
+                    <div class="os-label" style="text-align: center;">TÉRMINO DO ATENDIMENTO</div>
+                    <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
+                </div>
+                <div class="os-cell" style="width: 50%;">
+                    <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
+                </div>
             </div>
+            
             <div class="os-grid-row os-signatures">
-                <div class="os-sig-box"><div class="os-sig-line">TÉCNICO EXECUTOR<br><span>Nome legível / Matrícula / Empresa</span></div></div>
-                <div class="os-sig-box"><div class="os-sig-line">GESTOR / FISCAL (DZEL)<br><span>Carimbo e Assinatura</span></div></div>
-                <div class="os-sig-box"><div class="os-sig-line">SOLICITANTE / RECEBEDOR<br><span>Atesto a conformidade do serviço</span></div></div>
+                <div class="os-sig-box"><div class="os-sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
+                <div class="os-sig-box"><div class="os-sig-line">GESTOR / FISCAL (DZEL)<span>Carimbo e Assinatura</span></div></div>
+                <div class="os-sig-box"><div class="os-sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
             </div>
         </div>
         <div class="os-footer-print">Documento impresso em <span id="print-hoje"></span></div>
     </div>
 
-    <!-- ======== LOGIN ======== -->
     <div id="login-overlay">
         <div class="login-box">
             <div class="login-logo"><i class="fas fa-building"></i></div>
@@ -888,10 +928,8 @@
         </div>
     </div>
 
-    <!-- ======== APP ======== -->
     <div id="app-content">
 
-        <!-- HEADER -->
         <header class="no-print">
             <h1>
                 <i class="fas fa-building"></i>
@@ -911,7 +949,6 @@
             </div>
         </header>
 
-        <!-- SIDEBAR -->
         <nav class="nav-tabs no-print">
             <div class="sidebar-brand">
                 <div class="sidebar-brand-logo">
@@ -943,10 +980,8 @@
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
         </nav>
 
-        <!-- MAIN -->
         <main class="no-print">
 
-            <!-- DASHBOARD -->
             <section id="dashboard" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1033,7 +1068,6 @@
                 </div>
             </section>
 
-            <!-- DEMANDAS -->
             <section id="demandas" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1107,7 +1141,6 @@
                 </div>
             </section>
 
-            <!-- PREDIAL -->
             <section id="predial" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1163,7 +1196,6 @@
                 </div>
             </section>
 
-            <!-- AR CONDICIONADO -->
             <section id="ar" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1219,7 +1251,6 @@
                 </div>
             </section>
 
-            <!-- LIMPEZA -->
             <section id="limpeza" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1275,7 +1306,6 @@
                 </div>
             </section>
 
-            <!-- VISITANTES -->
             <section id="visitantes" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1334,7 +1364,6 @@
                 </div>
             </section>
 
-            <!-- VEICULOS -->
             <section id="veiculos" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1387,7 +1416,6 @@
                 </div>
             </section>
 
-            <!-- EVENTOS -->
             <section id="eventos" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1442,7 +1470,6 @@
                 </div>
             </section>
 
-            <!-- CRACHÁS -->
             <section id="crachas" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1506,7 +1533,6 @@
                 </div>
             </section>
 
-            <!-- AUDITORIA -->
             <section id="auditoria" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1524,7 +1550,6 @@
                 </div>
             </section>
 
-            <!-- USUÁRIOS -->
             <section id="usuarios" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
@@ -1539,11 +1564,13 @@
                         <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>
                         <input type="password" id="novo-user-pass" placeholder="Senha" required>
                         <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>
-                        <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select><br>
+                        <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select>
+
                         <div class="checkbox-wrapper" style="grid-column: 1 / -1; background: #f0fdf4; border-color: var(--success);">
                             <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">
                             <label for="novo-user-admin" style="color: #065f46;"><i class="fas fa-crown"></i> É Administrador Geral? (Acesso Total)</label>
-                        </div><br>
+                        </div>
+
                         <div id="container-permissoes" style="grid-column: 1 / -1; margin-top: 10px;">
                             <h4 style="margin-bottom: 10px; color: var(--text-secondary); font-size: 0.875rem;">Permissões Específicas:</h4>
                             <div class="table-container">
@@ -1561,7 +1588,8 @@
                                     </tbody>
                                 </table>
                             </div>
-                        </div><br>
+                        </div>
+
                         <div class="btn-container" style="grid-column: 1 / -1;">
                             <button onclick="salvarUsuario()" class="btn-primary" id="btn-save-user">Criar Usuário</button>
                             <button onclick="cancelarEdicaoUsuario()" class="btn-cancel" id="btn-cancel-user" style="display:none">Cancelar</button>
@@ -2560,6 +2588,3 @@
     </script>
 </body>
 </html>
-
-
-
