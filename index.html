@@ -141,7 +141,7 @@
             .header-left { display: flex; align-items: center; gap: 15px; }
             header h1 {
                 font-size: 1rem; font-weight: 700; color: var(--text-primary);
-                display: flex; align-items: center; gap: 10px; letter-spacing: -0.2px;
+                display: flex; align-items: center; gap: 10px; letter-spacing: -0.2px; margin: 0;
             }
             header h1 i.fa-building { color: var(--accent); }
             .header-right { display: flex; align-items: center; gap: 1rem; }
@@ -152,7 +152,7 @@
             .header-avatar {
                 width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #6366f1);
                 border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                color: white; font-size: 0.75rem; font-weight: 700;
+                color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
             }
             #user-display { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; }
             #user-role-display { font-size: 0.72rem; color: var(--text-muted); display: block; }
@@ -341,17 +341,21 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 2.5rem; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
 
-        /* ======== SIDEBAR E HEADER MOBILE ======== */
+        /* ======== SIDEBAR E HEADER MOBILE (RESOLVIDO) ======== */
         @media screen and (max-width: 900px) {
+            .hide-mobile { display: none !important; }
             #app-content[style*="display: block"] { display: flex !important; flex-direction: column; }
-            #mobile-menu-btn { display: block; }
+            #mobile-menu-btn { display: block; margin-right: 8px; }
             
-            /* Ajuste perfeito do cabeçalho no celular */
-            header { height: auto; flex-direction: column; padding: 15px; gap: 12px; align-items: flex-start; }
-            .header-left { width: 100%; justify-content: flex-start; gap: 12px; }
-            .header-left h1 { font-size: 0.95rem; line-height: 1.3; }
-            .header-right { width: 100%; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); }
-            #date-display { display: none; } /* Oculta a data para ganhar espaço no celular */
+            /* Novo Header de 1 Linha pro Celular */
+            header { height: 60px; flex-direction: row; padding: 0 15px; align-items: center; justify-content: space-between; flex-wrap: nowrap; }
+            .header-left { width: auto; flex: 1; display: flex; align-items: center; overflow: hidden; gap: 0; }
+            .header-left h1 { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; display: inline-block; padding-top: 3px;}
+            .header-left h1 i { margin-right: 5px; }
+            .header-right { width: auto; padding: 0; border: none; display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; }
+            .header-user { padding: 0; border: none; background: transparent; margin: 0; gap: 0; }
+            .logout-btn { padding: 0; width: 34px; height: 34px; justify-content: center; align-items: center; border-radius: 50%; margin: 0; }
+            .logout-btn i { margin: 0; font-size: 0.95rem; }
             
             .nav-tabs {
                 position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
@@ -398,22 +402,22 @@
         /* ======== OS PRINT STYLES ======== */
         #area-impressao { display: none; margin: 0 auto; width: 100%; font-family: Arial, sans-serif; color: #000; box-sizing: border-box; }
         .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 100%; min-height: 265mm; width: 100%; box-sizing: border-box; }
-        .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; box-sizing: border-box; }
+        .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; margin: 0; box-sizing: border-box; }
         .os-grid-row:last-child { border-bottom: none; }
         .os-grid-row.border-thick { border-bottom: 2px solid #000; }
         .os-grid-row.row-expand { flex-grow: 1; align-items: stretch; }
-        .os-logo-box { width: 15%; display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; }
+        .os-logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; }
         .os-logo-box img { max-height: 70px; width: auto; }
-        .os-header-center { width: 65%; text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+        .os-header-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
         .os-header-center h3 { margin: 0; font-size: 15px; }
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
-        .os-header-right { width: 20%; text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+        .os-header-right { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; }
         .os-numero { margin: 5px 0 0 0; color: #c0392b; font-size: 18px; }
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
         .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
-        .os-cell { padding: 8px; display: flex; flex-direction: column; box-sizing: border-box; }
+        .os-cell { padding: 8px; display: flex; flex-direction: column; margin: 0; box-sizing: border-box; }
         .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
         .os-value { font-size: 13px; font-weight: normal; text-transform: uppercase; }
         .os-value.destaque { font-size: 14px; font-weight: bold; padding-top: 5px; }
@@ -449,15 +453,18 @@
     <div id="area-impressao">
         <div class="os-container">
             <div class="os-grid-row border-thick">
-                <div class="os-logo-box"><img src="brasao.jpg" alt="Logo SP"></div>
-                <div class="os-header-center">
+                <div class="os-logo-box" style="width: 15%;"><img src="brasao.jpg" alt="Logo SP"></div>
+                <div class="os-header-center" style="width: 60%;">
                     <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
                     <h4>SECRETARIA DA EDUCAÇÃO</h4>
                     <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
                 </div>
-                <div class="os-header-right">
-                    <p>ORDEM DE SERVIÇO</p>
-                    <h3 class="os-numero">Nº <span id="print-id"></span></h3>
+                <div class="os-header-right" style="width: 25%;">
+                    <div>
+                        <p>ORDEM DE SERVIÇO</p>
+                        <h3 class="os-numero">Nº <span id="print-id"></span></h3>
+                    </div>
+                    <img id="print-logo-empresa" src="" style="max-width: 110px; max-height: 40px; display: none; margin-top: 8px; object-fit: contain;">
                 </div>
             </div>
 
@@ -484,14 +491,14 @@
 
             <div class="os-secao-titulo">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
             <div class="os-grid-row border-thick" style="min-height: 80px;">
-                <div class="os-cell">
+                <div class="os-cell" style="width: 100%;">
                     <div class="os-value destaque" id="print-titulo"></div>
                 </div>
             </div>
 
             <div class="os-secao-titulo">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
             <div class="os-grid-row">
-                <div class="os-cell">
+                <div class="os-cell" style="width: 100%;">
                     <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
                     <div class="os-checkbox-grid">
                         <div><span id="chk-limpeza">☐</span> LIMPEZA PREDIAL</div>
@@ -506,7 +513,7 @@
                 </div>
             </div>
             <div class="os-grid-row border-thick">
-                <div class="os-cell">
+                <div class="os-cell" style="width: 100%;">
                     <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
                     <div class="os-checkbox-grid locais">
                         <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
@@ -574,19 +581,19 @@
                 <h1>
                     <i class="fas fa-building"></i>
                     COGESPA — DIVISÃO DE ZELADORIA
-                    <i class="fas fa-shield-alt" style="font-size:0.7rem; color: var(--success);" title="Conexão Segura"></i>
+                    <i class="fas fa-shield-alt hide-mobile" style="font-size:0.7rem; color: var(--success);" title="Conexão Segura"></i>
                 </h1>
             </div>
             <div class="header-right">
-                <span id="date-display" style="font-size:0.78rem; color:var(--text-muted);"></span>
+                <span id="date-display" class="hide-mobile" style="font-size:0.78rem; color:var(--text-muted);"></span>
                 <div class="header-user">
                     <div class="header-avatar" id="avatar-initials">U</div>
-                    <div>
+                    <div class="hide-mobile">
                         <small id="user-display"></small>
                         <small id="user-role-display"></small>
                     </div>
                 </div>
-                <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> <span class="hide-mobile">Sair</span></a>
             </div>
         </header>
 
@@ -1809,6 +1816,22 @@
             document.getElementById('print-setor').innerText = d.setor.toUpperCase();
             document.getElementById('print-status').innerText = d.status.toUpperCase();
             document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
+            
+            /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA */
+            const cat = getCategoriaDemanda(d);
+            const logoEmpresa = document.getElementById('print-logo-empresa');
+            logoEmpresa.src = ""; // Limpa antes
+            
+            if (cat === 'PREDIAL') {
+                logoEmpresa.src = 'epura.jpg';
+                logoEmpresa.style.display = 'block';
+            } else if (cat === 'AR') {
+                logoEmpresa.src = 'igm2.jpg';
+                logoEmpresa.style.display = 'block';
+            } else {
+                logoEmpresa.style.display = 'none';
+            }
+            
             const chks = ['chk-limpeza', 'chk-ar', 'chk-manut', 'chk-elevador', 'chk-ti', 'chk-telefonia', 'chk-extintores'];
             chks.forEach(chk => document.getElementById(chk).innerText = '☐');
             if (d.contratada) {
