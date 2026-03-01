@@ -412,9 +412,12 @@
         .os-header-center h3 { margin: 0; font-size: 15px; }
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
-        .os-header-right { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; }
-        .os-numero { margin: 5px 0 0 0; color: #c0392b; font-size: 18px; }
+        
+        /* Ajuste do lado direito para a logo da contratada */
+        .os-header-right { width: 25%; text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .os-numero { margin: 0; color: #c0392b; font-size: 16px; font-weight: bold; }
+        
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
         .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
         .os-cell { padding: 8px; display: flex; flex-direction: column; margin: 0; box-sizing: border-box; }
@@ -459,12 +462,10 @@
                     <h4>SECRETARIA DA EDUCAÇÃO</h4>
                     <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
                 </div>
-                <div class="os-header-right" style="width: 25%;">
-                    <div>
-                        <p>ORDEM DE SERVIÇO</p>
-                        <h3 class="os-numero">Nº <span id="print-id"></span></h3>
-                    </div>
-                    <img id="print-logo-empresa" src="" style="max-width: 110px; max-height: 40px; display: none; margin-top: 8px; object-fit: contain;">
+                <div class="os-header-right">
+                    <p id="print-top-text">ORDEM DE SERVIÇO</p>
+                    <img id="print-logo-empresa" src="" style="max-width: 130px; max-height: 50px; display: none; margin-bottom: 6px; object-fit: contain;">
+                    <h3 class="os-numero">O.S Nº <span id="print-id"></span></h3>
                 </div>
             </div>
 
@@ -1820,16 +1821,20 @@
             /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA */
             const cat = getCategoriaDemanda(d);
             const logoEmpresa = document.getElementById('print-logo-empresa');
+            const textoTop = document.getElementById('print-top-text');
             logoEmpresa.src = ""; // Limpa antes
             
             if (cat === 'PREDIAL') {
                 logoEmpresa.src = 'epura.jpg';
                 logoEmpresa.style.display = 'block';
+                textoTop.style.display = 'none';
             } else if (cat === 'AR') {
                 logoEmpresa.src = 'igm2.jpg';
                 logoEmpresa.style.display = 'block';
+                textoTop.style.display = 'none';
             } else {
                 logoEmpresa.style.display = 'none';
+                textoTop.style.display = 'block';
             }
             
             const chks = ['chk-limpeza', 'chk-ar', 'chk-manut', 'chk-elevador', 'chk-ti', 'chk-telefonia', 'chk-extintores'];
