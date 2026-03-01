@@ -341,13 +341,12 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 2.5rem; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
 
-        /* ======== SIDEBAR E HEADER MOBILE (RESOLVIDO) ======== */
+        /* ======== SIDEBAR E HEADER MOBILE ======== */
         @media screen and (max-width: 900px) {
             .hide-mobile { display: none !important; }
             #app-content[style*="display: block"] { display: flex !important; flex-direction: column; }
             #mobile-menu-btn { display: block; margin-right: 8px; }
             
-            /* Novo Header de 1 Linha pro Celular */
             header { height: 60px; flex-direction: row; padding: 0 15px; align-items: center; justify-content: space-between; flex-wrap: nowrap; }
             .header-left { width: auto; flex: 1; display: flex; align-items: center; overflow: hidden; gap: 0; }
             .header-left h1 { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; display: inline-block; padding-top: 3px;}
@@ -413,10 +412,12 @@
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
         
-        /* Ajuste do lado direito para a logo da contratada */
         .os-header-right { width: 25%; text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         .os-numero { margin: 0; color: #c0392b; font-size: 16px; font-weight: bold; }
+        
+        /* Retirado o max-width rígido do CSS para deixar o JS definir os tamanhos exatos das imagens dinamicamente */
+        #print-logo-empresa { display: none; margin-bottom: 6px; object-fit: contain; }
         
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
         .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
@@ -464,7 +465,7 @@
                 </div>
                 <div class="os-header-right">
                     <p id="print-top-text">ORDEM DE SERVIÇO</p>
-                    <img id="print-logo-empresa" src="" style="max-width: 180px; max-height: 80px; display: none; margin-bottom: 6px; object-fit: contain;">
+                    <img id="print-logo-empresa" src="">
                     <h3 class="os-numero">O.S Nº <span id="print-id"></span></h3>
                 </div>
             </div>
@@ -1818,7 +1819,7 @@
             document.getElementById('print-status').innerText = d.status.toUpperCase();
             document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
             
-            /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA */
+            /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA COM TAMANHOS INDIVIDUAIS */
             const cat = getCategoriaDemanda(d);
             const logoEmpresa = document.getElementById('print-logo-empresa');
             const textoTop = document.getElementById('print-top-text');
@@ -1826,10 +1827,14 @@
             
             if (cat === 'PREDIAL') {
                 logoEmpresa.src = 'epura.jpg';
+                logoEmpresa.style.maxWidth = '220px'; // Épura pode ficar bem maior
+                logoEmpresa.style.maxHeight = '95px';
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
             } else if (cat === 'AR') {
                 logoEmpresa.src = 'igm2.jpg';
+                logoEmpresa.style.maxWidth = '130px'; // IGM2 no tamanho original que ficou bom
+                logoEmpresa.style.maxHeight = '50px';
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
             } else {
@@ -2264,4 +2269,3 @@
     </script>
 </body>
 </html>
-
