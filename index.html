@@ -381,6 +381,7 @@
         @media print {
             @page { size: A4 portrait; margin: 5mm; } 
             .no-print, .nav-tabs, #login-overlay, .modal-overlay { display: none !important; }
+            body, #app-content, main { overflow: visible !important; height: auto !important; padding: 0 !important; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; margin: 0; padding: 0; }
             #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
             .section { display: none !important; }
@@ -1868,18 +1869,39 @@
             document.getElementById('print-hoje').innerText = new Date().toLocaleString('pt-BR');
             window.scrollTo(0, 0);
             document.body.classList.add('printing-os');
-            setTimeout(function() { window.print(); }, 800);
-            const limparImpressao = () => { document.body.classList.remove('printing-os'); window.scrollTo(0, 0); };
-            window.onafterprint = limparImpressao;
-            setTimeout(function() { if (document.hasFocus()) { limparImpressao(); } else { setTimeout(limparImpressao, 5000); } }, 2000);
+            
+            // Aumentamos levemente o tempo para o Android renderizar o DOM antes de chamar o print
+            setTimeout(function() { 
+                window.print(); 
+            }, 1000); 
         }
 
         window.imprimirDashboard = function() {
             document.body.classList.add('printing-dashboard');
             Object.values(Chart.instances).forEach(chart => chart.resize());
-            setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
-            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
+            
+            setTimeout(function() { 
+                window.print(); 
+            }, 800); // Tempo para o gráfico estabilizar
+        }
+
+        // Nova lógica universal para limpar a tela após a impressão (serve para O.S. e Dashboard)
+        const limparImpressao = () => { 
+            document.body.classList.remove('printing-os', 'printing-dashboard'); 
+            window.scrollTo(0, 0);
+            Object.values(Chart.instances).forEach(chart => chart.resize());
+        };
+
+        // Evento nativo
+        window.addEventListener('afterprint', limparImpressao);
+
+        // Fallback garantido para dispositivos móveis (resolve o bug do Chrome no Android)
+        if (window.matchMedia) {
+            window.matchMedia('print').addEventListener('change', function(mql) {
+                if (!mql.matches) {
+                    limparImpressao();
+                }
+            });
         }
 
         function criarLinhaTabela(d) {
@@ -2283,4 +2305,3 @@
     </script>
 </body>
 </html>
-
