@@ -341,21 +341,21 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 2.5rem; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
 
-        /* ======== SIDEBAR E HEADER MOBILE (CORRIGIDO) ======== */
+        /* ======== SIDEBAR E HEADER MOBILE (RESOLVIDO) ======== */
         @media screen and (max-width: 900px) {
             .hide-mobile { display: none !important; }
             #app-content[style*="display: block"] { display: flex !important; flex-direction: column; }
             #mobile-menu-btn { display: block; margin-right: 8px; }
             
-            /* Correção do Header Mobile: Duas linhas bem divididas e sem empilhar errado */
-            header { height: auto; flex-direction: column; padding: 15px; align-items: flex-start; gap: 12px; }
-            .header-left { width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
-            .header-left h1 { font-size: 0.95rem; line-height: 1.3; white-space: normal; margin: 0; }
+            /* Novo Header de 1 Linha pro Celular */
+            header { height: 60px; flex-direction: row; padding: 0 15px; align-items: center; justify-content: space-between; flex-wrap: nowrap; }
+            .header-left { width: auto; flex: 1; display: flex; align-items: center; overflow: hidden; gap: 0; }
+            .header-left h1 { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; display: inline-block; padding-top: 3px;}
             .header-left h1 i { margin-right: 5px; }
-            .header-right { width: 100%; display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 12px 0 0 0; border-top: 1px solid var(--border); }
-            .header-user { padding: 0; border: none; background: transparent; margin: 0; display: flex; align-items: center; gap: 10px; }
-            #user-display { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-            .logout-btn { padding: 6px 14px; margin: 0; border-radius: 8px; font-size: 0.85rem; }
+            .header-right { width: auto; padding: 0; border: none; display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; }
+            .header-user { padding: 0; border: none; background: transparent; margin: 0; gap: 0; }
+            .logout-btn { padding: 0; width: 34px; height: 34px; justify-content: center; align-items: center; border-radius: 50%; margin: 0; }
+            .logout-btn i { margin: 0; font-size: 0.95rem; }
             
             .nav-tabs {
                 position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
@@ -376,6 +376,7 @@
             #tab-auditoria.active { border-left-color: var(--danger); }
             #tab-usuarios.active { border-left-color: #8b5cf6; }
             main { padding: 1.25rem; flex: 1; overflow-y: auto; }
+            .page-header-left h2 { font-size: 1.25rem; }
         }
 
         /* ======== PRINT ======== */
@@ -398,35 +399,25 @@
             body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
         }
 
-        /* ======== OS PRINT STYLES (ALINHAMENTO DO X CORRIGIDO VIA GRID) ======== */
+        /* ======== OS PRINT STYLES ======== */
         #area-impressao { display: none; margin: 0 auto; width: 100%; font-family: Arial, sans-serif; color: #000; box-sizing: border-box; }
         .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 100%; min-height: 265mm; width: 100%; box-sizing: border-box; }
-        
         .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; margin: 0; box-sizing: border-box; }
         .os-grid-row:last-child { border-bottom: none; }
         .os-grid-row.border-thick { border-bottom: 2px solid #000; }
         .os-grid-row.row-expand { flex-grow: 1; align-items: stretch; }
-
-        /* Nova estratégia de Grid para travar as colunas 100% alinhadas na vertical */
-        .os-grid-id-1 { display: grid; grid-template-columns: 25% 50% 25%; border-bottom: 1px solid #000; width: 100%; }
-        .os-grid-id-2 { display: grid; grid-template-columns: 75% 25%; border-bottom: 2px solid #000; width: 100%; }
-        .os-grid-id-1 > div, .os-grid-id-2 > div { padding: 6px 8px; display: flex; flex-direction: column; border-right: 1px solid #000; box-sizing: border-box; }
-        .os-grid-id-1 > div:last-child, .os-grid-id-2 > div:last-child { border-right: none; }
-        
-        .os-logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; width: 15%; box-sizing: border-box; }
+        .os-logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; box-sizing: border-box; }
         .os-logo-box img { max-height: 70px; width: auto; }
-        .os-header-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; width: 60%; box-sizing: border-box; }
+        .os-header-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; box-sizing: border-box; }
         .os-header-center h3 { margin: 0; font-size: 15px; }
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
         
-        /* Box direito refeito para isolar a logo e nunca sobrepor o texto */
-        .os-header-right { width: 25%; display: flex; flex-direction: column; padding: 0; box-sizing: border-box; }
-        .logo-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 5px; min-height: 60px; }
-        .os-numero-area { padding: 5px; text-align: center; background: white; position: relative; z-index: 2; }
-        #print-top-text { margin: 0; font-size: 12px; font-weight: bold; }
-        #print-logo-empresa { display: none; max-width: 130px; max-height: 65px; object-fit: contain; }
+        .os-header-right { text-align: center; padding: 5px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; box-sizing: border-box; }
+        .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         .os-numero { margin: 0; color: #c0392b; font-size: 16px; font-weight: bold; }
+        
+        #print-logo-empresa { display: none; margin-bottom: 6px; object-fit: contain; }
         
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
         .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
@@ -473,47 +464,43 @@
                     <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
                 </div>
                 <div class="os-header-right">
-                    <div class="logo-area">
-                        <p id="print-top-text">ORDEM DE SERVIÇO</p>
-                        <img id="print-logo-empresa" src="">
-                    </div>
-                    <div class="os-numero-area">
-                        <h3 class="os-numero"><span id="print-os-label">Nº </span><span id="print-id"></span></h3>
-                    </div>
+                    <p id="print-top-text">ORDEM DE SERVIÇO</p>
+                    <img id="print-logo-empresa" src="">
+                    <h3 class="os-numero"><span id="print-os-label">Nº </span><span id="print-id"></span></h3>
                 </div>
             </div>
 
             <div class="os-secao-titulo">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
-            <div class="os-grid-id-1">
-                <div>
+            <div class="os-grid-row">
+                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000;">
                     <div class="os-label">DATA E HORA DE ABERTURA</div><div class="os-value" id="print-data-hora"></div>
                 </div>
-                <div>
+                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%; border-right: 1px solid #000;">
                     <div class="os-label">SOLICITANTE / CONTATO</div><div class="os-value" id="print-solicitante"></div>
                 </div>
-                <div>
+                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%;">
                     <div class="os-label">PRIORIDADE NO SISTEMA</div><div class="os-value" id="print-prioridade"></div>
                 </div>
             </div>
-            <div class="os-grid-id-2">
-                <div>
+            <div class="os-grid-row border-thick">
+                <div class="os-cell" style="flex: 0 0 75%; max-width: 75%; border-right: 1px solid #000;">
                     <div class="os-label">UNIDADE / SETOR DE ORIGEM</div><div class="os-value" id="print-setor"></div>
                 </div>
-                <div>
+                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%;">
                     <div class="os-label">STATUS ATUAL</div><div class="os-value" id="print-status"></div>
                 </div>
             </div>
 
             <div class="os-secao-titulo">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
             <div class="os-grid-row border-thick" style="min-height: 80px;">
-                <div class="os-cell" style="width: 100%;">
+                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
                     <div class="os-value destaque" id="print-titulo"></div>
                 </div>
             </div>
 
             <div class="os-secao-titulo">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
             <div class="os-grid-row">
-                <div class="os-cell" style="width: 100%;">
+                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
                     <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
                     <div class="os-checkbox-grid">
                         <div><span id="chk-limpeza">☐</span> LIMPEZA PREDIAL</div>
@@ -528,7 +515,7 @@
                 </div>
             </div>
             <div class="os-grid-row border-thick">
-                <div class="os-cell" style="width: 100%;">
+                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
                     <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
                     <div class="os-checkbox-grid locais">
                         <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
@@ -540,11 +527,11 @@
             </div>
 
             <div class="os-grid-row row-expand">
-                <div class="os-cell" style="width: 50%; border-right: 1px solid #000;">
+                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%; border-right: 1px solid #000;">
                     <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
                     <div class="os-value" id="print-val-descricao" style="text-transform: none; white-space: pre-wrap; margin-top: 5px; font-size: 12px; font-weight: normal;"></div>
                 </div>
-                <div class="os-cell" style="width: 50%;">
+                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%;">
                     <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
                     <div class="os-value" id="print-val-materiais" style="text-transform: none; white-space: pre-wrap; margin-top: 5px; font-size: 12px; font-weight: normal;"></div>
                 </div>
@@ -552,15 +539,15 @@
 
             <div class="os-secao-titulo top-border">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
             <div class="os-grid-row">
-                <div class="os-cell" style="width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
+                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
                     <div class="os-label" style="text-align: center;">INÍCIO DO ATENDIMENTO</div>
                     <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
                 </div>
-                <div class="os-cell" style="width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
+                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
                     <div class="os-label" style="text-align: center;">TÉRMINO DO ATENDIMENTO</div>
                     <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
                 </div>
-                <div class="os-cell" style="width: 50%;">
+                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%;">
                     <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
                 </div>
             </div>
@@ -1844,15 +1831,22 @@
             
             if (cat === 'PREDIAL') {
                 logoEmpresa.src = 'epura.jpg';
-                logoEmpresa.style.maxWidth = '140px'; 
-                logoEmpresa.style.maxHeight = '65px';
+                logoEmpresa.style.width = '140px'; 
+                logoEmpresa.style.height = '60px';
+                logoEmpresa.style.objectFit = 'cover'; 
+                logoEmpresa.style.objectPosition = 'center'; 
+                logoEmpresa.style.marginBottom = '5px'; 
+                logoEmpresa.style.transform = 'scale(1.35)'; 
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
                 labelNum.innerText = "O.S Nº ";
             } else if (cat === 'AR') {
                 logoEmpresa.src = 'igm2.jpg';
-                logoEmpresa.style.maxWidth = '130px'; 
-                logoEmpresa.style.maxHeight = '50px';
+                logoEmpresa.style.width = '120px'; // <--- Caso queira aumentar a Igm2 no futuro, mude aqui (ex: 145px)
+                logoEmpresa.style.height = '45px'; // <--- e a altura aqui (ex: 55px)
+                logoEmpresa.style.objectFit = 'contain'; 
+                logoEmpresa.style.marginBottom = '6px';
+                logoEmpresa.style.transform = 'scale(1)'; 
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
                 labelNum.innerText = "O.S Nº ";
