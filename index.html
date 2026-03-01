@@ -1436,6 +1436,12 @@
             return 'OUTROS';
         }
 
+        // Função para detectar dispositivo Android
+        function isAndroidDevice() {
+            return /Android/i.test(navigator.userAgent);
+        }
+
+        // Versão corrigida da função renderizarDashboard
         async function renderizarDashboard() {
             const filtroMes = document.getElementById('dash-filtro-mes').value;
             const listaDemandas = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
@@ -1443,26 +1449,56 @@
             const listaVisitantes = visitantes.filter(v => !filtroMes || v.entrada.startsWith(filtroMes));
             const listaEventos = eventos.filter(e => !filtroMes || e.data.startsWith(filtroMes));
             const listaCrachas = crachas.filter(c => !filtroMes || c.data_solicitacao.startsWith(filtroMes));
+            
             const totalFrota = listaFrota.length;
             const totalVisitantes = listaVisitantes.length;
             const totalEventos = listaEventos.length;
             const totalCrachas = listaCrachas.length;
+            
             let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
-            listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); if(counts[cat] !== undefined) counts[cat]++; else counts['OUTROS']++; });
+            listaDemandas.forEach(d => { 
+                const cat = getCategoriaDemanda(d); 
+                if(counts[cat] !== undefined) counts[cat]++; 
+                else counts['OUTROS']++; 
+            });
+            
             const totalManutencao = counts['PREDIAL'] + counts['AR'];
             const totalGeral = totalFrota + totalVisitantes + listaDemandas.length + totalEventos + totalCrachas;
             const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
+            
             document.getElementById('kpi-total-geral').innerText = totalGeral.toLocaleString('pt-BR');
             document.getElementById('kpi-total-eventos').innerText = totalEventos;
             document.getElementById('kpi-publico-eventos').innerText = publicoEventos.toLocaleString('pt-BR') + " Participantes";
             document.getElementById('kpi-total-manutencao').innerText = totalManutencao;
             document.getElementById('kpi-total-crachas').innerText = totalCrachas;
             document.getElementById('kpi-total-limpeza').innerText = counts['LIMPEZA'];
-            const divisor = filtroMes ? 30 : 365;
-            const fluxoDiario = Math.ceil(totalFrota / (totalFrota > 0 ? divisor : 1));
+            
+            // CORREÇÃO DO CÁLCULO DA MÉDIA DIÁRIA
+            let fluxoDiario = 0;
+            if (filtroMes) {
+                // Se há filtro de mês, calcula média baseada nos dias do mês
+                const [ano, mes] = filtroMes.split('-').map(Number);
+                const diasNoMes = new Date(ano, mes, 0).getDate();
+                fluxoDiario = Math.ceil(totalFrota / diasNoMes);
+            } else {
+                // Se não há filtro, usa média dos últimos 30 dias
+                const trintaDiasAtras = new Date();
+                trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+                
+                const frotaUltimos30Dias = frota.filter(f => {
+                    const dataFrota = new Date(f.hora_inicial);
+                    return dataFrota >= trintaDiasAtras;
+                }).length;
+                
+                fluxoDiario = Math.ceil(frotaUltimos30Dias / 30);
+            }
+            
             document.getElementById('kpi-fluxo-garagem').innerHTML = fluxoDiario + ' <small>Veíc/Dia</small>';
+            
+            // Gráfico de Volume
             const ctxVolume = document.getElementById('chartVolumeSetor').getContext('2d');
             if (chartVolume) chartVolume.destroy();
+            
             const dadosSetor = [
                 { label: 'Garagem', valor: totalFrota },
                 { label: 'Recepção', valor: totalVisitantes },
@@ -1472,20 +1508,81 @@
                 { label: 'Ramais', valor: counts['RAMAL'] },
                 { label: 'Ar Cond.', valor: counts['AR'] }
             ].sort((a, b) => b.valor - a.valor);
+            
             chartVolume = new Chart(ctxVolume, {
                 type: 'bar',
-                data: { labels: dadosSetor.map(d => d.label), datasets: [{ label: 'Volume', data: dadosSetor.map(d => d.valor), backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 18 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: 40 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: '#64748b', font: { weight: 'bold', size: 11 }, formatter: (value) => value > 0 ? value : '' } }, scales: { x: { display: false, grace: '10%' }, y: { grid: { display: false }, ticks: { font: { size: 12, family: 'Plus Jakarta Sans' }, color: '#64748b' } } } }
+                data: { 
+                    labels: dadosSetor.map(d => d.label), 
+                    datasets: [{ 
+                        label: 'Volume', 
+                        data: dadosSetor.map(d => d.valor), 
+                        backgroundColor: '#3b82f6', 
+                        borderRadius: 6, 
+                        barThickness: 18 
+                    }] 
+                },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { right: 40 } }, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            anchor: 'end', 
+                            align: 'end', 
+                            color: '#64748b', 
+                            font: { weight: 'bold', size: 11 }, 
+                            formatter: (value) => value > 0 ? value : '' 
+                        } 
+                    }, 
+                    scales: { 
+                        x: { display: false, grace: '10%' }, 
+                        y: { 
+                            grid: { display: false }, 
+                            ticks: { 
+                                font: { size: 12, family: 'Plus Jakarta Sans' }, 
+                                color: '#64748b' 
+                            } 
+                        } 
+                    } 
+                }
             });
+            
             const qtdServidor = listaFrota.filter(f => f.tipo === 'servidor').length;
             const qtdVisitante = listaFrota.filter(f => f.tipo === 'visitante').length;
             document.getElementById('total-garagem-label').innerText = totalFrota;
+            
             const ctxGaragem = document.getElementById('chartGaragemPerfil').getContext('2d');
             if (chartGaragem) chartGaragem.destroy();
+            
             chartGaragem = new Chart(ctxGaragem, {
                 type: 'doughnut',
-                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor, qtdVisitante], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0, cutout: '65%' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, datalabels: { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum+=d); return sum===0?"":(value*100/sum).toFixed(0)+"%"; } } } }
+                data: { 
+                    labels: ['Servidores', 'Visitantes'], 
+                    datasets: [{ 
+                        data: [qtdServidor, qtdVisitante], 
+                        backgroundColor: ['#10b981', '#f59e0b'], 
+                        borderWidth: 0, 
+                        cutout: '65%' 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { position: 'top' }, 
+                        datalabels: { 
+                            color: '#fff', 
+                            font: { weight: 'bold', size: 12 }, 
+                            formatter: (value, ctx) => { 
+                                let sum = 0; 
+                                ctx.chart.data.datasets[0].data.map(d => sum+=d); 
+                                return sum===0?"":(value*100/sum).toFixed(0)+"%"; 
+                            } 
+                        } 
+                    } 
+                }
             });
         }
 
@@ -1801,6 +1898,7 @@
             document.getElementById('modal-print').style.display = "none";
         }
 
+        // Versão corrigida da função executarImpressao
         window.executarImpressao = function() {
             const desc = document.getElementById('print-input-descricao').value;
             const mat = document.getElementById('print-input-materiais').value;
@@ -1809,11 +1907,86 @@
             document.getElementById('print-val-materiais').innerText = mat.toUpperCase();
             
             fecharModalImpressao();
-            imprimirOSDireto(osPrintAtualId);
+            
+            if (isAndroidDevice()) {
+                // Para Android: abre em nova janela com timeout maior
+                setTimeout(() => {
+                    imprimirOSDireto(osPrintAtualId);
+                }, 300);
+            } else {
+                // Para iOS e outros: mantém o comportamento padrão
+                imprimirOSDireto(osPrintAtualId);
+            }
         }
 
+        // Versão corrigida da função imprimirDashboard
+        window.imprimirDashboard = function() {
+            // Prepara o corpo para impressão
+            document.body.classList.add('printing-dashboard');
+            
+            // Força o redimensionamento dos gráficos
+            setTimeout(() => {
+                if (chartVolume) chartVolume.resize();
+                if (chartGaragem) chartGaragem.resize();
+            }, 100);
+            
+            // Cria um elemento de estilo temporário para garantir a visibilidade
+            const style = document.createElement('style');
+            style.id = 'print-fix-style';
+            style.innerHTML = `
+                @media print {
+                    body.printing-dashboard {
+                        background: white !important;
+                    }
+                    body.printing-dashboard .section.active {
+                        display: block !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                    }
+                    body.printing-dashboard canvas {
+                        max-width: 100% !important;
+                        max-height: 400px !important;
+                        page-break-inside: avoid;
+                    }
+                    body.printing-dashboard .kpi-card,
+                    body.printing-dashboard .chart-card,
+                    body.printing-dashboard .stat-mini {
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Aguarda um momento para os gráficos renderizarem e imprime
+            setTimeout(() => {
+                window.print();
+            }, 500);
+            
+            // Limpa após a impressão
+            window.onafterprint = function() {
+                document.body.classList.remove('printing-dashboard');
+                document.getElementById('print-fix-style')?.remove();
+                if (chartVolume) chartVolume.resize();
+                if (chartGaragem) chartGaragem.resize();
+            };
+            
+            // Fallback para após 5 segundos
+            setTimeout(() => {
+                if (document.body.classList.contains('printing-dashboard')) {
+                    document.body.classList.remove('printing-dashboard');
+                    document.getElementById('print-fix-style')?.remove();
+                    if (chartVolume) chartVolume.resize();
+                    if (chartGaragem) chartGaragem.resize();
+                }
+            }, 5000);
+        }
+
+        // Versão corrigida da função imprimirOSDireto
         function imprimirOSDireto(id) {
-            const d = demandas.find(item => item.id == id); if (!d) return;
+            const d = demandas.find(item => item.id == id); 
+            if (!d) return;
+            
             document.getElementById('print-id').innerText = d.numero_os ? d.numero_os : d.id;
             const dataParts = d.data.split('-');
             const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : d.data;
@@ -1824,7 +1997,7 @@
             document.getElementById('print-status').innerText = d.status.toUpperCase();
             document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
             
-            /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA COM TAMANHOS INDIVIDUAIS */
+            // LÓGICA DA LOGO DINÂMICA DA CONTRATADA
             const cat = getCategoriaDemanda(d);
             const logoEmpresa = document.getElementById('print-logo-empresa');
             const textoTop = document.getElementById('print-top-text');
@@ -1853,7 +2026,7 @@
             } else {
                 logoEmpresa.style.display = 'none';
                 textoTop.style.display = 'block';
-                labelNum.innerText = "Nº "; // Evita a repetição "ORDEM DE SERVIÇO O.S Nº"
+                labelNum.innerText = "Nº ";
             }
             
             const chks = ['chk-limpeza', 'chk-ar', 'chk-manut', 'chk-elevador', 'chk-ti', 'chk-telefonia', 'chk-extintores'];
@@ -1866,20 +2039,52 @@
                 else if (c.includes('ELEVADOR')) document.getElementById('chk-elevador').innerText = '☑';
             }
             document.getElementById('print-hoje').innerText = new Date().toLocaleString('pt-BR');
+            
             window.scrollTo(0, 0);
             document.body.classList.add('printing-os');
-            setTimeout(function() { window.print(); }, 800);
-            const limparImpressao = () => { document.body.classList.remove('printing-os'); window.scrollTo(0, 0); };
-            window.onafterprint = limparImpressao;
-            setTimeout(function() { if (document.hasFocus()) { limparImpressao(); } else { setTimeout(limparImpressao, 5000); } }, 2000);
-        }
-
-        window.imprimirDashboard = function() {
-            document.body.classList.add('printing-dashboard');
-            Object.values(Chart.instances).forEach(chart => chart.resize());
-            setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
-            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
+            
+            // CORREÇÃO PARA ANDROID
+            if (isAndroidDevice()) {
+                // Para Android: usa um iframe temporário
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = 'none';
+                document.body.appendChild(iframe);
+                
+                const printContent = document.getElementById('area-impressao').cloneNode(true);
+                printContent.style.display = 'block';
+                
+                iframe.contentDocument.body.appendChild(printContent);
+                iframe.contentWindow.focus();
+                
+                setTimeout(() => {
+                    iframe.contentWindow.print();
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        document.body.classList.remove('printing-os');
+                    }, 1000);
+                }, 500);
+            } else {
+                // Para iOS e outros: mantém o comportamento padrão
+                setTimeout(function() { window.print(); }, 800);
+                
+                const limparImpressao = () => { 
+                    document.body.classList.remove('printing-os'); 
+                    window.scrollTo(0, 0); 
+                };
+                
+                window.onafterprint = limparImpressao;
+                
+                setTimeout(function() { 
+                    if (document.hasFocus()) { 
+                        limparImpressao(); 
+                    } else { 
+                        setTimeout(limparImpressao, 5000); 
+                    } 
+                }, 2000);
+            }
         }
 
         function criarLinhaTabela(d) {
