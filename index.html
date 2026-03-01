@@ -341,10 +341,18 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 2.5rem; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
 
-        /* ======== SIDEBAR MOBILE ======== */
+        /* ======== SIDEBAR E HEADER MOBILE ======== */
         @media screen and (max-width: 900px) {
             #app-content[style*="display: block"] { display: flex !important; flex-direction: column; }
             #mobile-menu-btn { display: block; }
+            
+            /* Ajuste perfeito do cabeçalho no celular */
+            header { height: auto; flex-direction: column; padding: 15px; gap: 12px; align-items: flex-start; }
+            .header-left { width: 100%; justify-content: flex-start; gap: 12px; }
+            .header-left h1 { font-size: 0.95rem; line-height: 1.3; }
+            .header-right { width: 100%; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); }
+            #date-display { display: none; } /* Oculta a data para ganhar espaço no celular */
+            
             .nav-tabs {
                 position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
                 flex-direction: column; overflow-y: auto; overflow-x: hidden;
