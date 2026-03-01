@@ -412,11 +412,10 @@
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
         
-        .os-header-right { width: 25%; text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .os-header-right { width: 25%; text-align: center; padding: 5px 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         .os-numero { margin: 0; color: #c0392b; font-size: 16px; font-weight: bold; }
         
-        /* Retirado o max-width rígido do CSS para deixar o JS definir os tamanhos exatos das imagens dinamicamente */
         #print-logo-empresa { display: none; margin-bottom: 6px; object-fit: contain; }
         
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
@@ -1827,14 +1826,20 @@
             
             if (cat === 'PREDIAL') {
                 logoEmpresa.src = 'epura.jpg';
-                logoEmpresa.style.maxWidth = '220px'; // Épura pode ficar bem maior
-                logoEmpresa.style.maxHeight = '95px';
+                // Definindo a caixa menor para não empurrar os textos
+                logoEmpresa.style.maxWidth = '140px'; 
+                logoEmpresa.style.maxHeight = '55px';
+                logoEmpresa.style.marginBottom = '0px'; 
+                // O truque: usar 'scale' aumenta a imagem visualmente "comendo" o espaço branco da própria foto, sem alargar a div!
+                logoEmpresa.style.transform = 'scale(1.35)'; 
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
             } else if (cat === 'AR') {
                 logoEmpresa.src = 'igm2.jpg';
-                logoEmpresa.style.maxWidth = '130px'; // IGM2 no tamanho original que ficou bom
+                logoEmpresa.style.maxWidth = '130px'; 
                 logoEmpresa.style.maxHeight = '50px';
+                logoEmpresa.style.marginBottom = '6px';
+                logoEmpresa.style.transform = 'scale(1)'; // Reseta caso venha da predial
                 logoEmpresa.style.display = 'block';
                 textoTop.style.display = 'none';
             } else {
