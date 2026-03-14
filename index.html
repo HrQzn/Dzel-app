@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Divisão de Zeladoria | Dzel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -57,6 +57,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
         body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--bg-main); color: var(--text-primary); overflow-x: hidden; }
 
         ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -67,8 +68,8 @@
         /* UPPERCASE RULE */
         input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; }
         #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; }
-        
-        /* Modal Overlay Print */
+
+        /* ======== MODAL ======== */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
             z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px;
@@ -77,12 +78,17 @@
             background: var(--bg-card); border-radius: var(--radius-lg); padding: 2rem;
             width: 100%; max-width: 550px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease;
         }
+        /* Mobile modal fix */
+        @media (max-width: 600px) {
+            .modal-box { padding: 1.25rem; border-radius: var(--radius-md); }
+        }
 
         /* ======== LOGIN ======== */
         #login-overlay {
             position: fixed; inset: 0;
             background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 50%, #0f2942 100%);
             z-index: 9999; display: flex; justify-content: center; align-items: center;
+            padding: 20px;
         }
         #login-overlay::before {
             content: ''; position: absolute; inset: 0;
@@ -118,107 +124,106 @@
         .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
         .login-error { color: #fca5a5; font-size: 0.85rem; margin-top: 10px; display: none; }
 
-        /* ======== APP LAYOUT ======== */
+        /* ======== APP LAYOUT — DESKTOP ======== */
         #app-content { display: none; }
-        #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer; padding: 5px; }
-        #mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 15; backdrop-filter: blur(2px); }
-
-        @media screen {
-            #app-content[style*="display: block"] {
-                display: grid !important;
-                grid-template-columns: var(--sidebar-w) 1fr;
-                grid-template-rows: auto 1fr;
-                grid-template-areas: "sidebar header" "sidebar main";
-                height: 100vh; overflow: hidden; background: var(--bg-main);
-            }
-
-            /* ======== HEADER ======== */
-            header {
-                grid-area: header; background: var(--bg-card); padding: 0 2rem; height: 64px;
-                display: flex; justify-content: space-between; align-items: center;
-                border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 10;
-            }
-            .header-left { display: flex; align-items: center; gap: 15px; }
-            header h1 {
-                font-size: 1rem; font-weight: 700; color: var(--text-primary);
-                display: flex; align-items: center; gap: 10px; letter-spacing: -0.2px; margin: 0;
-            }
-            header h1 i.fa-building { color: var(--accent); }
-            .header-right { display: flex; align-items: center; gap: 1rem; }
-            .header-user {
-                display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
-                background: var(--bg-main); border-radius: 40px; border: 1px solid var(--border);
-            }
-            .header-avatar {
-                width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #6366f1);
-                border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
-            }
-            #user-display { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; }
-            #user-role-display { font-size: 0.72rem; color: var(--text-muted); display: block; }
-            #date-display { font-size: 0.78rem; color: var(--text-muted); }
-            .logout-btn {
-                display: flex; align-items: center; gap: 6px; color: var(--danger) !important;
-                background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
-                padding: 7px 14px; border-radius: 8px; text-decoration: none;
-                font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
-            }
-            .logout-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); }
-
-            /* ======== SIDEBAR ======== */
-            .nav-tabs {
-                grid-area: sidebar; display: flex; flex-direction: column; background: var(--sidebar-bg);
-                padding: 0; overflow-y: auto; overflow-x: hidden; z-index: 20; position: relative;
-            }
-            .nav-tabs::after {
-                content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
-                background: linear-gradient(to bottom, transparent, rgba(59,130,246,0.3) 30%, rgba(59,130,246,0.3) 70%, transparent);
-            }
-            .sidebar-brand { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem; }
-            .sidebar-brand-logo { display: flex; align-items: center; gap: 10px; }
-            .sidebar-brand-icon {
-                width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #6366f1);
-                border-radius: 9px; display: flex; align-items: center; justify-content: center;
-                color: white; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59,130,246,0.35); flex-shrink: 0;
-            }
-            .sidebar-brand-text strong { display: block; color: white; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.3px; line-height: 1.2; }
-            .sidebar-brand-text span { color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 0.2px; }
-            .sidebar-section-label { padding: 1rem 1.25rem 0.4rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: rgba(255,255,255,0.25); text-transform: uppercase; }
-
-            .tab-btn {
-                background: none; border: none; color: rgba(255,255,255,0.45); padding: 0 1.25rem;
-                height: 42px; cursor: pointer; font-weight: 500; font-size: 0.875rem;
-                font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s ease;
-                border-left: 3px solid transparent; text-align: left; display: flex; align-items: center;
-                gap: 12px; white-space: nowrap; position: relative; border-radius: 0; margin: 1px 0;
-            }
-            .tab-btn i { font-size: 0.9rem; width: 18px; text-align: center; opacity: 0.7; transition: opacity 0.2s; }
-            .tab-btn:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.05); border-left-color: rgba(255,255,255,0.15); }
-            .tab-btn:hover i { opacity: 1; }
-            .tab-btn.active { color: white; background: rgba(59,130,246,0.12); border-left-color: var(--accent); font-weight: 600; }
-            .tab-btn.active i { opacity: 1; color: var(--accent-light); }
-            .hidden-tab { display: none !important; }
-
-            #tab-predial.active  { background: rgba(249,115,22,0.1); border-left-color: var(--predial); }
-            #tab-predial.active i { color: #fb923c; }
-            #tab-limpeza.active  { background: rgba(13,148,136,0.1); border-left-color: var(--limpeza); }
-            #tab-limpeza.active i { color: #2dd4bf; }
-            #tab-ar.active       { background: rgba(59,130,246,0.12); border-left-color: var(--ar); }
-            #tab-ar.active i     { color: #60a5fa; }
-            #tab-dashboard.active { background: rgba(245,158,11,0.1); border-left-color: var(--warning); }
-            #tab-dashboard.active i { color: #fbbf24; }
-            #tab-crachas.active  { background: rgba(124,58,237,0.12); border-left-color: var(--cracha); }
-            #tab-crachas.active i { color: #a78bfa; }
-            #tab-auditoria.active { background: rgba(239,68,68,0.1); border-left-color: var(--danger); }
-            #tab-auditoria.active i { color: #f87171; }
-            #tab-usuarios.active { background: rgba(139,92,246,0.1); border-left-color: #8b5cf6; }
-            #tab-usuarios.active i { color: #c4b5fd; }
-
-            /* ======== MAIN ======== */
-            main { grid-area: main; overflow-y: auto; padding: 2rem 2.25rem; height: 100%; }
-            .section { max-width: 1380px; margin: 0 auto; display: none; }
-            .section.active { display: block; animation: fadeInUp 0.35s ease; }
+        
+        /* Desktop layout via class (não depende de style inline) */
+        #app-content.app-visible {
+            display: grid;
+            grid-template-columns: var(--sidebar-w) 1fr;
+            grid-template-rows: 64px 1fr;
+            grid-template-areas: "sidebar header" "sidebar main";
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-main);
         }
+
+        /* ======== HEADER ======== */
+        header {
+            grid-area: header; background: var(--bg-card); padding: 0 2rem; height: 64px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 10;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        header h1 {
+            font-size: 1rem; font-weight: 700; color: var(--text-primary);
+            display: flex; align-items: center; gap: 10px; letter-spacing: -0.2px; margin: 0;
+        }
+        header h1 i.fa-building { color: var(--accent); }
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+        .header-user {
+            display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
+            background: var(--bg-main); border-radius: 40px; border: 1px solid var(--border);
+        }
+        .header-avatar {
+            width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #6366f1);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+        }
+        #user-display { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; }
+        #user-role-display { font-size: 0.72rem; color: var(--text-muted); display: block; }
+        #date-display { font-size: 0.78rem; color: var(--text-muted); }
+        .logout-btn {
+            display: flex; align-items: center; gap: 6px; color: var(--danger) !important;
+            background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+            padding: 7px 14px; border-radius: 8px; text-decoration: none;
+            font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); }
+
+        /* ======== SIDEBAR ======== */
+        .nav-tabs {
+            grid-area: sidebar; display: flex; flex-direction: column; background: var(--sidebar-bg);
+            padding: 0; overflow-y: auto; overflow-x: hidden; z-index: 20; position: relative;
+        }
+        .nav-tabs::after {
+            content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(59,130,246,0.3) 30%, rgba(59,130,246,0.3) 70%, transparent);
+        }
+        .sidebar-brand { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem; }
+        .sidebar-brand-logo { display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand-icon {
+            width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #6366f1);
+            border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59,130,246,0.35); flex-shrink: 0;
+        }
+        .sidebar-brand-text strong { display: block; color: white; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.3px; line-height: 1.2; }
+        .sidebar-brand-text span { color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 0.2px; }
+        .sidebar-section-label { padding: 1rem 1.25rem 0.4rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: rgba(255,255,255,0.25); text-transform: uppercase; }
+
+        .tab-btn {
+            background: none; border: none; color: rgba(255,255,255,0.45); padding: 0 1.25rem;
+            height: 42px; cursor: pointer; font-weight: 500; font-size: 0.875rem;
+            font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s ease;
+            border-left: 3px solid transparent; text-align: left; display: flex; align-items: center;
+            gap: 12px; white-space: nowrap; position: relative; border-radius: 0; margin: 1px 0;
+        }
+        .tab-btn i { font-size: 0.9rem; width: 18px; text-align: center; opacity: 0.7; transition: opacity 0.2s; }
+        .tab-btn:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.05); border-left-color: rgba(255,255,255,0.15); }
+        .tab-btn:hover i { opacity: 1; }
+        .tab-btn.active { color: white; background: rgba(59,130,246,0.12); border-left-color: var(--accent); font-weight: 600; }
+        .tab-btn.active i { opacity: 1; color: var(--accent-light); }
+        .hidden-tab { display: none !important; }
+
+        #tab-predial.active  { background: rgba(249,115,22,0.1); border-left-color: var(--predial); }
+        #tab-predial.active i { color: #fb923c; }
+        #tab-limpeza.active  { background: rgba(13,148,136,0.1); border-left-color: var(--limpeza); }
+        #tab-limpeza.active i { color: #2dd4bf; }
+        #tab-ar.active       { background: rgba(59,130,246,0.12); border-left-color: var(--ar); }
+        #tab-ar.active i     { color: #60a5fa; }
+        #tab-dashboard.active { background: rgba(245,158,11,0.1); border-left-color: var(--warning); }
+        #tab-dashboard.active i { color: #fbbf24; }
+        #tab-crachas.active  { background: rgba(124,58,237,0.12); border-left-color: var(--cracha); }
+        #tab-crachas.active i { color: #a78bfa; }
+        #tab-auditoria.active { background: rgba(239,68,68,0.1); border-left-color: var(--danger); }
+        #tab-auditoria.active i { color: #f87171; }
+        #tab-usuarios.active { background: rgba(139,92,246,0.1); border-left-color: #8b5cf6; }
+        #tab-usuarios.active i { color: #c4b5fd; }
+
+        /* ======== MAIN ======== */
+        main { grid-area: main; overflow-y: auto; padding: 2rem 2.25rem; height: 100%; }
+        .section { max-width: 1380px; margin: 0 auto; display: none; }
+        .section.active { display: block; animation: fadeInUp 0.35s ease; }
 
         /* ======== METRIC & CARDS ======== */
         .page-header { margin-bottom: 1.75rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; }
@@ -274,9 +279,9 @@
         .checkbox-wrapper { display: flex; align-items: center; gap: 10px; background: #fef3c7; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1.5px solid #fcd34d; }
         .checkbox-wrapper input { width: auto; margin: 0; }
         .checkbox-wrapper label { font-weight: 700; color: #92400e; cursor: pointer; font-size: 0.875rem; }
-        .table-container { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; background: var(--bg-card); }
-        th { background: #f8fafc; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
         td { padding: 1rem 1rem; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: var(--text-primary); vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #f8fafc; }
@@ -292,7 +297,7 @@
         .bg-cracha-solicitado { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
         .bg-cracha-confeccionado { background: #cffafe; color: #155e75; border: 1px solid #67e8f9; }
         .bg-cracha-entregue { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-        .action-btn { border: none; padding: 6px 10px; border-radius: 7px; cursor: pointer; margin-right: 4px; margin-bottom: 3px; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .action-btn { border: none; padding: 6px 10px; border-radius: 7px; cursor: pointer; margin-right: 4px; margin-bottom: 3px; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .action-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
         .btn-check    { background: #d1fae5; color: #065f46; }
         .btn-check:hover { background: #a7f3d0; }
@@ -341,45 +346,169 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 2.5rem; font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
 
-        /* ======== SIDEBAR E HEADER MOBILE (RESOLVIDO) ======== */
+        /* ======== MOBILE MENU BUTTON ======== */
+        #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.4rem; color: var(--text-primary); cursor: pointer; padding: 8px; border-radius: 8px; -webkit-tap-highlight-color: transparent; transition: background 0.2s; }
+        #mobile-menu-btn:active { background: rgba(0,0,0,0.06); }
+        #mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 15; backdrop-filter: blur(2px); }
+
+        /* ======== MOBILE LAYOUT ======== */
         @media screen and (max-width: 900px) {
             .hide-mobile { display: none !important; }
-            #app-content[style*="display: block"] { display: flex !important; flex-direction: column; }
-            #mobile-menu-btn { display: block; margin-right: 8px; }
-            
-            /* Novo Header do Celular super alinhado */
-            header { height: auto; flex-direction: column; padding: 12px 15px; align-items: stretch; gap: 10px; }
-            .header-left { width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 10px; }
-            .header-left h1 { font-size: 1rem; line-height: 1.2; white-space: normal; margin: 0; }
-            .header-right { width: 100%; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 10px; }
-            .header-user { background: transparent; border: none; padding: 0; margin: 0; flex: 1; max-width: calc(100% - 90px); }
-            #user-display { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
-            .logout-btn { margin: 0; padding: 6px 12px; font-size: 0.8rem; }
-            
+
+            /* Força layout flex coluna no mobile */
+            #app-content.app-visible {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100dvh; /* dynamic viewport height — corrige barra do browser mobile */
+                overflow: hidden;
+            }
+
+            /* Header mobile */
+            header {
+                grid-area: unset;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px 14px;
+                gap: 0;
+                flex-shrink: 0;
+                z-index: 10;
+            }
+            .header-left {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+            }
+            header h1 {
+                font-size: 0.85rem;
+                line-height: 1.25;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .header-user {
+                background: transparent;
+                border: none;
+                padding: 0;
+                gap: 6px;
+            }
+            #user-display {
+                font-size: 0.8rem;
+                max-width: 120px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .logout-btn { padding: 7px 10px; font-size: 0.8rem; }
+            #mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+
+            /* Sidebar — drawer lateral */
             .nav-tabs {
-                position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-                flex-direction: column; overflow-y: auto; overflow-x: hidden;
-                transform: translateX(-100%); transition: transform 0.3s ease;
-                z-index: 20; padding: 0; border-right: 1px solid rgba(255,255,255,0.1);
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: 260px;
+                flex-direction: column;
+                overflow-y: auto; overflow-x: hidden;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 25;
+                grid-area: unset;
             }
             body.sidebar-open .nav-tabs { transform: translateX(0); }
-            body.sidebar-open #mobile-overlay { display: block; opacity: 1; pointer-events: auto; }
-            .sidebar-brand, .sidebar-section-label { display: block; }
-            .tab-btn { border-left: 3px solid transparent; border-bottom: none; height: 42px; font-size: 0.875rem; white-space: nowrap; padding: 0 1.25rem; }
-            .tab-btn.active { border-left-color: var(--accent); border-bottom-color: transparent; }
-            #tab-predial.active  { border-left-color: var(--predial); }
-            #tab-limpeza.active  { border-left-color: var(--limpeza); }
-            #tab-ar.active       { border-left-color: var(--ar); }
-            #tab-dashboard.active { border-left-color: var(--warning); }
-            #tab-crachas.active  { border-left-color: var(--cracha); }
-            #tab-auditoria.active { border-left-color: var(--danger); }
-            #tab-usuarios.active { border-left-color: #8b5cf6; }
-            main { padding: 1.25rem; flex: 1; overflow-y: auto; }
+            body.sidebar-open #mobile-overlay { display: block; }
+
+            .sidebar-brand { display: block; }
+            .sidebar-section-label { display: block; }
+            .tab-btn { height: 46px; font-size: 0.9rem; }
+
+            /* Main area */
+            main {
+                grid-area: unset;
+                flex: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 1rem;
+                height: 0; /* importante para o flex funcionar corretamente */
+            }
+
+            /* Cards e grids — empilhar */
+            .dashboard-panel {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .metric-card { padding: 1rem; }
+            .metric-info p { font-size: 1.6rem; }
+
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+            .kpi-card { padding: 1rem; }
+            .kpi-card-value { font-size: 1.6rem; }
+
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+            /* Forms */
+            .form-grid { grid-template-columns: 1fr; gap: 0.65rem; }
+            .form-grid > * { min-width: 0; }
+            /* Mantém a coluna dupla apenas para campos simples */
+            @supports (grid-template-columns: repeat(2, 1fr)) {
+                .form-grid { grid-template-columns: repeat(2, 1fr); }
+                .form-grid input[style*="grid-column"], 
+                .form-grid textarea { grid-column: 1 / -1; }
+            }
+
+            .btn-container { flex-wrap: wrap; }
+            .btn-container button { flex: 1 1 auto; min-width: 120px; }
+
+            /* Filtros */
+            .filter-container { padding: 0.75rem; gap: 0.5rem; }
+            .filter-group { min-width: 100%; }
+
+            /* Tabelas — scroll horizontal */
+            .table-container { border-radius: var(--radius-sm); }
+            table { min-width: 600px; }
+            td, th { padding: 0.75rem 0.75rem; font-size: 0.82rem; }
+            .action-btn { padding: 7px 9px; font-size: 0.75rem; min-height: 36px; /* tap target */ }
+
+            /* Cards */
+            .card { padding: 1.25rem; border-radius: var(--radius-md); }
+            .card h2 { font-size: 0.95rem; }
+
+            /* Page header */
+            .page-header { margin-bottom: 1rem; }
+            .page-header-left h2 { font-size: 1.2rem; }
+
+            /* Tipo selector */
+            .tipo-selector { gap: 0.5rem; padding: 0.65rem 0.75rem; }
+            .radio-label { padding: 5px 10px; font-size: 0.82rem; }
+
+            /* Checkbox wrapper */
+            .checkbox-wrapper { padding: 0.65rem 0.75rem; }
+
+            /* Foto container */
+            .foto-container { padding: 0.85rem; }
+
+            /* Perm table */
+            .perm-table { min-width: 500px; }
         }
 
-        /* ======== PRINT ======== */
+        /* Tela muito pequena (< 400px) */
+        @media screen and (max-width: 400px) {
+            .dashboard-panel { grid-template-columns: 1fr 1fr; }
+            .kpi-grid { grid-template-columns: 1fr; }
+            header h1 { font-size: 0.78rem; }
+            .metric-info p { font-size: 1.4rem; }
+        }
+
+        /* ======== PRINT — DESKTOP ======== */
         @media print {
-            @page { size: A4 portrait; margin: 5mm; } 
+            @page { size: A4 portrait; margin: 5mm; }
             .no-print, .nav-tabs, #login-overlay, .modal-overlay { display: none !important; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; margin: 0; padding: 0; }
             #app-content { display: block !important; width: 100%; margin: 0; padding: 0; }
@@ -387,7 +516,6 @@
             .section.active { display: block !important; position: relative !important; top: 0 !important; left: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             canvas { max-width: 100% !important; max-height: 100% !important; page-break-inside: avoid; }
             .card, .metric-card, .kpi-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd; box-shadow: none !important; }
-            
             body.printing-os #app-content { display: none !important; }
             body.printing-os #area-impressao { 
                 display: flex !important; flex-direction: column; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; margin: 0; padding: 0; background: white; 
@@ -400,65 +528,54 @@
         /* ======== OS PRINT STYLES ======== */
         #area-impressao { display: none; margin: 0 auto; width: 100%; font-family: Arial, sans-serif; color: #000; box-sizing: border-box; }
         .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 100%; min-height: 265mm; width: 100%; box-sizing: border-box; }
-        
         .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; margin: 0; box-sizing: border-box; }
         .os-grid-row:last-child { border-bottom: none; }
         .os-grid-row.border-thick { border-bottom: 2px solid #000; }
         .os-grid-row.row-expand { flex-grow: 1; align-items: stretch; }
-        
-        /* Uso do flex basis para garantir a largura rigorosa das colunas e alinhar as linhas */
         .os-cell { padding: 6px 8px; display: flex; flex-direction: column; margin: 0; box-sizing: border-box; }
-        
         .os-logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; box-sizing: border-box; }
         .os-logo-box img { max-height: 70px; width: auto; }
-        
         .os-header-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; box-sizing: border-box; }
         .os-header-center h3 { margin: 0; font-size: 15px; }
         .os-header-center h4 { margin: 4px 0; font-size: 13px; }
         .os-header-center p { margin: 0; font-size: 11px; font-weight: bold; }
-        
         .os-header-right { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; box-sizing: border-box; }
         .os-header-right p { margin: 0; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         .os-numero { margin: 0; color: #c0392b; font-size: 16px; font-weight: bold; }
-        
         #print-logo-empresa { display: none; margin-bottom: 6px; object-fit: contain; }
-        
         .os-secao-titulo { background-color: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 12px; font-weight: bold; padding: 6px; }
         .os-secao-titulo.top-border { border-top: 1px solid #000; border-bottom: 2px solid #000; }
-        
         .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
         .os-value { font-size: 13px; font-weight: normal; text-transform: uppercase; }
         .os-value.destaque { font-size: 14px; font-weight: bold; padding-top: 5px; }
-        
         .os-checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; margin-top: 5px; }
         .os-checkbox-grid.locais { grid-template-columns: repeat(4, 1fr); }
         .os-signatures { min-height: 90px; align-items: flex-end; padding-bottom: 15px; padding-top: 20px; }
         .os-sig-box { flex: 1; text-align: center; padding: 0 15px; }
         .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
-        .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px;}
+        .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
         .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
     </style>
 </head>
 <body>
-    
+
+    <!-- Modal Print -->
     <div id="modal-print" class="modal-overlay no-print">
         <div class="modal-box">
-            <h3 style="color:var(--text-primary);"><i class="fas fa-print" style="color:var(--accent);"></i> Preencher O.S. para Impressão</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Preencha os campos abaixo para que saiam impressos na Ordem de Serviço. Se preferir preencher à mão, basta deixar em branco e clicar em Imprimir.</p>
-            
+            <h3 style="color:var(--text-primary); margin-bottom: 0.5rem;"><i class="fas fa-print" style="color:var(--accent);"></i> Preencher O.S. para Impressão</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Preencha os campos abaixo. Se preferir preencher à mão, deixe em branco.</p>
             <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Descrição Detalhada dos Serviços Executados:</label>
             <textarea id="print-input-descricao" rows="4" placeholder="Ex: Foi realizada a troca da fechadura e lubrificação das dobradiças..." style="margin-bottom: 1rem;"></textarea>
-            
             <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Materiais e Peças Utilizados (Reposição):</label>
             <textarea id="print-input-materiais" rows="3" placeholder="Ex: 01 Fechadura Stam, 01 Óleo lubrificante..." style="margin-bottom: 1.5rem;"></textarea>
-            
             <div class="btn-container">
-                <button class="btn-primary" onclick="executarImpressao()">Gerar Impressão</button>
+                <button class="btn-primary" onclick="executarImpressao()"><i class="fas fa-print"></i> Gerar Impressão</button>
                 <button class="btn-cancel" style="display:block" onclick="fecharModalImpressao()">Cancelar</button>
             </div>
         </div>
     </div>
 
+    <!-- Área de impressão (desktop fallback) -->
     <div id="area-impressao">
         <div class="os-container">
             <div class="os-grid-row border-thick">
@@ -474,38 +591,35 @@
                     <h3 class="os-numero"><span id="print-os-label">Nº </span><span id="print-id"></span></h3>
                 </div>
             </div>
-
             <div class="os-secao-titulo">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
             <div class="os-grid-row">
-                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000;">
+                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
                     <div class="os-label">DATA E HORA DE ABERTURA</div><div class="os-value" id="print-data-hora"></div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%; border-right: 1px solid #000;">
+                <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
                     <div class="os-label">SOLICITANTE / CONTATO</div><div class="os-value" id="print-solicitante"></div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%;">
+                <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
                     <div class="os-label">PRIORIDADE NO SISTEMA</div><div class="os-value" id="print-prioridade"></div>
                 </div>
             </div>
             <div class="os-grid-row border-thick">
-                <div class="os-cell" style="flex: 0 0 75%; max-width: 75%; border-right: 1px solid #000;">
+                <div class="os-cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
                     <div class="os-label">UNIDADE / SETOR DE ORIGEM</div><div class="os-value" id="print-setor"></div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%;">
+                <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
                     <div class="os-label">STATUS ATUAL</div><div class="os-value" id="print-status"></div>
                 </div>
             </div>
-
             <div class="os-secao-titulo">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
-            <div class="os-grid-row border-thick" style="min-height: 80px;">
-                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
+            <div class="os-grid-row border-thick" style="min-height:80px;">
+                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
                     <div class="os-value destaque" id="print-titulo"></div>
                 </div>
             </div>
-
             <div class="os-secao-titulo">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
             <div class="os-grid-row">
-                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
+                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
                     <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
                     <div class="os-checkbox-grid">
                         <div><span id="chk-limpeza">☐</span> LIMPEZA PREDIAL</div>
@@ -520,43 +634,40 @@
                 </div>
             </div>
             <div class="os-grid-row border-thick">
-                <div class="os-cell" style="flex: 0 0 100%; max-width: 100%;">
+                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
                     <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
                     <div class="os-checkbox-grid locais">
                         <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
                         <div>☐ CASA VERDE</div><div>☐ SÃO DOMINGOS</div><div>☐ CAJAMAR</div><div>☐ TENENTE PENA</div>
                         <div>☐ CENTRO OESTE</div><div>☐ CAPE</div>
-                        <div style="grid-column: span 2;">☐ OUTRO: ___________________________</div>
+                        <div style="grid-column:span 2;">☐ OUTRO: ___________________________</div>
                     </div>
                 </div>
             </div>
-
             <div class="os-grid-row row-expand">
-                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%; border-right: 1px solid #000;">
+                <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
                     <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
-                    <div class="os-value" id="print-val-descricao" style="text-transform: none; white-space: pre-wrap; margin-top: 5px; font-size: 12px; font-weight: normal;"></div>
+                    <div class="os-value" id="print-val-descricao" style="text-transform:none;white-space:pre-wrap;margin-top:5px;font-size:12px;font-weight:normal;"></div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%;">
+                <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
                     <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
-                    <div class="os-value" id="print-val-materiais" style="text-transform: none; white-space: pre-wrap; margin-top: 5px; font-size: 12px; font-weight: normal;"></div>
+                    <div class="os-value" id="print-val-materiais" style="text-transform:none;white-space:pre-wrap;margin-top:5px;font-size:12px;font-weight:normal;"></div>
                 </div>
             </div>
-
             <div class="os-secao-titulo top-border">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
             <div class="os-grid-row">
-                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
-                    <div class="os-label" style="text-align: center;">INÍCIO DO ATENDIMENTO</div>
-                    <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
+                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
+                    <div class="os-label" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
+                    <div style="margin-top:15px;font-size:13px;">___/___/20___ ÀS ___:___</div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 25%; max-width: 25%; border-right: 1px solid #000; text-align: center; justify-content: center;">
-                    <div class="os-label" style="text-align: center;">TÉRMINO DO ATENDIMENTO</div>
-                    <div style="margin-top: 15px; font-size: 13px;">___/___/20___ ÀS ___:___</div>
+                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
+                    <div class="os-label" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
+                    <div style="margin-top:15px;font-size:13px;">___/___/20___ ÀS ___:___</div>
                 </div>
-                <div class="os-cell" style="flex: 0 0 50%; max-width: 50%;">
+                <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
                     <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
                 </div>
             </div>
-            
             <div class="os-grid-row os-signatures">
                 <div class="os-sig-box"><div class="os-sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
                 <div class="os-sig-box"><div class="os-sig-line">GESTOR / FISCAL (DZEL)<span>Carimbo e Assinatura</span></div></div>
@@ -566,29 +677,31 @@
         <div class="os-footer-print">Documento impresso em <span id="print-hoje"></span></div>
     </div>
 
+    <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
             <div class="login-logo"><i class="fas fa-building"></i></div>
             <h2>Acesso Restrito</h2>
             <p>Divisão de Zeladoria — COGESPA</p>
-            <input type="text" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)">
-            <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)">
+            <input type="text" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email">
+            <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)" autocomplete="current-password">
             <button onclick="fazerLogin()" class="login-btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
             <p id="login-error" class="login-error"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos!</p>
         </div>
     </div>
 
+    <!-- Mobile overlay (fecha sidebar) -->
     <div id="mobile-overlay" class="no-print" onclick="toggleSidebar()"></div>
 
     <div id="app-content">
 
         <header class="no-print">
             <div class="header-left">
-                <button id="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <button id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
                 <h1>
                     <i class="fas fa-building"></i>
-                    COGESPA — DIVISÃO DE ZELADORIA
-                    <i class="fas fa-shield-alt hide-mobile" style="font-size:0.7rem; color: var(--success);" title="Conexão Segura"></i>
+                    <span>COGESPA — DIV. ZELADORIA</span>
+                    <i class="fas fa-shield-alt hide-mobile" style="font-size:0.7rem; color:var(--success);" title="Conexão Segura"></i>
                 </h1>
             </div>
             <div class="header-right">
@@ -614,22 +727,18 @@
                     </div>
                 </div>
             </div>
-
             <div class="sidebar-section-label">Visão Geral</div>
             <button id="tab-dashboard" class="tab-btn hidden-tab" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
             <button id="tab-demandas" class="tab-btn" onclick="switchTab('demandas')"><i class="fas fa-clipboard-list"></i> Demandas (Geral)</button>
-
             <div class="sidebar-section-label">Técnico</div>
             <button id="tab-predial" class="tab-btn hidden-tab" onclick="switchTab('predial')"><i class="fas fa-hammer"></i> Predial</button>
             <button id="tab-ar" class="tab-btn hidden-tab" onclick="switchTab('ar')"><i class="fas fa-snowflake"></i> Ar Condicionado</button>
             <button id="tab-limpeza" class="tab-btn hidden-tab" onclick="switchTab('limpeza')"><i class="fas fa-broom"></i> Limpeza</button>
-
             <div class="sidebar-section-label">Controle</div>
             <button id="tab-visitantes" class="tab-btn" onclick="switchTab('visitantes')"><i class="fas fa-users"></i> Recepção</button>
             <button id="tab-veiculos" class="tab-btn" onclick="switchTab('veiculos')"><i class="fas fa-car"></i> Garagem</button>
             <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
             <button id="tab-crachas" class="tab-btn hidden-tab" onclick="switchTab('crachas')"><i class="fas fa-id-card"></i> Crachás</button>
-
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> Auditoria</button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
@@ -643,93 +752,35 @@
                         <h2><i class="fas fa-chart-line" style="color:var(--accent); margin-right:8px;"></i>Relatório Consolidado</h2>
                         <p>Divisão de Zeladoria — Dados em Tempo Real</p>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
                         <div>
-                            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Filtrar Período:</label>
-                            <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; height: 38px; font-size: 0.85rem;">
+                            <label style="font-size:0.72rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Filtrar Período:</label>
+                            <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;height:38px;font-size:0.85rem;">
                         </div>
-                        <button onclick="imprimirDashboard()" class="btn-primary" style="padding: 0 16px; font-size: 0.82rem; height: 38px; flex: unset; width: auto; background: var(--secondary);">
+                        <button onclick="imprimirDashboard()" class="btn-primary" style="padding:0 16px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:var(--secondary);">
                             <i class="fas fa-print"></i>
                         </button>
                     </div>
                 </div>
-
                 <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div>
-                            <div class="kpi-card-label">Total Atendimentos</div>
-                            <div class="kpi-card-value" id="kpi-total-geral">0</div>
-                            <div class="kpi-card-sub">Soma de todos os setores</div>
-                        </div>
-                        <div class="kpi-card-icon" style="background:#eff6ff;"><i class="fas fa-layer-group" style="color:var(--accent);"></i></div>
-                    </div>
-                    <div class="kpi-card">
-                        <div>
-                            <div class="kpi-card-label">Eventos Realizados</div>
-                            <div class="kpi-card-value" id="kpi-total-eventos">0</div>
-                            <div class="kpi-card-sub" id="kpi-publico-eventos">0 Participantes</div>
-                        </div>
-                        <div class="kpi-card-icon" style="background:#f5f3ff;"><i class="fas fa-calendar-check" style="color:#8b5cf6;"></i></div>
-                    </div>
-                    <div class="kpi-card">
-                        <div>
-                            <div class="kpi-card-label">Chamados Manutenção</div>
-                            <div class="kpi-card-value" id="kpi-total-manutencao">0</div>
-                            <div class="kpi-card-sub">Predial + Ar Condicionado</div>
-                        </div>
-                        <div class="kpi-card-icon" style="background:#fff7ed;"><i class="fas fa-tools" style="color:var(--predial);"></i></div>
-                    </div>
-                    <div class="kpi-card">
-                        <div>
-                            <div class="kpi-card-label">Crachás Emitidos</div>
-                            <div class="kpi-card-value" id="kpi-total-crachas">0</div>
-                            <div class="kpi-card-sub">Solicitações atendidas</div>
-                        </div>
-                        <div class="kpi-card-icon" style="background:#f0fdf4;"><i class="fas fa-id-card" style="color:var(--success);"></i></div>
-                    </div>
+                    <div class="kpi-card"><div><div class="kpi-card-label">Total Atendimentos</div><div class="kpi-card-value" id="kpi-total-geral">0</div><div class="kpi-card-sub">Soma de todos os setores</div></div><div class="kpi-card-icon" style="background:#eff6ff;"><i class="fas fa-layer-group" style="color:var(--accent);"></i></div></div>
+                    <div class="kpi-card"><div><div class="kpi-card-label">Eventos Realizados</div><div class="kpi-card-value" id="kpi-total-eventos">0</div><div class="kpi-card-sub" id="kpi-publico-eventos">0 Participantes</div></div><div class="kpi-card-icon" style="background:#f5f3ff;"><i class="fas fa-calendar-check" style="color:#8b5cf6;"></i></div></div>
+                    <div class="kpi-card"><div><div class="kpi-card-label">Chamados Manutenção</div><div class="kpi-card-value" id="kpi-total-manutencao">0</div><div class="kpi-card-sub">Predial + Ar Condicionado</div></div><div class="kpi-card-icon" style="background:#fff7ed;"><i class="fas fa-tools" style="color:var(--predial);"></i></div></div>
+                    <div class="kpi-card"><div><div class="kpi-card-label">Crachás Emitidos</div><div class="kpi-card-value" id="kpi-total-crachas">0</div><div class="kpi-card-sub">Solicitações atendidas</div></div><div class="kpi-card-icon" style="background:#f0fdf4;"><i class="fas fa-id-card" style="color:var(--success);"></i></div></div>
                 </div>
-
                 <div class="charts-grid">
-                    <div class="chart-card">
-                        <h3><i class="fas fa-bar-chart" style="color:var(--accent); margin-right:6px;"></i>Volume de Atendimento por Setor</h3>
-                        <div style="height: 280px;"><canvas id="chartVolumeSetor"></canvas></div>
-                    </div>
-                    <div class="chart-card">
-                        <h3><i class="fas fa-car" style="color:var(--estacionado); margin-right:6px;"></i>Garagem: Perfil de Acesso</h3>
-                        <div style="height: 230px; display: flex; justify-content: center;"><canvas id="chartGaragemPerfil"></canvas></div>
-                        <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                            <p style="font-size: 0.75rem; color: var(--text-muted);">Total de Veículos no Período</p>
-                            <p id="total-garagem-label" style="font-weight: 800; font-size: 1.75rem; color: var(--text-primary); font-family: 'JetBrains Mono', monospace;">0</p>
-                        </div>
-                    </div>
+                    <div class="chart-card"><h3><i class="fas fa-bar-chart" style="color:var(--accent);margin-right:6px;"></i>Volume de Atendimento por Setor</h3><div style="height:280px;"><canvas id="chartVolumeSetor"></canvas></div></div>
+                    <div class="chart-card"><h3><i class="fas fa-car" style="color:var(--estacionado);margin-right:6px;"></i>Garagem: Perfil de Acesso</h3><div style="height:230px;display:flex;justify-content:center;"><canvas id="chartGaragemPerfil"></canvas></div><div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);"><p style="font-size:0.75rem;color:var(--text-muted);">Total de Veículos no Período</p><p id="total-garagem-label" style="font-weight:800;font-size:1.75rem;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">0</p></div></div>
                 </div>
-
                 <div class="stats-grid">
-                    <div class="stat-mini" style="border-left-color: #475569;">
-                        <h4>Segurança Eletrônica (CFTV)</h4>
-                        <p>161 <small>Câmeras</small></p>
-                        <span>Monitoramento 24h</span>
-                    </div>
-                    <div class="stat-mini" style="border-left-color: var(--accent);">
-                        <h4>Fluxo Médio Diário (Garagem)</h4>
-                        <p id="kpi-fluxo-garagem">0 <small>Veíc/Dia</small></p>
-                        <span>Baseado na movimentação total</span>
-                    </div>
-                    <div class="stat-mini" style="border-left-color: var(--limpeza);">
-                        <h4>Limpeza (Chamados)</h4>
-                        <p id="kpi-total-limpeza">0 <small>Solicitações</small></p>
-                        <span>Limpeza + Copas</span>
-                    </div>
+                    <div class="stat-mini" style="border-left-color:#475569;"><h4>Segurança Eletrônica (CFTV)</h4><p>161 <small>Câmeras</small></p><span>Monitoramento 24h</span></div>
+                    <div class="stat-mini" style="border-left-color:var(--accent);"><h4>Fluxo Médio Diário (Garagem)</h4><p id="kpi-fluxo-garagem">0 <small>Veíc/Dia</small></p><span>Baseado na movimentação total</span></div>
+                    <div class="stat-mini" style="border-left-color:var(--limpeza);"><h4>Limpeza (Chamados)</h4><p id="kpi-total-limpeza">0 <small>Solicitações</small></p><span>Limpeza + Copas</span></div>
                 </div>
             </section>
 
             <section id="demandas" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Demandas — Geral</h2>
-                        <p>Controle de ordens de serviço e solicitações</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Demandas — Geral</h2><p>Controle de ordens de serviço e solicitações</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-demanda-total">...</p></div><i class="fas fa-folder-open metric-icon"></i></div>
                     <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-demanda-pendente">...</p></div><i class="fas fa-clock metric-icon"></i></div>
@@ -747,17 +798,10 @@
                             <input type="text" id="demanda-solicitante" placeholder="Nome do Solicitante" required>
                             <input type="text" id="demanda-contratada" placeholder="Empresa Executante / Contratada" list="lista-contratadas">
                             <datalist id="lista-contratadas">
-                                <option value="EQUIPE INTERNA">
-                                <option value="LIMPEZA">
-                                <option value="MANUTENÇÃO PREDIAL">
-                                <option value="AR CONDICIONADO">
-                                <option value="ELEVADORES">
-                                <option value="VIGILÂNCIA">
-                                <option value="COPA">
-                                <option value="SUPORTE TI">
-                                <option value="TELEFONIA">
-                                <option value="BOMBEIRO">
-                                <option value="PURIFICADOR DE ÁGUA">
+                                <option value="EQUIPE INTERNA"><option value="LIMPEZA"><option value="MANUTENÇÃO PREDIAL">
+                                <option value="AR CONDICIONADO"><option value="ELEVADORES"><option value="VIGILÂNCIA">
+                                <option value="COPA"><option value="SUPORTE TI"><option value="TELEFONIA">
+                                <option value="BOMBEIRO"><option value="PURIFICADOR DE ÁGUA">
                             </datalist>
                             <select id="demanda-prioridade">
                                 <option value="Baixa">Prioridade Baixa</option>
@@ -784,13 +828,11 @@
                         <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
-                                <option value="">Todos</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em Andamento">Em Andamento</option>
-                                <option value="Concluído">Concluído</option>
+                                <option value="">Todos</option><option value="Pendente">Pendente</option>
+                                <option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-demandas">
@@ -802,177 +844,121 @@
             </section>
 
             <section id="predial" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2 style="color:var(--predial)"><i class="fas fa-hammer" style="margin-right:8px;"></i>Manutenção Predial</h2>
-                        <p>Controle de chamados de manutenção predial</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2 style="color:var(--predial)"><i class="fas fa-hammer" style="margin-right:8px;"></i>Manutenção Predial</h2><p>Controle de chamados de manutenção predial</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-predial-total">...</p></div><i class="fas fa-folder-open metric-icon"></i></div>
                     <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-predial-pendente">...</p></div><i class="fas fa-clock metric-icon"></i></div>
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-predial-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-predial-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card" style="border-top: 3px solid var(--predial);">
-                    <h2 style="color: var(--predial);"><i class="fas fa-hammer" style="color:var(--predial)"></i> Nova Solicitação — Manutenção Predial</h2>
+                <div class="card" style="border-top:3px solid var(--predial);">
+                    <h2 style="color:var(--predial);"><i class="fas fa-hammer" style="color:var(--predial)"></i> Nova Solicitação — Manutenção Predial</h2>
                     <form id="form-predial">
                         <div class="form-grid">
                             <input type="text" id="predial-numero-os" placeholder="Nº da O.S. (Opcional)">
                             <input type="text" id="predial-titulo" placeholder="Descrição do Serviço" required>
                             <input type="text" id="predial-setor" placeholder="Local / Setor" required>
                             <input type="text" id="predial-solicitante" placeholder="Nome do Solicitante" required>
-                            <select id="predial-prioridade">
-                                <option value="Baixa">Prioridade Baixa</option>
-                                <option value="Média">Prioridade Média</option>
-                                <option value="Alta">Prioridade Alta</option>
-                            </select>
+                            <select id="predial-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="predial-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="predial-hora" required></div>
                         </div>
-                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--predial), #dc2626); flex: unset; width: auto; padding: 0.75rem 1.75rem;">Registrar Manutenção</button>
+                        <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,var(--predial),#dc2626);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Manutenção</button>
                     </form>
                 </div>
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-predial" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em Andamento">Em Andamento</option>
-                                <option value="Concluído">Concluído</option>
+                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar Predial</button>
+                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container">
-                        <table id="tabela-predial">
-                            <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                    <div class="table-container"><table id="tabela-predial"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
             <section id="ar" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2 style="color:var(--ar)"><i class="fas fa-snowflake" style="margin-right:8px;"></i>Ar Condicionado</h2>
-                        <p>Controle de chamados de ar-condicionado</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2 style="color:var(--ar)"><i class="fas fa-snowflake" style="margin-right:8px;"></i>Ar Condicionado</h2><p>Controle de chamados de ar-condicionado</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-ar-total">...</p></div><i class="fas fa-folder-open metric-icon"></i></div>
                     <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-ar-pendente">...</p></div><i class="fas fa-clock metric-icon"></i></div>
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-ar-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-ar-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card" style="border-top: 3px solid var(--ar);">
-                    <h2 style="color: var(--ar);"><i class="fas fa-snowflake" style="color:var(--ar)"></i> Nova Solicitação — Ar Condicionado</h2>
+                <div class="card" style="border-top:3px solid var(--ar);">
+                    <h2 style="color:var(--ar);"><i class="fas fa-snowflake" style="color:var(--ar)"></i> Nova Solicitação — Ar Condicionado</h2>
                     <form id="form-ar">
                         <div class="form-grid">
                             <input type="text" id="ar-numero-os" placeholder="Nº da O.S. (Opcional)">
                             <input type="text" id="ar-titulo" placeholder="Descrição do Serviço" required>
                             <input type="text" id="ar-setor" placeholder="Local / Setor" required>
                             <input type="text" id="ar-solicitante" placeholder="Nome do Solicitante" required>
-                            <select id="ar-prioridade">
-                                <option value="Baixa">Prioridade Baixa</option>
-                                <option value="Média">Prioridade Média</option>
-                                <option value="Alta">Prioridade Alta</option>
-                            </select>
+                            <select id="ar-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="ar-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="ar-hora" required></div>
                         </div>
-                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--ar), #1d4ed8); flex: unset; width: auto; padding: 0.75rem 1.75rem;">Registrar Ar Condicionado</button>
+                        <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,var(--ar),#1d4ed8);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Ar Condicionado</button>
                     </form>
                 </div>
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-ar" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em Andamento">Em Andamento</option>
-                                <option value="Concluído">Concluído</option>
+                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar Ar</button>
+                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container">
-                        <table id="tabela-ar">
-                            <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                    <div class="table-container"><table id="tabela-ar"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
             <section id="limpeza" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2 style="color:var(--limpeza)"><i class="fas fa-broom" style="margin-right:8px;"></i>Limpeza</h2>
-                        <p>Controle de chamados de limpeza e copas</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2 style="color:var(--limpeza)"><i class="fas fa-broom" style="margin-right:8px;"></i>Limpeza</h2><p>Controle de chamados de limpeza e copas</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-limpeza-total">...</p></div><i class="fas fa-folder-open metric-icon"></i></div>
                     <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-limpeza-pendente">...</p></div><i class="fas fa-clock metric-icon"></i></div>
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-limpeza-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-limpeza-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card" style="border-top: 3px solid var(--limpeza);">
-                    <h2 style="color: var(--limpeza);"><i class="fas fa-broom" style="color:var(--limpeza)"></i> Nova Solicitação — Limpeza</h2>
+                <div class="card" style="border-top:3px solid var(--limpeza);">
+                    <h2 style="color:var(--limpeza);"><i class="fas fa-broom" style="color:var(--limpeza)"></i> Nova Solicitação — Limpeza</h2>
                     <form id="form-limpeza">
                         <div class="form-grid">
                             <input type="text" id="limpeza-numero-os" placeholder="Nº da O.S. (Opcional)">
                             <input type="text" id="limpeza-titulo" placeholder="Descrição do Serviço" required>
                             <input type="text" id="limpeza-setor" placeholder="Local / Setor" required>
                             <input type="text" id="limpeza-solicitante" placeholder="Nome do Solicitante" required>
-                            <select id="limpeza-prioridade">
-                                <option value="Baixa">Prioridade Baixa</option>
-                                <option value="Média">Prioridade Média</option>
-                                <option value="Alta">Prioridade Alta</option>
-                            </select>
+                            <select id="limpeza-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="limpeza-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="limpeza-hora" required></div>
                         </div>
-                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--limpeza), #059669); flex: unset; width: auto; padding: 0.75rem 1.75rem;">Registrar Limpeza</button>
+                        <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,var(--limpeza),#059669);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Limpeza</button>
                     </form>
                 </div>
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Local):</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-limpeza" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em Andamento">Em Andamento</option>
-                                <option value="Concluído">Concluído</option>
+                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar Limpeza</button>
+                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container">
-                        <table id="tabela-limpeza">
-                            <thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                    <div class="table-container"><table id="tabela-limpeza"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
             <section id="visitantes" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Recepção de Visitantes</h2>
-                        <p>Registro e controle de entrada e saída</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Recepção de Visitantes</h2><p>Registro e controle de entrada e saída</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-recepcao"><div class="metric-info"><h3>Visitantes Ativos</h3><p id="dash-visitantes-ativos">...</p></div><i class="fas fa-users metric-icon"></i></div>
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total no Período</h3><p id="dash-visitantes-total">...</p></div><i class="fas fa-list metric-icon"></i></div>
@@ -987,7 +973,7 @@
                             <img id="vis-preview" class="foto-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E">
                             <div class="cam-controls">
                                 <button type="button" id="btn-iniciar-cam" onclick="iniciarCamera()" class="btn-foto"><i class="fas fa-camera"></i> Abrir Câmera</button>
-                                <button type="button" id="btn-capturar-cam" onclick="capturarFoto()" class="btn-primary" style="display:none; padding:6px 14px; font-size:0.8rem; flex:unset;">Capturar</button>
+                                <button type="button" id="btn-capturar-cam" onclick="capturarFoto()" class="btn-primary" style="display:none;padding:6px 14px;font-size:0.8rem;flex:unset;">Capturar</button>
                                 <label for="vis-foto-input" class="btn-foto"><i class="fas fa-upload"></i> Enviar Arquivo</label>
                             </div>
                             <input type="file" id="vis-foto-input" accept="image/*">
@@ -1013,7 +999,7 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
                         <div class="filter-group"><label>Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
-                        <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-visitantes">
@@ -1025,12 +1011,7 @@
             </section>
 
             <section id="veiculos" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Controle de Garagem</h2>
-                        <p>Registro de entrada e saída de veículos</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Controle de Garagem</h2><p>Registro de entrada e saída de veículos</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-estacionado"><div class="metric-info"><h3>Estacionados</h3><p id="dash-frota-estacionados">...</p></div><i class="fas fa-parking metric-icon"></i></div>
                     <div class="metric-card card-total"><div class="metric-info"><h3>Acessos</h3><p id="dash-frota-total">...</p></div><i class="fas fa-car metric-icon"></i></div>
@@ -1042,8 +1023,8 @@
                     <form id="form-veiculo">
                         <input type="hidden" id="veiculo-id-edit" value="">
                         <div class="tipo-selector">
-                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-servidor" value="servidor" checked onclick="atualizarLabels()"><span style="color: var(--servidor); font-weight:700;">Entrada Servidor</span></label>
-                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-visitante" value="visitante" onclick="atualizarLabels()"><span style="color: var(--visitante); font-weight:700;">Entrada Visitante</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-servidor" value="servidor" checked onclick="atualizarLabels()"><span style="color:var(--servidor);font-weight:700;">Entrada Servidor</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoFluxo" id="radio-visitante" value="visitante" onclick="atualizarLabels()"><span style="color:var(--visitante);font-weight:700;">Entrada Visitante</span></label>
                         </div>
                         <div class="form-grid">
                             <input type="text" id="veiculo-carro" placeholder="Veículo (Modelo - Placa)" required>
@@ -1065,24 +1046,19 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
-                        <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-veiculos">
                             <thead><tr><th>Status</th><th>Tipo</th><th>Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Ações</th></tr></thead>
-                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                            <tbody><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
             <section id="eventos" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Gestão de Eventos</h2>
-                        <p>Registro e controle de eventos institucionais</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Gestão de Eventos</h2><p>Registro e controle de eventos institucionais</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-evt-total"><div class="metric-info"><h3>Total Eventos</h3><p id="dash-eventos-qtd">...</p></div><i class="fas fa-calendar metric-icon"></i></div>
                     <div class="metric-card card-evt-interno"><div class="metric-info"><h3>Internos</h3><p id="dash-eventos-interno">...</p></div><i class="fas fa-building metric-icon"></i></div>
@@ -1094,8 +1070,8 @@
                     <form id="form-evento">
                         <input type="hidden" id="evento-id-edit" value="">
                         <div class="tipo-selector">
-                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Interno" checked> <span style="color: var(--primary); font-weight:700;">Interno</span></label>
-                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Externo"> <span style="color: var(--evento); font-weight:700;">Externo</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Interno" checked> <span style="color:var(--primary);font-weight:700;">Interno</span></label>
+                            <label class="radio-label"><input type="radio" name="tipoEvento" value="Externo"> <span style="color:var(--evento);font-weight:700;">Externo</span></label>
                         </div>
                         <div class="form-grid">
                             <input type="text" id="evento-nome" placeholder="Nome do Evento / Reunião" required>
@@ -1107,10 +1083,10 @@
                                 <input type="checkbox" id="evento-coffee">
                                 <label for="evento-coffee"><i class="fas fa-coffee"></i> Servir Coffee Break?</label>
                             </div>
-                            <textarea id="evento-obs" placeholder="Observações e Solicitações (Ex: Datashow, Água, Cadeiras extras...)" style="grid-column: 1 / -1; height: 80px; resize: vertical;"></textarea>
+                            <textarea id="evento-obs" placeholder="Observações e Solicitações..." style="grid-column:1/-1;height:80px;resize:vertical;"></textarea>
                         </div>
                         <div class="btn-container">
-                            <button type="submit" class="btn-primary" id="btn-submit-evento" style="background: linear-gradient(135deg, var(--evento), #be185d);">Salvar Evento</button>
+                            <button type="submit" class="btn-primary" id="btn-submit-evento" style="background:linear-gradient(135deg,var(--evento),#be185d);">Salvar Evento</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-evento" onclick="cancelarEdicaoEvento()">Cancelar</button>
                         </div>
                     </form>
@@ -1119,7 +1095,7 @@
                     <div class="filter-container">
                         <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
-                        <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-eventos">
@@ -1131,42 +1107,29 @@
             </section>
 
             <section id="crachas" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2 style="color:var(--cracha)"><i class="fas fa-id-card" style="margin-right:8px;"></i>Gestão de Crachás</h2>
-                        <p>Solicitação, confecção e entrega de crachás</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2 style="color:var(--cracha)"><i class="fas fa-id-card" style="margin-right:8px;"></i>Gestão de Crachás</h2><p>Solicitação, confecção e entrega de crachás</p></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-cracha-solicitado"><div class="metric-info"><h3>Solicitados</h3><p id="dash-cracha-solicitado">...</p></div><i class="fas fa-id-card metric-icon"></i></div>
                     <div class="metric-card card-cracha-pronto"><div class="metric-info"><h3>Confeccionados</h3><p id="dash-cracha-confeccionado">...</p></div><i class="fas fa-check metric-icon"></i></div>
                     <div class="metric-card card-cracha-entregue"><div class="metric-info"><h3>Entregues</h3><p id="dash-cracha-entregue">...</p></div><i class="fas fa-user-check metric-icon"></i></div>
                 </div>
-                <div class="card" style="border-top: 3px solid var(--cracha);">
+                <div class="card" style="border-top:3px solid var(--cracha);">
                     <h2 id="titulo-form-cracha"><i class="fas fa-id-card" style="color:var(--cracha)"></i> Novo Crachá</h2>
                     <form id="form-cracha">
                         <input type="hidden" id="cracha-id-edit" value="">
-                        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-                            <input type="text" id="cracha-nome" placeholder="Nome do Colaborador" required style="grid-column: span 2;">
+                        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+                            <input type="text" id="cracha-nome" placeholder="Nome do Colaborador" required style="grid-column:span 2;">
                             <input type="text" id="cracha-doc" placeholder="RG ou CPF" required>
                             <input type="text" id="cracha-setor" placeholder="Setor (Ex: Financeiro)" required>
                             <input type="text" id="cracha-cargo" placeholder="Cargo (Ex: Analista)" required>
                             <input type="text" id="cracha-sala" placeholder="Sala (Ex: 65)" required>
                             <input type="text" id="cracha-ramal" placeholder="Ramal">
-                            <select id="cracha-tipo">
-                                <option value="Definitivo">Crachá Definitivo</option>
-                                <option value="Provisório">Crachá Provisório</option>
-                                <option value="Cordão">Apenas Cordão/Presilha</option>
-                            </select>
+                            <select id="cracha-tipo"><option value="Definitivo">Crachá Definitivo</option><option value="Provisório">Crachá Provisório</option><option value="Cordão">Apenas Cordão/Presilha</option></select>
                             <div><label style="font-size:0.8rem">Data Solicitação</label><input type="date" id="cracha-data" required></div>
-                            <select id="cracha-status">
-                                <option value="Solicitado">Solicitado (Pendente)</option>
-                                <option value="Confeccionado">Confeccionado (Pronto)</option>
-                                <option value="Entregue">Entregue ao Usuário</option>
-                            </select>
+                            <select id="cracha-status"><option value="Solicitado">Solicitado (Pendente)</option><option value="Confeccionado">Confeccionado (Pronto)</option><option value="Entregue">Entregue ao Usuário</option></select>
                         </div>
                         <div class="btn-container">
-                            <button type="submit" class="btn-primary" id="btn-submit-cracha" style="background: linear-gradient(135deg, var(--cracha), #5b21b6);">Salvar Crachá</button>
+                            <button type="submit" class="btn-primary" id="btn-submit-cracha" style="background:linear-gradient(135deg,var(--cracha),#5b21b6);">Salvar Crachá</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-cracha" onclick="cancelarEdicaoCracha()">Cancelar</button>
                         </div>
                     </form>
@@ -1176,13 +1139,10 @@
                         <div class="filter-group"><label>Buscar (Nome/Setor/RG):</label><input type="text" id="filtro-busca-cracha" onkeyup="window.renderizarApenasCrachas()" placeholder="Digite para buscar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-cracha" onchange="window.renderizarApenasCrachas()">
-                                <option value="">Todos</option>
-                                <option value="Solicitado">Solicitados</option>
-                                <option value="Confeccionado">Prontos</option>
-                                <option value="Entregue">Entregues</option>
+                                <option value="">Todos</option><option value="Solicitado">Solicitados</option><option value="Confeccionado">Prontos</option><option value="Entregue">Entregues</option>
                             </select>
                         </div>
-                        <button id="btn-export-crachas" class="btn-excel" onclick="exportarExcel('crachas')"><i class="fas fa-file-excel"></i> Exportar (.xlsx)</button>
+                        <button id="btn-export-crachas" class="btn-excel" onclick="exportarExcel('crachas')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
                         <table id="tabela-crachas">
@@ -1194,12 +1154,7 @@
             </section>
 
             <section id="auditoria" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Logs de Auditoria</h2>
-                        <p>Histórico das últimas ações no sistema</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Logs de Auditoria</h2><p>Histórico das últimas ações no sistema</p></div></div>
                 <div class="card">
                     <div class="table-container">
                         <table id="tabela-logs">
@@ -1211,28 +1166,21 @@
             </section>
 
             <section id="usuarios" class="section">
-                <div class="page-header">
-                    <div class="page-header-left">
-                        <h2>Gestão de Usuários</h2>
-                        <p>Criação e permissões de acesso ao sistema</p>
-                    </div>
-                </div>
+                <div class="page-header"><div class="page-header-left"><h2>Gestão de Usuários</h2><p>Criação e permissões de acesso ao sistema</p></div></div>
                 <div class="card">
                     <h2 id="titulo-user-form"><i class="fas fa-user-shield"></i> Criar Novo Usuário</h2>
-                    <div class="form-grid" style="background: #f8fafc; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+                    <div class="form-grid" style="background:#f8fafc;padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:1.25rem;">
                         <input type="hidden" id="edit-user-id">
                         <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>
                         <input type="password" id="novo-user-pass" placeholder="Senha" required>
                         <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>
                         <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select>
-
-                        <div class="checkbox-wrapper" style="grid-column: 1 / -1; background: #f0fdf4; border-color: var(--success);">
+                        <div class="checkbox-wrapper" style="grid-column:1/-1;background:#f0fdf4;border-color:var(--success);">
                             <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">
-                            <label for="novo-user-admin" style="color: #065f46;"><i class="fas fa-crown"></i> É Administrador Geral? (Acesso Total)</label>
+                            <label for="novo-user-admin" style="color:#065f46;"><i class="fas fa-crown"></i> É Administrador Geral? (Acesso Total)</label>
                         </div>
-
-                        <div id="container-permissoes" style="grid-column: 1 / -1; margin-top: 10px;">
-                            <h4 style="margin-bottom: 10px; color: var(--text-secondary); font-size: 0.875rem;">Permissões Específicas:</h4>
+                        <div id="container-permissoes" style="grid-column:1/-1;margin-top:10px;">
+                            <h4 style="margin-bottom:10px;color:var(--text-secondary);font-size:0.875rem;">Permissões Específicas:</h4>
                             <div class="table-container">
                                 <table class="perm-table">
                                     <thead><tr><th>Módulo</th><th>Visualizar</th><th>Editar</th><th>Excluir</th><th>Exportar</th></tr></thead>
@@ -1244,13 +1192,12 @@
                                         <tr><td>Visitantes</td><td><input type="checkbox" id="perm-visitantes-ver"></td><td><input type="checkbox" id="perm-visitantes-edit"></td><td><input type="checkbox" id="perm-visitantes-del"></td><td><input type="checkbox" id="perm-visitantes-exp"></td></tr>
                                         <tr><td>Frota / Veículos</td><td><input type="checkbox" id="perm-veiculos-ver"></td><td><input type="checkbox" id="perm-veiculos-edit"></td><td><input type="checkbox" id="perm-veiculos-del"></td><td><input type="checkbox" id="perm-veiculos-exp"></td></tr>
                                         <tr><td>Eventos</td><td><input type="checkbox" id="perm-eventos-ver"></td><td><input type="checkbox" id="perm-eventos-edit"></td><td><input type="checkbox" id="perm-eventos-del"></td><td><input type="checkbox" id="perm-eventos-exp"></td></tr>
-                                        <tr><td style="color: var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
+                                        <tr><td style="color:var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-
-                        <div class="btn-container" style="grid-column: 1 / -1;">
+                        <div class="btn-container" style="grid-column:1/-1;">
                             <button onclick="salvarUsuario()" class="btn-primary" id="btn-save-user">Criar Usuário</button>
                             <button onclick="cancelarEdicaoUsuario()" class="btn-cancel" id="btn-cancel-user" style="display:none">Cancelar</button>
                         </div>
@@ -1320,8 +1267,6 @@
         let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [];
         let currentUserRole = null, currentUserData = null;
         let streamGeral = null;
-        
-        /* Variável global para armazenar qual ID está sendo impresso */
         let osPrintAtualId = null;
 
         async function verificarSessao() {
@@ -1352,7 +1297,8 @@
 
         function iniciarSistema(userData) {
             document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('app-content').style.display = 'block';
+            // FIX: usa classe em vez de style inline para não quebrar o seletor CSS
+            document.getElementById('app-content').classList.add('app-visible');
             document.getElementById('user-display').innerText = `Olá, ${userData.nome}`;
             document.getElementById('user-role-display').innerText = userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão';
             const initials = userData.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
@@ -1385,7 +1331,6 @@
             }
         }
 
-        /* LÓGICA DO MENU MOBILE */
         window.toggleSidebar = function() {
             document.body.classList.toggle('sidebar-open');
         }
@@ -1540,15 +1485,8 @@
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
             const p = meta.permissoes || {};
-            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas'];
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar'];
             mods.forEach(m => {
-                if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
-                if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
-                if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
-                if(document.getElementById(`perm-${m}-exp`)) document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
-            });
-            const subMods = ['predial', 'limpeza', 'ar'];
-            subMods.forEach(m => {
                 if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
                 if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
                 if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
@@ -1768,7 +1706,7 @@
 
         window.editarDemanda = function(id) {
             const d = demandas.find(item => item.id == id); if (!d) return;
-            if(!document.getElementById('demandas').classList.contains('active')) { alert("Redirecionando para a aba Geral para edição completa."); switchTab('demandas'); }
+            if(!document.getElementById('demandas').classList.contains('active')) { switchTab('demandas'); }
             document.getElementById('demanda-id-edit').value = d.id;
             document.getElementById('demanda-numero-os').value = d.numero_os || '';
             document.getElementById('demanda-titulo').value = d.titulo;
@@ -1794,7 +1732,10 @@
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
         }
 
-        /* LÓGICA DE ABRIR O MODAL E GERAR IMPRESSÃO */
+        /* =====================================================
+           IMPRESSÃO DE O.S. — COMPATÍVEL COM MOBILE (Android/iOS)
+           Usa nova janela para garantir funcionamento em todos os browsers
+        ===================================================== */
         window.abrirModalImpressao = function(id) {
             osPrintAtualId = id;
             document.getElementById('print-input-descricao').value = "";
@@ -1809,58 +1750,248 @@
         window.executarImpressao = function() {
             const desc = document.getElementById('print-input-descricao').value;
             const mat = document.getElementById('print-input-materiais').value;
-            
-            document.getElementById('print-val-descricao').innerText = desc.toUpperCase();
-            document.getElementById('print-val-materiais').innerText = mat.toUpperCase();
-            
             fecharModalImpressao();
-            imprimirOSDireto(osPrintAtualId);
+            abrirJanelaImpressao(osPrintAtualId, desc, mat);
         }
 
-        function imprimirOSDireto(id) {
-            const d = demandas.find(item => item.id == id); if (!d) return;
-            document.getElementById('print-id').innerText = d.numero_os ? d.numero_os : d.id;
+        function montarDadosOS(id) {
+            return demandas.find(item => item.id == id);
+        }
+
+        function getLogoInfoParaOS(d) {
+            const cat = getCategoriaDemanda(d);
+            if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '140px', height: '60px', fit: 'cover' };
+            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '145px', height: '55px', fit: 'contain' };
+            return null;
+        }
+
+        function montarCheckboxes(d) {
+            const c = (d.contratada || '').toUpperCase();
+            return {
+                limpeza:   c.includes('LIMPEZA')     ? '☑' : '☐',
+                ar:        c.includes('AR CONDICIONADO') ? '☑' : '☐',
+                manut:     (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) ? '☑' : '☐',
+                elevador:  c.includes('ELEVADOR')    ? '☑' : '☐',
+                ti:        '☐',
+                telefonia: c.includes('TELEFONIA')   ? '☑' : '☐',
+                extintores:'☐'
+            };
+        }
+
+        /* Abre nova janela com o HTML da O.S. e chama window.print() nela.
+           Funciona em Android Chrome, iOS Safari, Firefox Mobile e desktop. */
+        function abrirJanelaImpressao(id, descricao, materiais) {
+            const d = montarDadosOS(id);
+            if (!d) return;
+
             const dataParts = d.data.split('-');
             const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : d.data;
-            document.getElementById('print-data-hora').innerText = `${dataBr}, ${d.hora ? d.hora : '--:--'}`;
+            const logoInfo = getLogoInfoParaOS(d);
+            const chks = montarCheckboxes(d);
+
+            const logoHTML = logoInfo
+                ? `<img src="${logoInfo.src}" style="width:${logoInfo.width};height:${logoInfo.height};object-fit:${logoInfo.fit};display:block;margin-bottom:5px;">`
+                : '';
+            const topTextHTML = logoInfo ? '' : '<p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:5px;">ORDEM DE SERVIÇO</p>';
+            const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
+            const osNum = d.numero_os ? d.numero_os : d.id;
+
+            const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>O.S. ${osNum}</title>
+<style>
+  @page { size: A4 portrait; margin: 8mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; color: #000; background: #fff; }
+  .os-container { border: 2px solid #000; display: flex; flex-direction: column; min-height: 270mm; width: 100%; }
+  .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; }
+  .os-grid-row:last-child { border-bottom: none; }
+  .os-grid-row.thick { border-bottom: 2px solid #000; }
+  .os-grid-row.expand { flex-grow: 1; align-items: stretch; }
+  .os-cell { padding: 6px 8px; display: flex; flex-direction: column; }
+  .os-logo { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
+  .os-logo img { max-height: 70px; width: auto; }
+  .os-hdr-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; }
+  .os-hdr-center h3 { margin: 0; font-size: 14px; }
+  .os-hdr-center h4 { margin: 4px 0; font-size: 12px; }
+  .os-hdr-center p  { margin: 0; font-size: 11px; font-weight: bold; }
+  .os-hdr-right { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; }
+  .os-numero { color: #c0392b; font-size: 16px; font-weight: bold; margin: 0; }
+  .os-sec { background: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
+  .os-sec.top { border-top: 1px solid #000; border-bottom: 2px solid #000; }
+  .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
+  .os-value { font-size: 12px; text-transform: uppercase; }
+  .os-value.destaque { font-size: 13px; font-weight: bold; padding-top: 5px; }
+  .chk-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
+  .chk-grid.locais { grid-template-columns: repeat(4,1fr); }
+  .sigs { min-height: 90px; align-items: flex-end; padding-bottom: 15px; padding-top: 20px; }
+  .sig-box { flex: 1; text-align: center; padding: 0 15px; }
+  .sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
+  .sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
+  .footer { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
+</style>
+</head>
+<body>
+<div class="os-container">
+  <div class="os-grid-row thick">
+    <div class="os-logo"><img src="brasao.jpg" alt="SP"></div>
+    <div class="os-hdr-center">
+      <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
+      <h4>SECRETARIA DA EDUCAÇÃO</h4>
+      <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
+    </div>
+    <div class="os-hdr-right">
+      ${topTextHTML}
+      ${logoHTML}
+      <h3 class="os-numero">${osLabel}${osNum}</h3>
+    </div>
+  </div>
+
+  <div class="os-sec">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
+  <div class="os-grid-row">
+    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
+      <div class="os-label">DATA E HORA DE ABERTURA</div>
+      <div class="os-value">${dataBr}, ${d.hora || '--:--'}</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
+      <div class="os-label">SOLICITANTE / CONTATO</div>
+      <div class="os-value">${d.solicitante.toUpperCase()}</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
+      <div class="os-label">PRIORIDADE NO SISTEMA</div>
+      <div class="os-value">${d.prioridade.toUpperCase()}</div>
+    </div>
+  </div>
+  <div class="os-grid-row thick">
+    <div class="os-cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
+      <div class="os-label">UNIDADE / SETOR DE ORIGEM</div>
+      <div class="os-value">${d.setor.toUpperCase()}</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
+      <div class="os-label">STATUS ATUAL</div>
+      <div class="os-value">${d.status.toUpperCase()}</div>
+    </div>
+  </div>
+
+  <div class="os-sec">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
+  <div class="os-grid-row thick" style="min-height:80px;">
+    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
+      <div class="os-value destaque">${d.titulo.toUpperCase()}</div>
+    </div>
+  </div>
+
+  <div class="os-sec">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
+  <div class="os-grid-row">
+    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
+      <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
+      <div class="chk-grid">
+        <div>${chks.limpeza} LIMPEZA PREDIAL</div>
+        <div>${chks.ar} AR CONDICIONADO</div>
+        <div>${chks.manut} MANUTENÇÃO PREDIAL</div>
+        <div>${chks.elevador} MANUT. DE ELEVADORES</div>
+        <div>${chks.ti} SUPORTE TI</div>
+        <div>${chks.telefonia} TELEFONIA</div>
+        <div>${chks.extintores} MANUT. E RECARGA EXTINTORES</div>
+        <div>☐ OUTROS: ______________________</div>
+      </div>
+    </div>
+  </div>
+  <div class="os-grid-row thick">
+    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
+      <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
+      <div class="chk-grid locais">
+        <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
+        <div>☐ CASA VERDE</div><div>☐ SÃO DOMINGOS</div><div>☐ CAJAMAR</div><div>☐ TENENTE PENA</div>
+        <div>☐ CENTRO OESTE</div><div>☐ CAPE</div>
+        <div style="grid-column:span 2;">☐ OUTRO: ___________________________</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="os-grid-row expand">
+    <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
+      <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
+      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(descricao || '').toUpperCase()}</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
+      <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
+      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(materiais || '').toUpperCase()}</div>
+    </div>
+  </div>
+
+  <div class="os-sec top">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
+  <div class="os-grid-row">
+    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
+      <div class="os-label" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
+      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
+      <div class="os-label" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
+      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
+    </div>
+    <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
+      <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
+    </div>
+  </div>
+
+  <div class="os-grid-row sigs">
+    <div class="sig-box"><div class="sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
+    <div class="sig-box"><div class="sig-line">GESTOR / FISCAL (DZEL)<span>Carimbo e Assinatura</span></div></div>
+    <div class="sig-box"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
+  </div>
+</div>
+<div class="footer">Documento impresso em ${new Date().toLocaleString('pt-BR')}</div>
+
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() { window.print(); }, 400);
+  });
+  window.addEventListener('afterprint', function() {
+    // iOS não fecha automaticamente
+    try { window.close(); } catch(e) {}
+  });
+<\/script>
+</body>
+</html>`;
+
+            /* Tenta abrir nova janela (funciona em Android/desktop).
+               iOS Safari por segurança bloqueia window.open em async — por isso usamos
+               um truque: chamamos imediatamente (ainda no contexto do click via modal). */
+            const pw = window.open('', '_blank');
+            if (pw) {
+                pw.document.open();
+                pw.document.write(html);
+                pw.document.close();
+            } else {
+                /* Fallback: se popup bloqueado, usa método antigo (desktop) */
+                document.getElementById('print-val-descricao').innerText = (descricao || '').toUpperCase();
+                document.getElementById('print-val-materiais').innerText = (materiais || '').toUpperCase();
+                imprimirOSDesktopFallback(id);
+            }
+        }
+
+        /* Fallback para desktop caso popup seja bloqueado */
+        function imprimirOSDesktopFallback(id) {
+            const d = demandas.find(item => item.id == id); if (!d) return;
+            const cat = getCategoriaDemanda(d);
+            document.getElementById('print-id').innerText = d.numero_os ? d.numero_os : d.id;
+            const dataParts = d.data.split('-');
+            document.getElementById('print-data-hora').innerText = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}, ${d.hora || '--:--'}`;
             document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
             document.getElementById('print-prioridade').innerText = d.prioridade.toUpperCase();
             document.getElementById('print-setor').innerText = d.setor.toUpperCase();
             document.getElementById('print-status').innerText = d.status.toUpperCase();
             document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
-            
-            /* LÓGICA DA LOGO DINÂMICA DA CONTRATADA COM TAMANHOS INDIVIDUAIS */
-            const cat = getCategoriaDemanda(d);
             const logoEmpresa = document.getElementById('print-logo-empresa');
             const textoTop = document.getElementById('print-top-text');
-            const labelNum = document.getElementById('print-os-label'); 
-            logoEmpresa.src = ""; 
-            
-            if (cat === 'PREDIAL') {
-                logoEmpresa.src = 'epura.jpg';
-                logoEmpresa.style.width = '140px'; 
-                logoEmpresa.style.height = '60px';
-                logoEmpresa.style.objectFit = 'cover'; 
-                logoEmpresa.style.objectPosition = 'center'; 
-                logoEmpresa.style.marginBottom = '5px'; 
-                logoEmpresa.style.display = 'block';
-                textoTop.style.display = 'none';
-                labelNum.innerText = "O.S Nº ";
-            } else if (cat === 'AR') {
-                logoEmpresa.src = 'igm2.jpg';
-                logoEmpresa.style.width = '145px'; 
-                logoEmpresa.style.height = '55px';
-                logoEmpresa.style.objectFit = 'contain'; 
-                logoEmpresa.style.marginBottom = '5px';
-                logoEmpresa.style.display = 'block';
-                textoTop.style.display = 'none';
-                labelNum.innerText = "O.S Nº ";
-            } else {
-                logoEmpresa.style.display = 'none';
-                textoTop.style.display = 'block';
-                labelNum.innerText = "Nº "; // Evita a repetição "ORDEM DE SERVIÇO O.S Nº"
-            }
-            
+            const labelNum = document.getElementById('print-os-label');
+            logoEmpresa.src = "";
+            if (cat === 'PREDIAL') { logoEmpresa.src = 'epura.jpg'; logoEmpresa.style.cssText = 'width:140px;height:60px;object-fit:cover;object-position:center;margin-bottom:5px;display:block;'; textoTop.style.display = 'none'; labelNum.innerText = "O.S Nº "; }
+            else if (cat === 'AR') { logoEmpresa.src = 'igm2.jpg'; logoEmpresa.style.cssText = 'width:145px;height:55px;object-fit:contain;margin-bottom:5px;display:block;'; textoTop.style.display = 'none'; labelNum.innerText = "O.S Nº "; }
+            else { logoEmpresa.style.display = 'none'; textoTop.style.display = 'block'; labelNum.innerText = "Nº "; }
             const chks = ['chk-limpeza', 'chk-ar', 'chk-manut', 'chk-elevador', 'chk-ti', 'chk-telefonia', 'chk-extintores'];
             chks.forEach(chk => document.getElementById(chk).innerText = '☐');
             if (d.contratada) {
@@ -1872,12 +2003,11 @@
                 else if (c.includes('TELEFONIA')) document.getElementById('chk-telefonia').innerText = '☑';
             }
             document.getElementById('print-hoje').innerText = new Date().toLocaleString('pt-BR');
-            window.scrollTo(0, 0);
             document.body.classList.add('printing-os');
-            setTimeout(function() { window.print(); }, 800);
-            const limparImpressao = () => { document.body.classList.remove('printing-os'); window.scrollTo(0, 0); };
-            window.onafterprint = limparImpressao;
-            setTimeout(function() { if (document.hasFocus()) { limparImpressao(); } else { setTimeout(limparImpressao, 5000); } }, 2000);
+            setTimeout(() => { window.print(); }, 800);
+            const limpar = () => { document.body.classList.remove('printing-os'); };
+            window.onafterprint = limpar;
+            setTimeout(() => { if (document.hasFocus()) limpar(); else setTimeout(limpar, 5000); }, 2000);
         }
 
         window.imprimirDashboard = function() {
@@ -1891,19 +2021,19 @@
         function criarLinhaTabela(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
-            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7; color:#92400e; border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
+            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Avançar status"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel = (pode('demandas', 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
-            const contratadaDisplay = d.contratada ? `<br><span style="color:var(--accent); font-size:0.75rem; font-weight:600;"><i class="fas fa-hard-hat"></i> ${d.contratada}</span>` : '';
+            const contratadaDisplay = d.contratada ? `<br><span style="color:var(--accent);font-size:0.75rem;font-weight:600;"><i class="fas fa-hard-hat"></i> ${d.contratada}</span>` : '';
             return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><span class="badge bg-saiu">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">${d.solicitante} · ${d.setor}</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         function criarLinhaTabelaSimples(d, prefixo) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
-            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7; color:#92400e; border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
+            let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print"><i class="fas fa-print"></i></button>`;
             let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -1927,7 +2057,7 @@
             document.getElementById('dash-demanda-andamento').innerText = lista.filter(d => d.status === 'Em Andamento').length;
             document.getElementById('dash-demanda-concluido').innerText = lista.filter(d => d.status === 'Concluído').length;
             const tbody = document.querySelector('#tabela-demandas tbody');
-            if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
+            if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
             else { tbody.innerHTML = lista.map(d => criarLinhaTabela(d)).join(''); }
         }
 
@@ -1948,7 +2078,7 @@
                 document.getElementById(`dash-${prefixo}-andamento`).innerText = listaFinal.filter(d => d.status === 'Em Andamento').length;
                 document.getElementById(`dash-${prefixo}-concluido`).innerText = listaFinal.filter(d => d.status === 'Concluído').length;
                 const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
-                if(listaFinal.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro.</td></tr>'; }
+                if(listaFinal.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum registro.</td></tr>'; }
                 else { tbody.innerHTML = listaFinal.map(d => criarLinhaTabelaSimples(d, prefixo)).join(''); }
             }
             renderizarAba('predial', 'PREDIAL');
@@ -2031,7 +2161,7 @@
             const btnExport = document.getElementById('btn-export-visitantes');
             if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum visitante encontrado.</td></tr>'; }
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum visitante encontrado.</td></tr>'; }
             else {
                 tbody.innerHTML = lista.map(v => {
                     const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
@@ -2042,7 +2172,7 @@
                     if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
                     const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
-                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small style="color:var(--text-muted)">${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small style="color:var(--text-muted)">${v.doc}</small></td><td>${v.responsavel}<br><small style="color:var(--text-muted)">${v.finalidade}</small></td><td style="font-family:'JetBrains Mono',monospace; font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small style="color:var(--text-muted)">${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small style="color:var(--text-muted)">${v.doc}</small></td><td>${v.responsavel}<br><small style="color:var(--text-muted)">${v.finalidade}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }).join('');
             }
         }
@@ -2117,18 +2247,18 @@
             const tbody = document.querySelector('#tabela-veiculos tbody');
             const btnExport = document.getElementById('btn-export-veiculos');
             if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum veículo encontrado.</td></tr>'; }
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum veículo encontrado.</td></tr>'; }
             else {
                 tbody.innerHTML = lista.map(f => {
                     const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';
-                    const icon = f.tipo === 'servidor' ? '<span style="color:var(--servidor); font-size:0.75rem; font-weight:700;"><i class="fas fa-id-badge"></i> Servidor</span>' : '<span style="color:var(--visitante); font-size:0.75rem; font-weight:700;"><i class="fas fa-user-tag"></i> Visitante</span>';
+                    const icon = f.tipo === 'servidor' ? '<span style="color:var(--servidor);font-size:0.75rem;font-weight:700;"><i class="fas fa-id-badge"></i> Servidor</span>' : '<span style="color:var(--visitante);font-size:0.75rem;font-weight:700;"><i class="fas fa-user-tag"></i> Visitante</span>';
                     const dIn = formatarDataHoraReal(f.hora_inicial);
                     const dOut = f.hora_final ? formatarDataHoraReal(f.hora_final) : '-';
                     const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
                     let buttons = '';
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace; font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }).join('');
             }
         }
@@ -2193,16 +2323,16 @@
             const tbody = document.querySelector('#tabela-eventos tbody');
             const btnExport = document.getElementById('btn-export-eventos');
             if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum evento encontrado.</td></tr>'; }
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum evento encontrado.</td></tr>'; }
             else {
                 tbody.innerHTML = lista.map(ev => {
                     const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
-                    const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" style="color:#92400e; margin-left:6px;" title="Coffee Break"></i>' : '';
-                    const obsText = ev.obs ? `<div style="font-size:0.75rem; color:var(--text-muted); font-style:italic; margin-top:3px; border-top:1px dashed var(--border); padding-top:3px">${ev.obs}</div>` : '';
+                    const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" style="color:#92400e;margin-left:6px;" title="Coffee Break"></i>' : '';
+                    const obsText = ev.obs ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;margin-top:3px;border-top:1px dashed var(--border);padding-top:3px">${ev.obs}</div>` : '';
                     let buttons = '';
                     if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace; font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${ev.tipo}</span></td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${ev.publico}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
+                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${ev.tipo}</span></td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${ev.publico}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
                 }).join('');
             }
         }
@@ -2259,15 +2389,15 @@
             const tbody = document.querySelector('#tabela-crachas tbody');
             const btnExport = document.getElementById('btn-export-crachas');
             if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum crachá encontrado.</td></tr>'; }
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum crachá encontrado.</td></tr>'; }
             else {
                 tbody.innerHTML = lista.map(c => {
                     let badgeClass = c.status === 'Solicitado' ? 'bg-cracha-solicitado' : c.status === 'Confeccionado' ? 'bg-cracha-confeccionado' : 'bg-cracha-entregue';
-                    const dataEnt = c.data_entrega ? `<br><small style="color:var(--success); font-weight:600;"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : '';
+                    const dataEnt = c.data_entrega ? `<br><small style="color:var(--success);font-weight:600;"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : '';
                     let buttons = '';
                     if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace; font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small style="color:var(--text-muted)">DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small style="color:var(--text-muted)">${c.cargo || '-'}</small></td><td>Sala: <strong>${c.sala || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
+                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small style="color:var(--text-muted)">DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small style="color:var(--text-muted)">${c.cargo || '-'}</small></td><td>Sala: <strong>${c.sala || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
                 }).join('');
             }
         }
@@ -2289,4 +2419,3 @@
     </script>
 </body>
 </html>
-
