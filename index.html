@@ -39,6 +39,8 @@
             --predial: #f97316;
             --limpeza: #0d9488;
             --ar: #3b82f6;
+            --ocorrencia: #dc2626;
+            --whatsapp: #25D366;
 
             --bg-main: #f0f4f8;
             --bg-card: #ffffff;
@@ -220,6 +222,8 @@
         #tab-auditoria.active i { color: #f87171; }
         #tab-usuarios.active { background: rgba(139,92,246,0.1); border-left-color: #8b5cf6; }
         #tab-usuarios.active i { color: #c4b5fd; }
+        #tab-ocorrencias.active { background: rgba(220,38,38,0.1); border-left-color: var(--ocorrencia); }
+        #tab-ocorrencias.active i { color: #f87171; }
 
         /* ======== MAIN ======== */
         main { grid-area: main; overflow-y: auto; padding: 2rem 2.25rem; height: 100%; }
@@ -309,6 +313,17 @@
         .btn-baixa    { background: #fee2e2; color: #991b1b; }
         .btn-print    { background: #f1f5f9; color: #475569; }
         .btn-print:hover { background: #e2e8f0; }
+        .btn-whatsapp { background: #dcfce7; color: #15803d; }
+        .btn-whatsapp:hover { background: #bbf7d0; }
+        .btn-ocorrencia { background: #fee2e2; color: #991b1b; }
+        .card-oco-total::before   { background: #334155; }
+        .card-oco-aberta::before  { background: var(--ocorrencia); }
+        .card-oco-tratativa::before { background: var(--warning); }
+        .card-oco-encerrada::before { background: var(--success); }
+        .bg-aberta    { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .bg-tratativa { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .bg-encerrada { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .bg-critica   { background: #fee2e2; color: #7f1d1d; border: 1px solid #ef4444; font-weight:800; }
         .time-badge { background: #f8fafc; color: var(--text-muted); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; }
 
         /* ======== OUTROS ======== */
@@ -756,6 +771,7 @@
             <button id="tab-veiculos" class="tab-btn" onclick="switchTab('veiculos')"><i class="fas fa-car"></i> Garagem</button>
             <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
             <button id="tab-crachas" class="tab-btn hidden-tab" onclick="switchTab('crachas')"><i class="fas fa-id-card"></i> Crachás</button>
+            <button id="tab-ocorrencias" class="tab-btn hidden-tab" onclick="switchTab('ocorrencias')"><i class="fas fa-triangle-exclamation"></i> Ocorrências</button>
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> Auditoria</button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
@@ -1170,6 +1186,86 @@
                 </div>
             </section>
 
+            <section id="ocorrencias" class="section">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h2 style="color:var(--ocorrencia)"><i class="fas fa-triangle-exclamation" style="margin-right:8px;"></i>Registro de Ocorrências</h2>
+                        <p>Controle de ocorrências e registros por contratada</p>
+                    </div>
+                </div>
+                <div class="dashboard-panel">
+                    <div class="metric-card card-oco-total"><div class="metric-info"><h3>Total</h3><p id="dash-oco-total">...</p></div><i class="fas fa-clipboard-list metric-icon"></i></div>
+                    <div class="metric-card card-oco-aberta"><div class="metric-info"><h3>Abertas</h3><p id="dash-oco-abertas">...</p></div><i class="fas fa-exclamation-circle metric-icon"></i></div>
+                    <div class="metric-card card-oco-tratativa"><div class="metric-info"><h3>Em Tratativa</h3><p id="dash-oco-tratativa">...</p></div><i class="fas fa-tools metric-icon"></i></div>
+                    <div class="metric-card card-oco-encerrada"><div class="metric-info"><h3>Encerradas</h3><p id="dash-oco-encerradas">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
+                </div>
+                <div class="card" style="border-top:3px solid var(--ocorrencia);">
+                    <h2 id="titulo-form-ocorrencia" style="color:var(--ocorrencia);"><i class="fas fa-triangle-exclamation" style="color:var(--ocorrencia)"></i> Registrar Ocorrência</h2>
+                    <form id="form-ocorrencia">
+                        <input type="hidden" id="ocorrencia-id-edit" value="">
+                        <div class="form-grid">
+                            <input type="text" id="oco-numero" placeholder="Nº do Registro (Ex: 001/2026)">
+                            <input type="text" id="oco-unidade" placeholder="Unidade / Prédio (Ex: SEDE)" required>
+                            <input type="text" id="oco-local" placeholder="Local / Setor" required>
+                            <input type="text" id="oco-contratada" placeholder="Contratada (Opcional)">
+                            <select id="oco-categoria">
+                                <option value="Segurança">Segurança</option>
+                                <option value="Manutenção">Manutenção</option>
+                                <option value="Limpeza">Limpeza</option>
+                                <option value="Ar Condicionado">Ar Condicionado</option>
+                                <option value="Recepção">Recepção</option>
+                                <option value="Copa Gabinete">Copa Gabinete</option>
+                                <option value="Purificador de Água">Purificador de Água</option>
+                                <option value="Bombeiro">Bombeiro</option>
+                                <option value="Dedetização">Dedetização</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                            <select id="oco-gravidade">
+                                <option value="Baixa">Baixa</option>
+                                <option value="Média">Média</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Crítica">Crítica</option>
+                            </select>
+                            <div><label style="font-size:0.8rem">Data / Hora</label><input type="datetime-local" id="oco-data" required></div>
+                            <input type="text" id="oco-responsavel" placeholder="Responsável pelo Registro" required>
+                            <textarea id="oco-descricao" rows="3" placeholder="Descreva a ocorrência com detalhes..." required style="grid-column:1/-1; height:80px; resize:vertical;"></textarea>
+                            <select id="oco-status-edit" style="display:none">
+                                <option value="Aberta">Aberta</option>
+                                <option value="Em Tratativa">Em Tratativa</option>
+                                <option value="Encerrada">Encerrada</option>
+                            </select>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-oco" style="background:linear-gradient(135deg,var(--ocorrencia),#991b1b);">
+                                <i class="fas fa-exclamation-triangle"></i> Registrar Ocorrência
+                            </button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-oco" onclick="cancelarEdicaoOcorrencia()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-oco" onchange="window.renderizarApenasOcorrencias()"></div>
+                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-oco" onkeyup="window.renderizarApenasOcorrencias()" placeholder="Local, descrição..."></div>
+                        <div class="filter-group"><label>Status:</label>
+                            <select id="filtro-status-oco" onchange="window.renderizarApenasOcorrencias()">
+                                <option value="">Todos</option>
+                                <option value="Aberta">Aberta</option>
+                                <option value="Em Tratativa">Em Tratativa</option>
+                                <option value="Encerrada">Encerrada</option>
+                            </select>
+                        </div>
+                        <button class="btn-excel" onclick="exportarExcel('ocorrencias')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-ocorrencias">
+                            <thead><tr><th>Data/Hora</th><th>Gravidade</th><th>Categoria / Local</th><th>Descrição</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="auditoria" class="section">
                 <div class="page-header"><div class="page-header-left"><h2>Logs de Auditoria</h2><p>Histórico das últimas ações no sistema</p></div></div>
                 <div class="card">
@@ -1210,6 +1306,7 @@
                                         <tr><td>Frota / Veículos</td><td><input type="checkbox" id="perm-veiculos-ver"></td><td><input type="checkbox" id="perm-veiculos-edit"></td><td><input type="checkbox" id="perm-veiculos-del"></td><td><input type="checkbox" id="perm-veiculos-exp"></td></tr>
                                         <tr><td>Eventos</td><td><input type="checkbox" id="perm-eventos-ver"></td><td><input type="checkbox" id="perm-eventos-edit"></td><td><input type="checkbox" id="perm-eventos-del"></td><td><input type="checkbox" id="perm-eventos-exp"></td></tr>
                                         <tr><td style="color:var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
+                                        <tr><td style="color:var(--ocorrencia)">Ocorrências</td><td><input type="checkbox" id="perm-ocorrencias-ver"></td><td><input type="checkbox" id="perm-ocorrencias-edit"></td><td><input type="checkbox" id="perm-ocorrencias-del"></td><td><input type="checkbox" id="perm-ocorrencias-exp"></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1281,7 +1378,7 @@
             return `${datePart} ${timePart}`;
         }
 
-        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [];
+        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [];
         let currentUserRole = null, currentUserData = null;
         let streamGeral = null;
         let osPrintAtualId = null;
@@ -1343,7 +1440,7 @@
             carregarDados();
             iniciarRealtime();
 
-            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas'];
+            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias'];
             allTabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden-tab'));
 
             if (userData.isAdmin) {
@@ -1360,6 +1457,7 @@
                 if (userData.perms.veiculos?.ver) { document.getElementById('tab-veiculos').classList.remove('hidden-tab'); if(!firstTab) firstTab='veiculos'; }
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
                 if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }
+                if (userData.perms.ocorrencias?.ver) { document.getElementById('tab-ocorrencias').classList.remove('hidden-tab'); if(!firstTab) firstTab='ocorrencias'; }
                 if(userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {
                     document.getElementById('tab-dashboard').classList.remove('hidden-tab');
                     if(!firstTab) firstTab = 'dashboard';
@@ -1397,6 +1495,7 @@
             if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*')); }
             if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*')); }
             if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*')); }
+            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*')); }
             if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
             const results = await Promise.all(promises);
             results.forEach((res, index) => {
@@ -1407,6 +1506,7 @@
                     if(key === 'frota') { frota = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
                     if(key === 'eventos') { eventos = res.data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
                     if(key === 'crachas') { crachas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
+                    if(key === 'ocorrencias') { ocorrencias = res.data.sort((a,b) => new Date(b.data_hora) - new Date(a.data_hora)); window.renderizarApenasOcorrencias(); }
                     if(key === 'logs') { logs = res.data; renderizarLogs(); }
                 }
             });
@@ -1523,7 +1623,7 @@
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
             const p = meta.permissoes || {};
-            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar'];
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias'];
             mods.forEach(m => {
                 if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
                 if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
@@ -1550,7 +1650,7 @@
         }
 
         function montarPermissoesJSON() {
-            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar'];
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias'];
             let perms = {};
             mods.forEach(m => {
                 perms[m] = {
@@ -1622,6 +1722,7 @@
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
             if(tabId === 'ar') { const brt = DateUtils.getToInput(); document.getElementById('ar-data').value = brt.slice(0, 10); document.getElementById('ar-hora').value = brt.slice(11, 16); }
             if(tabId === 'limpeza') { const brt = DateUtils.getToInput(); document.getElementById('limpeza-data').value = brt.slice(0, 10); document.getElementById('limpeza-hora').value = brt.slice(11, 16); }
+            if(tabId === 'ocorrencias') { document.getElementById('oco-data').value = DateUtils.getToInput(); }
         }
 
         function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
@@ -1685,6 +1786,7 @@
             else if (tipo === 'frota') { data = frota; nomeArquivo = "Relatorio_Frota.xlsx"; }
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; }
             else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
+            else if (tipo === 'ocorrencias') { data = ocorrencias; nomeArquivo = "Relatorio_Ocorrencias.xlsx"; }
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
                 data = data.map(d => ({ ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data, HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim }));
@@ -2398,11 +2500,12 @@
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
             let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode('demandas', 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check" title="Avançar status"><i class="fas fa-arrow-right"></i></button>` : '';
+            let btnWA    = `<button onclick="enviarWhatsAppDemanda(${d.id})" class="action-btn btn-whatsapp" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
-            let btnEdit = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
-            let btnDel = (pode('demandas', 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
+            let btnEdit  = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
+            let btnDel   = (pode('demandas', 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
             const contratadaDisplay = d.contratada ? `<br><span style="color:var(--accent);font-size:0.75rem;font-weight:600;"><i class="fas fa-hard-hat"></i> ${d.contratada}</span>` : '';
-            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><span class="badge bg-saiu">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">${d.solicitante} · ${d.setor}</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:140px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
+            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><span class="badge bg-saiu">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">${d.solicitante} · ${d.setor}</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:160px">${btnAvancar}${btnWA}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         function criarLinhaTabelaSimples(d, prefixo) {
@@ -2410,10 +2513,11 @@
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
             let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
             let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
+            let btnWA2   = `<button onclick="enviarWhatsAppDemanda(${d.id})" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print"><i class="fas fa-print"></i></button>`;
-            let btnEdit = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
-            let btnDel = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
-            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small style="color:var(--text-muted)">${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:160px">${btnAvancar}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
+            let btnEdit  = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
+            let btnDel   = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
+            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small style="color:var(--text-muted)">${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:170px">${btnAvancar}${btnWA2}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         window.renderizarApenasDemandas = function() {
@@ -2791,6 +2895,413 @@
             clearTimeout(timeoutBusca);
             timeoutBusca = setTimeout(() => window.renderizarApenasDemandas(), 300);
         });
+
+        // Inicializa data das ocorrências
+        document.getElementById('oco-data').value = DateUtils.getToInput();
+
+        // ================================================================
+        // WHATSAPP
+        // ================================================================
+        window.enviarWhatsAppDemanda = function(id) {
+            const d = demandas.find(i => i.id == id); if (!d) return;
+            const ic = d.prioridade === 'Alta' ? '🚨' : '🔧';
+            let t = `${ic} *ORDEM DE SERVIÇO* ${ic}\n\n`;
+            if (d.numero_os) t += `*Nº O.S.:* ${d.numero_os}\n`;
+            t += `*Status:* ${d.status}\n`;
+            t += `*Prioridade:* ${d.prioridade}\n`;
+            t += `*Serviço:* ${d.titulo}\n`;
+            t += `*Setor:* ${d.setor}\n`;
+            t += `*Data:* ${formatarData(d.data)} ${d.hora || ''}\n`;
+            t += `*Solicitante:* ${d.solicitante}\n`;
+            if (d.contratada) t += `*Contratada:* ${d.contratada}\n`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`, '_blank');
+        };
+
+        window.enviarWhatsAppOcorrencia = function(id) {
+            const o = ocorrencias.find(i => i.id == id); if (!o) return;
+            const ic = (o.gravidade === 'Crítica' || o.gravidade === 'Alta') ? '🚨' : o.gravidade === 'Baixa' ? 'ℹ️' : '⚠️';
+            const dtStr = o.data_hora ? formatarDataHoraReal(o.data_hora) : '';
+            let t = `${ic} *REGISTRO DE OCORRÊNCIA* ${ic}\n\n`;
+            if (o.numero) t += `*Nº:* ${o.numero}\n`;
+            t += `*Status:* ${o.status}\n`;
+            t += `*Gravidade:* ${o.gravidade}\n`;
+            t += `*Categoria:* ${o.categoria}\n`;
+            t += `*Unidade:* ${o.unidade} — ${o.local}\n`;
+            t += `*Data/Hora:* ${dtStr}\n`;
+            t += `*Responsável:* ${o.responsavel}\n\n`;
+            t += `*Descrição:*\n${o.descricao}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`, '_blank');
+        };
+
+        // ================================================================
+        // OCORRÊNCIAS — CRUD
+        // ================================================================
+        const formOco = document.getElementById('form-ocorrencia');
+        formOco.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('ocorrencia-id-edit').value;
+            const id = idEdicao || Date.now();
+            const statusN = idEdicao ? document.getElementById('oco-status-edit').value : 'Aberta';
+            const novaOco = {
+                id,
+                numero:      document.getElementById('oco-numero').value.toUpperCase(),
+                unidade:     document.getElementById('oco-unidade').value.toUpperCase(),
+                local:       document.getElementById('oco-local').value.toUpperCase(),
+                contratada:  document.getElementById('oco-contratada').value.toUpperCase(),
+                categoria:   document.getElementById('oco-categoria').value,
+                gravidade:   document.getElementById('oco-gravidade').value,
+                data_hora:   DateUtils.toDatabaseISO(document.getElementById('oco-data').value),
+                responsavel: document.getElementById('oco-responsavel').value.toUpperCase(),
+                descricao:   document.getElementById('oco-descricao').value.trim().toUpperCase(),
+                status:      statusN,
+                data_encerramento: null
+            };
+            if (idEdicao) {
+                const ant = ocorrencias.find(o => o.id == id);
+                if (statusN === 'Encerrada' && (!ant || ant.status !== 'Encerrada'))
+                    novaOco.data_encerramento = DateUtils.getNowDatabaseISO();
+                else if (ant && ant.data_encerramento)
+                    novaOco.data_encerramento = ant.data_encerramento;
+                registrarLog('Edição', 'Ocorrências', `Alterou ocorrência: ${novaOco.numero || id}`);
+            } else {
+                registrarLog('Criação', 'Ocorrências', `Nova ocorrência: ${novaOco.categoria} — ${novaOco.unidade}`);
+            }
+            const { error } = await sb.from('ocorrencias').upsert(novaOco);
+            if (error) alert('Erro: ' + error.message);
+            else { cancelarEdicaoOcorrencia(); carregarDados(); }
+        });
+
+        window.editarOcorrencia = function(id) {
+            const o = ocorrencias.find(i => i.id == id); if (!o) return;
+            document.getElementById('ocorrencia-id-edit').value = o.id;
+            document.getElementById('oco-numero').value      = o.numero || '';
+            document.getElementById('oco-unidade').value     = o.unidade;
+            document.getElementById('oco-local').value       = o.local;
+            document.getElementById('oco-contratada').value  = o.contratada || '';
+            document.getElementById('oco-categoria').value   = o.categoria;
+            document.getElementById('oco-gravidade').value   = o.gravidade;
+            document.getElementById('oco-responsavel').value = o.responsavel;
+            document.getElementById('oco-descricao').value   = o.descricao;
+            if (o.data_hora) {
+                const dl = new Date(o.data_hora);
+                dl.setMinutes(dl.getMinutes() - dl.getTimezoneOffset());
+                document.getElementById('oco-data').value = dl.toISOString().slice(0, 16);
+            }
+            document.getElementById('titulo-form-ocorrencia').innerHTML = '<i class="fas fa-pen"></i> Editando Ocorrência';
+            const btn = document.getElementById('btn-submit-oco');
+            btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
+            btn.style.background = 'linear-gradient(135deg, var(--edit), #d97706)';
+            document.getElementById('btn-cancel-oco').style.display = 'block';
+            document.getElementById('oco-status-edit').style.display = 'block';
+            document.getElementById('oco-status-edit').value = o.status;
+            document.getElementById('ocorrencias').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.cancelarEdicaoOcorrencia = function() {
+            document.getElementById('ocorrencia-id-edit').value = '';
+            formOco.reset();
+            document.getElementById('oco-data').value = DateUtils.getToInput();
+            document.getElementById('titulo-form-ocorrencia').innerHTML = '<i class="fas fa-triangle-exclamation" style="color:var(--ocorrencia)"></i> Registrar Ocorrência';
+            const btn = document.getElementById('btn-submit-oco');
+            btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Registrar Ocorrência';
+            btn.style.background = 'linear-gradient(135deg, var(--ocorrencia), #991b1b)';
+            document.getElementById('btn-cancel-oco').style.display = 'none';
+            document.getElementById('oco-status-edit').style.display = 'none';
+        };
+
+        window.deletarOcorrencia = async function(id) {
+            if (!confirm('Excluir esta ocorrência?')) return;
+            const item = ocorrencias.find(o => o.id == id);
+            await sb.from('ocorrencias').delete().eq('id', id);
+            registrarLog('Exclusão', 'Ocorrências', `Removeu ocorrência: ${item ? (item.numero || item.categoria) : id}`);
+            carregarDados();
+        };
+
+        window.renderizarApenasOcorrencias = function() {
+            const mes   = document.getElementById('filtro-mes-oco').value;
+            const termo = document.getElementById('filtro-busca-oco').value.toUpperCase();
+            const stat  = document.getElementById('filtro-status-oco').value;
+            const lista = ocorrencias.filter(o => {
+                const bM = !mes  || (o.data_hora || '').startsWith(mes);
+                const bS = !stat || o.status === stat;
+                const bT = !termo || (o.unidade+o.local+o.categoria+o.descricao+o.responsavel+(o.numero||'')).toUpperCase().includes(termo);
+                return bM && bS && bT;
+            });
+            document.getElementById('dash-oco-total').innerText     = lista.length;
+            document.getElementById('dash-oco-abertas').innerText   = lista.filter(o => o.status === 'Aberta').length;
+            document.getElementById('dash-oco-tratativa').innerText = lista.filter(o => o.status === 'Em Tratativa').length;
+            document.getElementById('dash-oco-encerradas').innerText= lista.filter(o => o.status === 'Encerrada').length;
+
+            const tbody = document.querySelector('#tabela-ocorrencias tbody');
+            if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma ocorrência encontrada.</td></tr>'; return; }
+
+            const gravClass = { 'Baixa':'bg-concluido', 'Média':'bg-andamento', 'Alta':'bg-pendente', 'Crítica':'bg-critica' };
+            const statClass = { 'Aberta':'bg-aberta', 'Em Tratativa':'bg-tratativa', 'Encerrada':'bg-encerrada' };
+
+            tbody.innerHTML = lista.map(o => {
+                const dataFmt = formatarDataHoraReal(o.data_hora);
+                const tempo   = o.status === 'Encerrada' && o.data_encerramento
+                    ? `<span class="time-badge"><i class="fas fa-flag-checkered"></i> ${calcularTempoOco(o.data_hora, o.data_encerramento)}</span>`
+                    : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${calcularTempoOco(o.data_hora)}</span>`;
+                const titulo  = o.numero ? `<strong>#${o.numero} — ${o.categoria}</strong>` : `<strong>${o.categoria}</strong>`;
+                const desc    = (o.descricao || '').substring(0, 55) + ((o.descricao||'').length > 55 ? '…' : '');
+                const btnWA   = `<button onclick="enviarWhatsAppOcorrencia(${o.id})" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
+                const btnPDF  = `<button onclick="gerarPDFOcorrencia(${o.id})" class="action-btn btn-print" title="Gerar PDF"><i class="fas fa-file-pdf"></i></button>`;
+                const btnEdit = pode('ocorrencias','editar') ? `<button onclick="editarOcorrencia(${o.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
+                const btnDel  = pode('ocorrencias','excluir') ? `<button onclick="deletarOcorrencia(${o.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
+                return `<tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;white-space:nowrap">${dataFmt}</td>
+                    <td><span class="badge ${gravClass[o.gravidade]||'bg-saiu'}">${o.gravidade}</span></td>
+                    <td>${titulo}<br><small style="color:var(--text-muted)">${o.unidade} — ${o.local}</small></td>
+                    <td>${desc}<br><small style="color:var(--text-muted)">Resp: ${o.responsavel}</small></td>
+                    <td><span class="badge ${statClass[o.status]||'bg-saiu'}">${o.status}</span></td>
+                    <td>${tempo}</td>
+                    <td style="min-width:150px">${btnWA}${btnPDF}${btnEdit}${btnDel}</td>
+                </tr>`;
+            }).join('');
+        };
+
+        function calcularTempoOco(dataISOInicio, dataISOFim) {
+            if (!dataISOInicio) return '--';
+            const inicio = new Date(dataISOInicio);
+            const fim    = dataISOFim ? new Date(dataISOFim) : new Date();
+            const diff   = fim - inicio;
+            if (diff < 0) return '00m';
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
+        }
+
+        // ================================================================
+        // ================================================================
+        // ================================================================
+        // PDF DE OCORRÊNCIA — Documento Governamental Limpo (sem cores)
+        // ================================================================
+        window.gerarPDFOcorrencia = async function(id) {
+            const o = ocorrencias.find(i => i.id == id); if (!o) return;
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            const PW = 200, OX = 5, RX = 205;
+            let Y = 8;
+
+            // Sanitize — remove acentos para compatibilidade jsPDF helvetica
+            const s = (v) => String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
+
+            // ── Helpers de desenho ───────────────────────────────────
+            const hline = (y, lw) => {
+                pdf.setLineWidth(lw||0.3); pdf.setDrawColor(0,0,0);
+                pdf.line(OX, y, RX, y);
+            };
+            const vline = (x, y1, y2, lw) => {
+                pdf.setLineWidth(lw||0.3); pdf.setDrawColor(0,0,0);
+                pdf.line(x, y1, x, y2);
+            };
+            const caixa = (x, y, w, h) => {
+                pdf.setLineWidth(0.25); pdf.setDrawColor(0,0,0);
+                pdf.rect(x, y, w, h, 'S');
+            };
+
+            // Cabeçalho de seção — fundo cinza claro APENAS para distinguir
+            const secHeader = (num, titulo, y) => {
+                const h = 6.5;
+                // Fundo branco, borda preta, texto em caixa alta
+                pdf.setFillColor(240,240,240);
+                pdf.setDrawColor(0,0,0);
+                pdf.setLineWidth(0.4);
+                pdf.rect(OX, y, PW, h, 'FD');
+                pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                pdf.text(`${num}  ${s(titulo)}`, OX+PW/2, y+4.3, {align:'center'});
+                return y + h;
+            };
+
+            // Campo: label + valor, sem qualquer cor de fundo
+            const campo = (lbl, val, x, y, w, h) => {
+                caixa(x, y, w, h);
+                pdf.setFontSize(6.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(60,60,60);
+                pdf.text(s(lbl), x+2, y+3.5);
+                const linhas = pdf.splitTextToSize(s(String(val||'-').toUpperCase()), w-4);
+                pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+                pdf.text(linhas[0]||'', x+2, y+h-2.5);
+            };
+
+            pdf.setDrawColor(0,0,0);
+
+            // ════════════════════════════════════════════════════════
+            // CABEÇALHO
+            // ════════════════════════════════════════════════════════
+            const hdrH = 28;
+            // Borda externa do cabeçalho
+            pdf.setLineWidth(0.6); pdf.setDrawColor(0,0,0);
+            pdf.rect(OX, Y, PW, hdrH, 'S');
+
+            // Divisores verticais: 18% brasão | 55% texto | 27% nº
+            const cW1 = PW * 0.18, cW3 = PW * 0.27, cW2 = PW - cW1 - cW3;
+            const cx2 = OX+cW1, cx3 = OX+cW1+cW2;
+            vline(cx2, Y, Y+hdrH, 0.3);
+            vline(cx3, Y, Y+hdrH, 0.3);
+
+            // Brasão
+            try {
+                await new Promise(resolve => {
+                    const img = new Image(); img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        const cv = document.createElement('canvas');
+                        cv.width = img.naturalWidth||img.width;
+                        cv.height = img.naturalHeight||img.height;
+                        cv.getContext('2d').drawImage(img, 0, 0);
+                        const bW=15, bH=15;
+                        pdf.addImage(cv.toDataURL('image/png'),'PNG',
+                            OX+(cW1-bW)/2, Y+(hdrH-bH)/2, bW, bH);
+                        resolve();
+                    };
+                    img.onerror = resolve;
+                    img.src = 'brasao.jpg';
+                });
+            } catch(e) {}
+
+            // Texto central
+            const ctrX = cx2 + cW2/2;
+            pdf.setTextColor(0,0,0);
+            pdf.setFontSize(10); pdf.setFont('helvetica','bold');
+            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y+6.5, {align:'center'});
+            pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+            pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y+11, {align:'center'});
+            pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y+15, {align:'center'});
+            pdf.setFont('helvetica','bold');
+            pdf.text('DIVISAO DE ZELADORIA  -  DZEL', ctrX, Y+19.5, {align:'center'});
+            // Linha separadora fina
+            pdf.setLineWidth(0.2); pdf.line(cx2+5, Y+21.5, cx3-5, Y+21.5);
+            pdf.setFontSize(8.5); pdf.setFont('helvetica','bold');
+            pdf.text('REGISTRO DE OCORRENCIA', ctrX, Y+26, {align:'center'});
+
+            // Coluna direita: número + status
+            const roX = cx3, roW = cW3;
+            const numDisplay = o.numero ? `No. ${s(o.numero)}` : `ID ${o.id}`;
+            pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+            pdf.text('NUMERO DO REGISTRO', roX+roW/2, Y+7, {align:'center'});
+            pdf.setFontSize(14); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text(numDisplay, roX+roW/2, Y+15, {align:'center'});
+            // Status em caixa simples
+            const sW=roW-10, sH=5.5, sX=roX+5, sY=Y+hdrH-8;
+            caixa(sX, sY, sW, sH);
+            pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text(s(o.status).toUpperCase(), sX+sW/2, sY+3.8, {align:'center'});
+
+            Y += hdrH;
+
+            // ════════════════════════════════════════════════════════
+            // BARRA DE RESUMO
+            // ════════════════════════════════════════════════════════
+            const barH = 8;
+            caixa(OX, Y, PW, barH);
+            // Gravidade em caixinha simples
+            const gW=32, gH=5, gX=OX+2, gY=Y+1.5;
+            caixa(gX, gY, gW, gH);
+            pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text(`GRAVIDADE: ${s(o.gravidade||'').toUpperCase()}`, gX+gW/2, gY+3.5, {align:'center'});
+
+            const dt = o.data_hora ? new Date(o.data_hora) : new Date();
+            const dataStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+            const horaStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+            pdf.text('Abertura:', OX+38, Y+3.5);
+            pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text(`${dataStr}  ${horaStr}`, OX+38, Y+7);
+
+            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+            pdf.text('Responsavel:', OX+90, Y+3.5);
+            pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text(s((o.responsavel||'').toUpperCase()).substring(0,44), OX+90, Y+7);
+
+            Y += barH + 1;
+
+            // ════════════════════════════════════════════════════════
+            // SEÇÃO 1 — IDENTIFICAÇÃO
+            // ════════════════════════════════════════════════════════
+            Y = secHeader('1.', 'IDENTIFICACAO DA OCORRENCIA', Y);
+
+            const fH = 11, hw = PW/2;
+
+            campo('UNIDADE / PREDIO',      o.unidade||'-',    OX,    Y, hw, fH);
+            campo('LOCAL / SETOR',         o.local||'-',      OX+hw, Y, hw, fH);
+            Y += fH;
+            campo('CATEGORIA',             o.categoria||'-',  OX,    Y, hw, fH);
+            campo('CONTRATADA / EMPRESA',  o.contratada||'-', OX+hw, Y, hw, fH);
+            Y += fH;
+
+            const temEnc = o.status === 'Encerrada' && o.data_encerramento;
+            if (temEnc) {
+                const dtE = new Date(o.data_encerramento);
+                const encStr = `${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+                campo('DATA / HORA DE ABERTURA',     `${dataStr}  ${horaStr}`, OX,    Y, hw, fH);
+                campo('DATA / HORA DE ENCERRAMENTO', encStr,                   OX+hw, Y, hw, fH);
+            } else {
+                campo('DATA / HORA DE ABERTURA', `${dataStr}  ${horaStr}`, OX, Y, PW, fH);
+            }
+            Y += fH + 1;
+
+            // ════════════════════════════════════════════════════════
+            // SEÇÃO 2 — HISTÓRICO / DESCRIÇÃO
+            // ════════════════════════════════════════════════════════
+            Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
+
+            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW-6);
+            const lnH      = 5.2;
+            // Histórico ainda maior — mínimo 130mm
+            const descBoxH = Math.max(130, descLines.length * lnH + 20);
+
+            // Caixa limpa, fundo branco, bordas pretas — SEM linha vertical lateral
+            caixa(OX, Y, PW, descBoxH);
+
+            // Linhas de pauta sutis
+            for (let ly = Y+10; ly < Y+descBoxH-2; ly += lnH) {
+                pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.1);
+                pdf.line(OX+4, ly, RX-4, ly);
+            }
+            pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+            pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.25);
+            pdf.text(descLines, OX+4, Y+8);
+            Y += descBoxH + 1;
+
+            // ════════════════════════════════════════════════════════
+            // SEÇÃO 3 — ASSINATURA ÚNICA (GESTOR/FISCAL) — compacta
+            // ════════════════════════════════════════════════════════
+            Y = secHeader('3.', 'TERMO DE CIENCIA E ASSINATURA DO FISCAL', Y);
+
+            const sigH = 22;
+            const sigW = PW * 0.55;
+            const sigX = OX + (PW - sigW) / 2;
+
+            // Linha de assinatura simples — sem caixas, sem campo DATA
+            pdf.setLineWidth(0.4); pdf.setDrawColor(0,0,0);
+            pdf.line(sigX, Y+sigH-9, sigX+sigW, Y+sigH-9);
+            pdf.setLineWidth(0.25);
+
+            pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+            pdf.text('GESTOR / FISCAL  (DZEL)', sigX+sigW/2, Y+sigH-4.5, {align:'center'});
+            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
+            pdf.text('Carimbo, Assinatura e Matricula', sigX+sigW/2, Y+sigH-1.2, {align:'center'});
+
+            Y += sigH;
+
+            // ════════════════════════════════════════════════════════
+            // BORDA EXTERNA GERAL
+            // ════════════════════════════════════════════════════════
+            pdf.setLineWidth(0.7); pdf.setDrawColor(0,0,0);
+            pdf.rect(OX, 8, PW, Y-8, 'S');
+
+            // Rodapé simples sem cor
+            pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(80,80,80);
+            pdf.text(
+                `Documento gerado em ${new Date().toLocaleString('pt-BR')}   |   DIVISAO DE ZELADORIA - COGESPA`,
+                OX+PW/2, Y+4, {align:'center'}
+            );
+
+            // Salva
+            const nomeArq = o.numero ? String(o.numero).replace(/[^a-zA-Z0-9]/g,'_') : o.id;
+            pdf.save(`RO_${nomeArq}.pdf`);
+        };
     </script>
 </body>
 </html>
