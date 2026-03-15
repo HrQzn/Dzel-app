@@ -3246,9 +3246,9 @@
             // ════════════════════════════════════════════════════════
             Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
 
-            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW-6);
+            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW - 14);
             const lnH      = 5.2;
-            // Histórico ainda maior — mínimo 130mm
+            // Histórico maior — mínimo 130mm
             const descBoxH = Math.max(130, descLines.length * lnH + 20);
 
             // Caixa limpa, fundo branco, bordas pretas — SEM linha vertical lateral
@@ -3261,7 +3261,7 @@
             }
             pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
             pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.25);
-            pdf.text(descLines, OX+4, Y+8);
+            pdf.text(descLines, OX+5, Y+8);
             Y += descBoxH + 1;
 
             // ════════════════════════════════════════════════════════
