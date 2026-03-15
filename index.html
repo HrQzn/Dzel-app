@@ -1335,6 +1335,31 @@
             auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
         });
 
+        // ================================================================
+        // SINCRONIZAÇÃO COM GOOGLE SHEETS
+        // Cole aqui a URL gerada ao implantar o Apps Script
+        // ================================================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3kwAfzW1_ayEgxgOoOZUAUWcR4wd6wT9nZWl43Pl0zNPs_uZBPsaIyEEYEGlp3UoD4w/exec'; // ← COLE SUA URL AQUI
+
+        /**
+         * Envia um registro para o Google Sheets via Apps Script.
+         * @param {string} modulo  - 'demandas' | 'visitantes' | 'frota' | 'eventos' | 'crachas' | 'ocorrencias'
+         * @param {string} operacao - 'upsert' | 'insert' | 'delete'
+         * @param {object} dado    - objeto com os dados do registro
+         */
+        async function syncSheets(modulo, operacao, dado) {
+            if (!GOOGLE_SCRIPT_URL) return; // desativado se URL não configurada
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, // Apps Script exige text/plain para evitar preflight CORS
+                    body: JSON.stringify({ modulo, operacao, dado })
+                });
+            } catch(e) {
+                console.warn('Sync Sheets falhou (não crítico):', e.message);
+            }
+        }
+
         Chart.register(ChartDataLabels);
         let chartVolume = null;
         let chartGaragem = null;
@@ -1841,9 +1866,10 @@
                 else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
+                if(!error) syncSheets('demandas', 'upsert', novaDemanda);
             } else {
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
-                if(!error) registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`);
+                if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
             if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
         });
@@ -2570,13 +2596,16 @@
             let novoStatus = item.status, novaDataFim = item.data_fim;
             if(item.status === 'Pendente') novoStatus = 'Em Andamento';
             else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = DateUtils.getNowDatabaseISO(); }
-            await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id); carregarDados();
+            await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
+            syncSheets('demandas', 'upsert', {...item, status: novoStatus, data_fim: novaDataFim});
+            carregarDados();
         }
 
         window.deletarDemanda = async function(id) {
             if(confirm('Excluir?')) {
                 const item = demandas.find(d => d.id == id);
                 await sb.from('demandas').delete().eq('id', id);
+                syncSheets('demandas', 'delete', {id});
                 registrarLog('Exclusão', 'Demandas', `Removeu demanda: ${item ? item.titulo : id}`);
                 if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda(); carregarDados();
             }
@@ -2593,7 +2622,7 @@
             const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
             if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVisitante(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); }
         });
 
         window.editarVisitante = function(id) {
@@ -2617,7 +2646,7 @@
         }
 
         window.deletarVisitante = async function(id) {
-            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); }
+            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); }
         }
 
         window.cancelarEdicaoVisitante = function() {
@@ -2657,7 +2686,7 @@
         }
 
         window.baixaVisitante = async function(id) {
-            if(confirm('Confirmar saída do visitante?')) { await sb.from('visitantes').update({ status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }).eq('id', id); carregarDados(); }
+            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; await sb.from('visitantes').update(upd).eq('id', id); const item = visitantes.find(v=>v.id==id); syncSheets('visitantes','upsert',{...item,...upd}); carregarDados(); }
         }
 
         // ---- VEÍCULOS ----
@@ -2679,7 +2708,7 @@
             const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null };
             if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
             const { error } = await sb.from('frota').upsert(novoVeiculo);
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
         });
 
         window.editarVeiculo = function(id) {
@@ -2703,7 +2732,7 @@
         }
 
         window.deletarVeiculo = async function(id) {
-            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); }
+            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); }
         }
 
         window.cancelarEdicaoVeiculo = function() {
@@ -2744,7 +2773,7 @@
 
         window.baixaVeiculo = async function(id) {
             const km = prompt("KM de Saída (Opcional):", "0");
-            if (km !== null) { await sb.from('frota').update({ km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }).eq('id', id); carregarDados(); }
+            if (km !== null) { const upd = { km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }; await sb.from('frota').update(upd).eq('id', id); const item = frota.find(f=>f.id==id); syncSheets('frota','upsert',{...item,...upd}); carregarDados(); }
         }
 
         // ---- EVENTOS ----
@@ -2756,7 +2785,7 @@
             const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
-            if(error) alert('Erro ao salvar evento: ' + error.message); else { cancelarEdicaoEvento(); carregarDados(); }
+            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); }
         });
 
         window.editarEvento = function(id) {
@@ -2788,7 +2817,7 @@
         }
 
         window.deletarEvento = async function(id) {
-            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); }
+            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); }
         }
 
         window.renderizarApenasEventos = function() {
@@ -2825,7 +2854,7 @@
             const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
             if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
             const { error } = await sb.from('crachas').upsert(novoCracha);
-            if(error) alert('Erro ao salvar crachá: ' + error.message); else { cancelarEdicaoCracha(); carregarDados(); }
+            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); }
         });
 
         window.editarCracha = function(id) {
@@ -2855,7 +2884,7 @@
         }
 
         window.deletarCracha = async function(id) {
-            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); }
+            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); }
         }
 
         window.renderizarApenasCrachas = function() {
@@ -2968,7 +2997,7 @@
             }
             const { error } = await sb.from('ocorrencias').upsert(novaOco);
             if (error) alert('Erro: ' + error.message);
-            else { cancelarEdicaoOcorrencia(); carregarDados(); }
+            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); }
         });
 
         window.editarOcorrencia = function(id) {
@@ -3013,6 +3042,7 @@
             if (!confirm('Excluir esta ocorrência?')) return;
             const item = ocorrencias.find(o => o.id == id);
             await sb.from('ocorrencias').delete().eq('id', id);
+            syncSheets('ocorrencias','delete',{id});
             registrarLog('Exclusão', 'Ocorrências', `Removeu ocorrência: ${item ? (item.numero || item.categoria) : id}`);
             carregarDados();
         };
