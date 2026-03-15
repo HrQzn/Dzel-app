@@ -1878,16 +1878,29 @@
                 // ══════════════════════════════════════════════════════════════
                 // CABEÇALHO
                 // ══════════════════════════════════════════════════════════════
-                const hdrH = 22;
+                const hdrH = 24;  // altura ligeiramente maior para melhor respiro
                 rect(OX, Y, PW, hdrH);
-                // Divisor vertical logo | texto | OS num
-                const c1x = OX + PW * 0.15;
-                const c2x = OX + PW * 0.75;
+
+                // Divisores verticais: célula esquerda 15% | centro 60% | direita 25%
+                const c1x = OX + PW * 0.15;          // x = 35mm
+                const c2x = OX + PW * 0.75;          // x = 155mm
                 linhav(c1x, Y, Y + hdrH);
                 linhav(c2x, Y, Y + hdrH);
 
-                // Tenta carregar brasão como base64 para o PDF
-                // (se falhar, exibe texto substituto)
+                // ── Centros exatos de cada célula ──────────────────────────
+                // Célula esquerda: OX(5) até c1x(35) → largura 30mm
+                const celEsqW = c1x - OX;            // 30mm
+                // Célula centro: c1x(35) até c2x(155) → largura 120mm
+                const ctrX = (c1x + c2x) / 2;        // 95mm  ← centro real da coluna
+                // Célula direita: c2x(155) até OX+PW(205) → largura 50mm
+                const celDirX  = c2x;                 // 155mm
+                const celDirW  = (OX + PW) - c2x;    // 50mm
+                const celDirCX = c2x + celDirW / 2;  // 180mm ← centro real da coluna direita
+
+                // ── Brasão: centralizado na célula esquerda ────────────────
+                const brasaoW = 15, brasaoH = 15;
+                const brasaoX = OX + (celEsqW - brasaoW) / 2;        // centro H
+                const brasaoY = Y  + (hdrH    - brasaoH) / 2;        // centro V
                 try {
                     await new Promise((resolve) => {
                         const img = new Image();
@@ -1897,20 +1910,23 @@
                             canvas.width  = img.naturalWidth  || img.width;
                             canvas.height = img.naturalHeight || img.height;
                             canvas.getContext('2d').drawImage(img, 0, 0);
-                            const data = canvas.toDataURL('image/png');
-                            pdf.addImage(data, 'PNG', OX + 0.5, Y + 1, 13, 13);
+                            pdf.addImage(canvas.toDataURL('image/png'), 'PNG',
+                                brasaoX, brasaoY, brasaoW, brasaoH);
                             resolve();
                         };
-                        img.onerror = resolve; // continua sem imagem
+                        img.onerror = resolve;
                         img.src = 'brasao.jpg';
                     });
                 } catch(e) {}
 
-                // Logo da contratada (Épura / IGM) no canto direito
+                // ── Logo da contratada: centralizada na célula direita ─────
                 const cat = getCategoriaDemanda(d);
-                try {
-                    const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
-                    if (logoSrc) {
+                const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
+                const logoW = 24, logoH = 9;
+                const logoX = celDirCX - logoW / 2;   // centro H
+                const logoY = Y + 3;                   // margem superior
+                if (logoSrc) {
+                    try {
                         await new Promise((resolve) => {
                             const img = new Image();
                             img.crossOrigin = 'anonymous';
@@ -1919,33 +1935,41 @@
                                 canvas.width  = img.naturalWidth  || img.width;
                                 canvas.height = img.naturalHeight || img.height;
                                 canvas.getContext('2d').drawImage(img, 0, 0);
-                                const data = canvas.toDataURL('image/jpeg');
-                                pdf.addImage(data, 'JPEG', c2x + 1, Y + 1, 18, 8);
+                                pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG',
+                                    logoX, logoY, logoW, logoH);
                                 resolve();
                             };
                             img.onerror = resolve;
                             img.src = logoSrc;
                         });
-                    }
-                } catch(e) {}
-
-                // Texto central do cabeçalho (desenhado UMA vez com align center)
-                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', OX + PW * 0.5 - 2, Y + 6, {align:'center'});
-                pdf.setFontSize(9);
-                pdf.text('SECRETARIA DA EDUCACAO', OX + PW * 0.5 - 2, Y + 10.5, {align:'center'});
-                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
-                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', OX + PW * 0.5 - 2, Y + 14.5, {align:'center'});
-                pdf.text('DIVISAO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, {align:'center'});
-
-                // Nº OS
-                const osNum = d.numero_os ? d.numero_os : d.id;
-                if (!(cat === 'PREDIAL' || cat === 'AR')) {
-                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                    pdf.text('ORDEM DE SERVICO', c2x + (OX + PW - c2x)/2, Y + 7, {align:'center'});
+                    } catch(e) {}
                 }
-                pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
-                pdf.text(`No. ${osNum}`, c2x + (OX + PW - c2x)/2, Y + (cat==='PREDIAL'||cat==='AR' ? 17 : 14), {align:'center'});
+
+                // ── Texto central — alinhado ao CENTRO da coluna do meio ──
+                // (não ao centro da página inteira)
+                const textoY1 = logoSrc ? Y + 5  : Y + 5;
+                const textoY2 = logoSrc ? Y + 10 : Y + 10;
+                const textoY3 = logoSrc ? Y + 14 : Y + 14;
+                const textoY4 = logoSrc ? Y + 18 : Y + 18;
+
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, textoY1, {align:'center'});
+                pdf.setFontSize(9);
+                pdf.text('SECRETARIA DA EDUCACAO', ctrX, textoY2, {align:'center'});
+                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, textoY3, {align:'center'});
+                pdf.text('DIVISAO DE ZELADORIA', ctrX, textoY4, {align:'center'});
+
+                // ── Nº OS: centralizado na célula direita, abaixo do logo ─
+                const osNum = d.numero_os ? d.numero_os : d.id;
+                if (!logoSrc) {
+                    // Sem logo: mostra "ORDEM DE SERVICO" acima do número
+                    pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                    pdf.text('ORDEM DE SERVICO', celDirCX, Y + 10, {align:'center'});
+                }
+                const numY = logoSrc ? logoY + logoH + 5 : Y + 17;
+                pdf.setFontSize(13); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
+                pdf.text(`No. ${osNum}`, celDirCX, numY, {align:'center'});
                 pdf.setTextColor(0,0,0);
 
                 pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
