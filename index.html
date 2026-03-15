@@ -3254,14 +3254,8 @@
             // Histórico maior — mínimo 130mm
             const descBoxH = Math.max(130, descLines.length * lnH + 20);
 
-            // Caixa limpa, fundo branco, bordas pretas
+            // Caixa limpa, fundo branco, bordas pretas — sem linhas de pauta
             caixa(OX, Y, PW, descBoxH);
-
-            // Linhas de pauta sutis
-            for (let ly = Y+10; ly < Y+descBoxH-2; ly += lnH) {
-                pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.1);
-                pdf.line(OX+5, ly, RX-5, ly);
-            }
             pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.25);
             pdf.text(descLines, OX+5, Y+8);
             Y += descBoxH + 1;
