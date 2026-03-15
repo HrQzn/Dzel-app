@@ -3120,8 +3120,9 @@
                 caixa(x, y, w, h);
                 pdf.setFontSize(6.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(60,60,60);
                 pdf.text(s(lbl), x+2, y+3.5);
-                const linhas = pdf.splitTextToSize(s(String(val||'-').toUpperCase()), w-4);
+                // Define a fonte DO VALOR antes de calcular quebra de linha
                 pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+                const linhas = pdf.splitTextToSize(s(String(val||'-').toUpperCase()), w-4);
                 pdf.text(linhas[0]||'', x+2, y+h-2.5);
             };
 
@@ -3246,20 +3247,21 @@
             // ════════════════════════════════════════════════════════
             Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
 
-            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW - 14);
+            // IMPORTANTE: definir fonte ANTES do splitTextToSize para métricas corretas
+            pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW - 18);
             const lnH      = 5.2;
             // Histórico maior — mínimo 130mm
             const descBoxH = Math.max(130, descLines.length * lnH + 20);
 
-            // Caixa limpa, fundo branco, bordas pretas — SEM linha vertical lateral
+            // Caixa limpa, fundo branco, bordas pretas
             caixa(OX, Y, PW, descBoxH);
 
             // Linhas de pauta sutis
             for (let ly = Y+10; ly < Y+descBoxH-2; ly += lnH) {
                 pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.1);
-                pdf.line(OX+4, ly, RX-4, ly);
+                pdf.line(OX+5, ly, RX-5, ly);
             }
-            pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
             pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.25);
             pdf.text(descLines, OX+5, Y+8);
             Y += descBoxH + 1;
