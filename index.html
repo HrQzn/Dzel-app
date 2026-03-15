@@ -1296,13 +1296,13 @@
         function montarCheckboxes(d) {
             const c = (d.contratada || '').toUpperCase();
             return {
-                limpeza:    c.includes('LIMPEZA')          ? '☑' : '☐',
-                ar:         c.includes('AR CONDICIONADO')  ? '☑' : '☐',
-                manut:      (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) ? '☑' : '☐',
-                elevador:   c.includes('ELEVADOR')         ? '☑' : '☐',
-                ti:         '☐',
-                telefonia:  c.includes('TELEFONIA')        ? '☑' : '☐',
-                extintores: '☐'
+                limpeza:    c.includes('LIMPEZA')          ? '[X]' : '[ ]',
+                ar:         c.includes('AR CONDICIONADO')  ? '[X]' : '[ ]',
+                manut:      (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) ? '[X]' : '[ ]',
+                elevador:   c.includes('ELEVADOR')         ? '[X]' : '[ ]',
+                ti:         '[ ]',
+                telefonia:  c.includes('TELEFONIA')        ? '[X]' : '[ ]',
+                extintores: '[ ]'
             };
         }
 
@@ -1836,6 +1836,12 @@
                 const OX = 5;     // origem X
                 let   Y  = 8;     // cursor Y (avança linha a linha)
 
+                // ── Sanitize: remove acentos para compatibilidade com helvetica ──
+                const s = (str) => String(str || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')  // remove diacritics
+                    .replace(/[^\x00-\x7F]/g, '');    // remove qualquer não-ASCII restante
+
                 // ── Helpers de desenho ───────────────────────────────────────
                 const linhah  = (y, x1, x2) => { pdf.line(x1 ?? OX, y, x2 ?? OX+PW, y); };
                 const linhav  = (x, y1, y2) => { pdf.line(x, y1, x, y2); };
@@ -1844,7 +1850,7 @@
                     pdf.setFontSize(sz || 9);
                     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
                     if (color) pdf.setTextColor(...color); else pdf.setTextColor(0,0,0);
-                    const str = String(t || '');
+                    const str = s(t);
                     if (maxW) {
                         const lines = pdf.splitTextToSize(str, maxW);
                         pdf.text(lines, x, y);
@@ -1854,12 +1860,13 @@
                     return 1;
                 };
                 const label = (t, x, y) => txt(t, x, y, 7, true,  [80,80,80]);
-                const valor = (t, x, y, maxW) => txt(t.toUpperCase(), x, y, 9, false, [0,0,0], maxW);
+                const valor = (t, x, y, maxW) => txt(s(t).toUpperCase(), x, y, 9, false, [0,0,0], maxW);
                 const secao = (t, y, h) => {
                     pdf.setFillColor(230,230,230);
                     pdf.rect(OX, y, PW, h, 'F');
                     pdf.setDrawColor(0); pdf.rect(OX, y, PW, h);
-                    txt(t, OX + PW/2, y + h - 1.5, 8, true, [0,0,0]);
+                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                    pdf.text(s(t), OX + PW/2, y + h - 1.5, {align:'center'});
                     pdf.setTextColor(0,0,0);
                     return y + h;
                 };
@@ -1922,31 +1929,23 @@
                     }
                 } catch(e) {}
 
-                // Texto central
-                txt('GOVERNO DO ESTADO DE SÃO PAULO', OX + PW * 0.5 - 2, Y + 6, 10, true);
-                pdf.setTextColor(0,0,0);
-                txt('SECRETARIA DA EDUCAÇÃO', OX + PW * 0.5 - 2, Y + 10.5, 9, true);
-                txt('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', OX + PW * 0.5 - 2, Y + 14.5, 7.5, false);
-                txt('DIVISÃO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, 7.5, false);
-                // Alinhamento central manual (jsPDF não tem align via txt helper aqui, usamos centragem manual)
-                // Re-draw com alinhamento correto
-                pdf.setFontSize(10); pdf.setFont('helvetica','bold');
-                pdf.text('GOVERNO DO ESTADO DE SÃO PAULO', OX + PW * 0.5 - 2, Y + 6, {align:'center'});
+                // Texto central do cabeçalho (desenhado UMA vez com align center)
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', OX + PW * 0.5 - 2, Y + 6, {align:'center'});
                 pdf.setFontSize(9);
-                pdf.text('SECRETARIA DA EDUCAÇÃO', OX + PW * 0.5 - 2, Y + 10.5, {align:'center'});
+                pdf.text('SECRETARIA DA EDUCACAO', OX + PW * 0.5 - 2, Y + 10.5, {align:'center'});
                 pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
                 pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', OX + PW * 0.5 - 2, Y + 14.5, {align:'center'});
-                pdf.text('DIVISÃO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, {align:'center'});
+                pdf.text('DIVISAO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, {align:'center'});
 
                 // Nº OS
                 const osNum = d.numero_os ? d.numero_os : d.id;
                 if (!(cat === 'PREDIAL' || cat === 'AR')) {
-                    txt('ORDEM DE SERVIÇO', c2x + (PW - (c2x - OX))/2, Y + 7, 8, true, [0,0,0]);
-                    pdf.setFontSize(8); pdf.setFont('helvetica','bold');
-                    pdf.text('ORDEM DE SERVIÇO', c2x + (OX + PW - c2x)/2, Y + 7, {align:'center'});
+                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                    pdf.text('ORDEM DE SERVICO', c2x + (OX + PW - c2x)/2, Y + 7, {align:'center'});
                 }
                 pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
-                pdf.text(`Nº ${osNum}`, c2x + (OX + PW - c2x)/2, Y + (cat==='PREDIAL'||cat==='AR' ? 17 : 14), {align:'center'});
+                pdf.text(`No. ${osNum}`, c2x + (OX + PW - c2x)/2, Y + (cat==='PREDIAL'||cat==='AR' ? 17 : 14), {align:'center'});
                 pdf.setTextColor(0,0,0);
 
                 pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
@@ -1970,8 +1969,7 @@
                 label('SOLICITANTE / CONTATO', r1c1+1, Y+3.5);
                 valor(d.solicitante||'', r1c1+1, Y+8, r1c2-r1c1-2);
                 label('PRIORIDADE NO SISTEMA', r1c2+1, Y+3.5);
-                valor(d.prioridade||'', r1c2+1, Y+8);
-                linhah(Y+r1h); Y += r1h;
+                valor(d.prioridade||'', r1c2+1, Y+8);                linhah(Y+r1h); Y += r1h;
 
                 // Linha: Setor | Status
                 const r2h = 11;
@@ -1989,7 +1987,7 @@
                 // ══════════════════════════════════════════════════════════════
                 Y = secao('2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)', Y, 5);
 
-                const titulo = (d.titulo||'').toUpperCase();
+                const titulo = s((d.titulo||'').toUpperCase());
                 pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
                 const tLines = pdf.splitTextToSize(titulo, PW - 4);
                 const descH  = Math.max(14, tLines.length * 5 + 5);
@@ -2013,7 +2011,7 @@
                     [chks.ti,         'SUPORTE TI'],
                     [chks.telefonia,  'TELEFONIA'],
                     [chks.extintores, 'MANUT. E RECARGA EXTINTORES'],
-                    ['☐',             'OUTROS: _______________________'],
+                    ['[ ]',           'OUTROS: _______________________'],
                 ];
                 pdf.setFontSize(8); pdf.setFont('helvetica','normal');
                 const colW3 = PW / 3;
@@ -2022,9 +2020,10 @@
                     const row = Math.floor(i / 3);
                     const ex  = OX + 2 + col * colW3;
                     const ey  = Y + 8 + row * 5.5;
-                    pdf.setFont('helvetica', eq[0]==='☑' ? 'bold' : 'normal');
-                    pdf.setTextColor(eq[0]==='☑' ? 0 : 80, eq[0]==='☑' ? 100 : 80, eq[0]==='☑' ? 0 : 80);
-                    pdf.text(`${eq[0]} ${eq[1]}`, ex, ey);
+                    const marcado = eq[0] === '[X]';
+                    pdf.setFont('helvetica', marcado ? 'bold' : 'normal');
+                    pdf.setTextColor(marcado ? 0 : 80, marcado ? 120 : 80, marcado ? 0 : 80);
+                    pdf.text(`${eq[0]} ${s(eq[1])}`, ex, ey);
                 });
                 pdf.setTextColor(0,0,0);
                 const eqH = Math.ceil(equipes.length / 3) * 5.5 + 11;
@@ -2032,16 +2031,16 @@
 
                 // Checkboxes locais (4 colunas)
                 label('LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO', OX+1, Y+4);
-                const locais = ['SEDE','AROUCHE','EFAPE','ARMÊNIA','CASA VERDE','SÃO DOMINGOS','CAJAMAR','TENENTE PENA','CENTRO OESTE','CAPE'];
+                const locais = ['SEDE','AROUCHE','EFAPE','ARMENIA','CASA VERDE','SAO DOMINGOS','CAJAMAR','TENENTE PENA','CENTRO OESTE','CAPE'];
                 pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
                 const colW4 = PW / 4;
                 locais.forEach((loc, i) => {
                     const col = i % 4;
                     const row = Math.floor(i / 4);
-                    pdf.text(`☐ ${loc}`, OX + 2 + col * colW4, Y + 8 + row * 5.5);
+                    pdf.text(`[ ] ${s(loc)}`, OX + 2 + col * colW4, Y + 8 + row * 5.5);
                 });
                 const rowsLoc = Math.ceil(locais.length / 4);
-                pdf.text(`☐ OUTRO: ______________________________`, OX + 2, Y + 8 + rowsLoc * 5.5);
+                pdf.text(`[ ] OUTRO: ______________________________`, OX + 2, Y + 8 + rowsLoc * 5.5);
                 pdf.setTextColor(0,0,0);
                 const locH = (rowsLoc + 1) * 5.5 + 10;
                 pdf.setLineWidth(0.5); linhah(Y+locH); pdf.setLineWidth(0.3);
@@ -2052,17 +2051,17 @@
                 const midX = OX + PW / 2;
                 linhav(midX, Y, Y + camposMH);
 
-                label('DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS', OX+1, Y+4);
+                label('DESCRICAO DETALHADA DOS SERVICOS EXECUTADOS', OX+1, Y+4);
                 if (descricao && descricao.trim()) {
                     pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const dLines = pdf.splitTextToSize((descricao||'').toUpperCase(), midX - OX - 4);
+                    const dLines = pdf.splitTextToSize(s((descricao||'').toUpperCase()), midX - OX - 4);
                     pdf.text(dLines, OX+2, Y+9);
                 }
 
-                label('MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)', midX+1, Y+4);
+                label('MATERIAIS E PECAS UTILIZADOS (REPOSICAO)', midX+1, Y+4);
                 if (materiais && materiais.trim()) {
                     pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const mLines = pdf.splitTextToSize((materiais||'').toUpperCase(), OX + PW - midX - 4);
+                    const mLines = pdf.splitTextToSize(s((materiais||'').toUpperCase()), OX + PW - midX - 4);
                     pdf.text(mLines, midX+2, Y+9);
                 }
                 pdf.setLineWidth(0.5); linhah(Y+camposMH); pdf.setLineWidth(0.3);
@@ -2077,11 +2076,11 @@
                 const e1x = OX + PW * 0.25;
                 const e2x = OX + PW * 0.50;
                 linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
-                label('INÍCIO DO ATENDIMENTO',   OX+1,  Y+3.5);
-                pdf.setFontSize(8); pdf.text('___/___/20___ ÀS ___:___', OX+2, Y+9);
-                label('TÉRMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
-                pdf.setFontSize(8); pdf.text('___/___/20___ ÀS ___:___', e1x+2, Y+9);
-                label('OBSERVAÇÕES FINAIS / PENDÊNCIAS', e2x+1, Y+3.5);
+                label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
+                pdf.setFontSize(8); pdf.text('___/___/20___ AS ___:___', OX+2, Y+9);
+                label('TERMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
+                pdf.setFontSize(8); pdf.text('___/___/20___ AS ___:___', e1x+2, Y+9);
+                label('OBSERVACOES FINAIS / PENDENCIAS', e2x+1, Y+3.5);
                 linhah(Y+enc4H); Y += enc4H;
 
                 // ══════════════════════════════════════════════════════════════
@@ -2093,17 +2092,16 @@
                 linhav(OX + sigW * 2, Y, Y + sigH);
 
                 const sigs = [
-                    ['TÉCNICO EXECUTOR',        'Nome legível / Matrícula / Empresa'],
+                    ['TECNICO EXECUTOR',        'Nome legivel / Matricula / Empresa'],
                     ['GESTOR / FISCAL (DZEL)',   'Carimbo e Assinatura'],
-                    ['SOLICITANTE / RECEBEDOR',  'Atesto a conformidade do serviço'],
+                    ['SOLICITANTE / RECEBEDOR',  'Atesto a conformidade do servico'],
                 ];
                 sigs.forEach((sig, i) => {
                     const sx = OX + 3 + i * sigW;
-                    // Linha de assinatura
                     pdf.setLineWidth(0.2);
                     pdf.line(sx, Y + sigH - 10, sx + sigW - 6, Y + sigH - 10);
                     pdf.setLineWidth(0.3);
-                    pdf.setFontSize(8);  pdf.setFont('helvetica','bold');
+                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
                     pdf.text(sig[0], sx + (sigW-6)/2, Y + sigH - 6, {align:'center'});
                     pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
                     pdf.text(sig[1], sx + (sigW-6)/2, Y + sigH - 2.5, {align:'center'});
@@ -2117,8 +2115,9 @@
                 pdf.setLineWidth(0.3);
 
                 // Rodapé
+                const dataGeracao = new Date().toLocaleString('pt-BR');
                 pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(100,100,100);
-                pdf.text(`Documento gerado em ${new Date().toLocaleString('pt-BR')}`, OX + PW/2, Y + 4, {align:'center'});
+                pdf.text(`Documento gerado em ${dataGeracao}`, OX + PW/2, Y + 4, {align:'center'});
 
                 // ── Salva ────────────────────────────────────────────────────
                 const nomeArq = d.numero_os ? String(d.numero_os).replace(/[^a-zA-Z0-9]/g,'_') : d.id;
