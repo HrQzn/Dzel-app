@@ -334,7 +334,11 @@
         .kpi-card-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
         .chart-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
         .chart-card h3 { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem; }
-        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        /* Garante que canvas sempre tenha dimensões no mobile */
+        .chart-card canvas { display: block; }
+        .chart-wrapper-bar  { position: relative; height: 280px; width: 100%; overflow: hidden; }
+        .chart-wrapper-dnut { position: relative; height: 200px; width: 100%; max-width: 300px; margin: 0 auto; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
         .stat-mini { background: var(--bg-card); border-radius: var(--radius-md); padding: 1rem 1.25rem; border: 1px solid var(--border); border-left: 4px solid; box-shadow: var(--shadow-sm); transition: transform 0.2s; }
         .stat-mini:hover { transform: translateY(-2px); }
@@ -451,6 +455,8 @@
             .kpi-card-value { font-size: 1.6rem; }
 
             .charts-grid { grid-template-columns: 1fr; }
+            .chart-wrapper-bar  { height: 220px; }
+            .chart-wrapper-dnut { height: 180px; max-width: 220px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
 
             /* Forms */
@@ -769,8 +775,8 @@
                     <div class="kpi-card"><div><div class="kpi-card-label">Crachás Emitidos</div><div class="kpi-card-value" id="kpi-total-crachas">0</div><div class="kpi-card-sub">Solicitações atendidas</div></div><div class="kpi-card-icon" style="background:#f0fdf4;"><i class="fas fa-id-card" style="color:var(--success);"></i></div></div>
                 </div>
                 <div class="charts-grid">
-                    <div class="chart-card"><h3><i class="fas fa-bar-chart" style="color:var(--accent);margin-right:6px;"></i>Volume de Atendimento por Setor</h3><div style="height:280px;"><canvas id="chartVolumeSetor"></canvas></div></div>
-                    <div class="chart-card"><h3><i class="fas fa-car" style="color:var(--estacionado);margin-right:6px;"></i>Garagem: Perfil de Acesso</h3><div style="height:230px;display:flex;justify-content:center;"><canvas id="chartGaragemPerfil"></canvas></div><div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);"><p style="font-size:0.75rem;color:var(--text-muted);">Total de Veículos no Período</p><p id="total-garagem-label" style="font-weight:800;font-size:1.75rem;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">0</p></div></div>
+                    <div class="chart-card"><h3><i class="fas fa-bar-chart" style="color:var(--accent);margin-right:6px;"></i>Volume de Atendimento por Setor</h3><div class="chart-wrapper-bar"><canvas id="chartVolumeSetor"></canvas></div></div>
+                    <div class="chart-card"><h3><i class="fas fa-car" style="color:var(--estacionado);margin-right:6px;"></i>Garagem: Perfil de Acesso</h3><div class="chart-wrapper-dnut"><canvas id="chartGaragemPerfil"></canvas></div><div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);"><p style="font-size:0.75rem;color:var(--text-muted);">Total de Veículos no Período</p><p id="total-garagem-label" style="font-weight:800;font-size:1.75rem;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">0</p></div></div>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-mini" style="border-left-color:#475569;"><h4>Segurança Eletrônica (CFTV)</h4><p>161 <small>Câmeras</small></p><span>Monitoramento 24h</span></div>
@@ -1269,6 +1275,26 @@
         let streamGeral = null;
         let osPrintAtualId = null;
 
+        function montarDadosOS(id) { return demandas.find(item => item.id == id); }
+        function getLogoInfoParaOS(d) {
+            const cat = getCategoriaDemanda(d);
+            if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '140px', height: '60px', fit: 'cover' };
+            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '145px', height: '55px', fit: 'contain' };
+            return null;
+        }
+        function montarCheckboxes(d) {
+            const c = (d.contratada || '').toUpperCase();
+            return {
+                limpeza:    c.includes('LIMPEZA')          ? '☑' : '☐',
+                ar:         c.includes('AR CONDICIONADO')  ? '☑' : '☐',
+                manut:      (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) ? '☑' : '☐',
+                elevador:   c.includes('ELEVADOR')         ? '☑' : '☐',
+                ti:         '☐',
+                telefonia:  c.includes('TELEFONIA')        ? '☑' : '☐',
+                extintores: '☐'
+            };
+        }
+
         async function verificarSessao() {
             const { data } = await sb.auth.getSession();
             if (data.session) {
@@ -1422,10 +1448,11 @@
                 { label: 'Ramais', valor: counts['RAMAL'] },
                 { label: 'Ar Cond.', valor: counts['AR'] }
             ].sort((a, b) => b.valor - a.valor);
+            const isMobile = window.innerWidth <= 900;
             chartVolume = new Chart(ctxVolume, {
                 type: 'bar',
-                data: { labels: dadosSetor.map(d => d.label), datasets: [{ label: 'Volume', data: dadosSetor.map(d => d.valor), backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 18 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: 40 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: '#64748b', font: { weight: 'bold', size: 11 }, formatter: (value) => value > 0 ? value : '' } }, scales: { x: { display: false, grace: '10%' }, y: { grid: { display: false }, ticks: { font: { size: 12, family: 'Plus Jakarta Sans' }, color: '#64748b' } } } }
+                data: { labels: dadosSetor.map(d => d.label), datasets: [{ label: 'Volume', data: dadosSetor.map(d => d.valor), backgroundColor: '#3b82f6', borderRadius: 6, barThickness: isMobile ? 14 : 18 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: isMobile ? 30 : 40, left: isMobile ? 0 : 0 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: '#64748b', font: { weight: 'bold', size: isMobile ? 10 : 11 }, formatter: (value) => value > 0 ? value : '' } }, scales: { x: { display: false, grace: '15%' }, y: { grid: { display: false }, ticks: { font: { size: isMobile ? 11 : 12, family: 'Plus Jakarta Sans' }, color: '#64748b' } } } }
             });
             const qtdServidor = listaFrota.filter(f => f.tipo === 'servidor').length;
             const qtdVisitante = listaFrota.filter(f => f.tipo === 'visitante').length;
@@ -1434,8 +1461,8 @@
             if (chartGaragem) chartGaragem.destroy();
             chartGaragem = new Chart(ctxGaragem, {
                 type: 'doughnut',
-                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor, qtdVisitante], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0, cutout: '65%' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, datalabels: { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum+=d); return sum===0?"":(value*100/sum).toFixed(0)+"%"; } } } }
+                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor || 0, qtdVisitante || 0], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0, cutout: '65%' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 10 } }, datalabels: { color: '#fff', font: { weight: 'bold', size: isMobile ? 11 : 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d); return sum === 0 ? "" : (value * 100 / sum).toFixed(0) + "%"; } } } }
             });
         }
 
@@ -1574,7 +1601,11 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
-            if(tabId === 'dashboard') { renderizarDashboard(); }
+            if(tabId === 'dashboard') { 
+                renderizarDashboard(); 
+                // Força resize dos charts após o DOM estar visível
+                setTimeout(() => { if(chartVolume) chartVolume.resize(); if(chartGaragem) chartGaragem.resize(); }, 100);
+            }
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = DateUtils.getToInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); }
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
@@ -1734,7 +1765,9 @@
 
         /* =====================================================
            IMPRESSÃO DE O.S. — COMPATÍVEL COM MOBILE (Android/iOS)
-           Usa nova janela para garantir funcionamento em todos os browsers
+           Estratégia dupla:
+           1. Tenta window.open com URL absoluta para imagens (Android Chrome)
+           2. Fallback: overlay full-screen + window.print() (iOS Safari)
         ===================================================== */
         window.abrirModalImpressao = function(id) {
             osPrintAtualId = id;
@@ -1749,40 +1782,33 @@
 
         window.executarImpressao = function() {
             const desc = document.getElementById('print-input-descricao').value;
-            const mat = document.getElementById('print-input-materiais').value;
+            const mat  = document.getElementById('print-input-materiais').value;
             fecharModalImpressao();
-            abrirJanelaImpressao(osPrintAtualId, desc, mat);
+
+            // window.open DEVE ser chamado aqui — dentro do handler de click síncrono
+            // para iOS/Android não bloquearem como popup
+            const pw = window.open('', '_blank');
+            const html = gerarHTMLOS(osPrintAtualId, desc, mat);
+
+            if (pw && !pw.closed) {
+                pw.document.open();
+                pw.document.write(html);
+                pw.document.close();
+            } else {
+                // Fallback: overlay full-screen (funciona mesmo com popup bloqueado)
+                imprimirViaOverlay(html);
+            }
         }
 
-        function montarDadosOS(id) {
-            return demandas.find(item => item.id == id);
-        }
-
-        function getLogoInfoParaOS(d) {
-            const cat = getCategoriaDemanda(d);
-            if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '140px', height: '60px', fit: 'cover' };
-            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '145px', height: '55px', fit: 'contain' };
-            return null;
-        }
-
-        function montarCheckboxes(d) {
-            const c = (d.contratada || '').toUpperCase();
-            return {
-                limpeza:   c.includes('LIMPEZA')     ? '☑' : '☐',
-                ar:        c.includes('AR CONDICIONADO') ? '☑' : '☐',
-                manut:     (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) ? '☑' : '☐',
-                elevador:  c.includes('ELEVADOR')    ? '☑' : '☐',
-                ti:        '☐',
-                telefonia: c.includes('TELEFONIA')   ? '☑' : '☐',
-                extintores:'☐'
-            };
-        }
-
-        /* Abre nova janela com o HTML da O.S. e chama window.print() nela.
-           Funciona em Android Chrome, iOS Safari, Firefox Mobile e desktop. */
-        function abrirJanelaImpressao(id, descricao, materiais) {
+        /* Gera o HTML completo da O.S. com URL base absoluta para que
+           imagens (brasao.jpg, epura.jpg, igm2.jpg) carreguem corretamente
+           em nova aba/janela sem contexto de origem. */
+        function gerarHTMLOS(id, descricao, materiais) {
             const d = montarDadosOS(id);
-            if (!d) return;
+            if (!d) return '<html><body><p>Erro: OS não encontrada.</p></body></html>';
+
+            // URL base absoluta — resolve imagens relativas na nova janela
+            const baseHref = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
 
             const dataParts = d.data.split('-');
             const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : d.data;
@@ -1790,104 +1816,111 @@
             const chks = montarCheckboxes(d);
 
             const logoHTML = logoInfo
-                ? `<img src="${logoInfo.src}" style="width:${logoInfo.width};height:${logoInfo.height};object-fit:${logoInfo.fit};display:block;margin-bottom:5px;">`
+                ? `<img src="${logoInfo.src}" style="width:${logoInfo.width};height:${logoInfo.height};object-fit:${logoInfo.fit};display:block;margin-bottom:5px;" onerror="this.style.display='none'">`
                 : '';
             const topTextHTML = logoInfo ? '' : '<p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:5px;">ORDEM DE SERVIÇO</p>';
             const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
 
-            const html = `<!DOCTYPE html>
+            return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<base href="${baseHref}">
 <title>O.S. ${osNum}</title>
 <style>
   @page { size: A4 portrait; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; color: #000; background: #fff; }
   .os-container { border: 2px solid #000; display: flex; flex-direction: column; min-height: 270mm; width: 100%; }
-  .os-grid-row { display: flex; width: 100%; border-bottom: 1px solid #000; }
-  .os-grid-row:last-child { border-bottom: none; }
-  .os-grid-row.thick { border-bottom: 2px solid #000; }
-  .os-grid-row.expand { flex-grow: 1; align-items: stretch; }
-  .os-cell { padding: 6px 8px; display: flex; flex-direction: column; }
-  .os-logo { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
-  .os-logo img { max-height: 70px; width: auto; }
-  .os-hdr-center { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; }
-  .os-hdr-center h3 { margin: 0; font-size: 14px; }
-  .os-hdr-center h4 { margin: 4px 0; font-size: 12px; }
-  .os-hdr-center p  { margin: 0; font-size: 11px; font-weight: bold; }
-  .os-hdr-right { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; }
-  .os-numero { color: #c0392b; font-size: 16px; font-weight: bold; margin: 0; }
-  .os-sec { background: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
-  .os-sec.top { border-top: 1px solid #000; border-bottom: 2px solid #000; }
-  .os-label { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
-  .os-value { font-size: 12px; text-transform: uppercase; }
-  .os-value.destaque { font-size: 13px; font-weight: bold; padding-top: 5px; }
-  .chk-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
-  .chk-grid.locais { grid-template-columns: repeat(4,1fr); }
-  .sigs { min-height: 90px; align-items: flex-end; padding-bottom: 15px; padding-top: 20px; }
-  .sig-box { flex: 1; text-align: center; padding: 0 15px; }
+  .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
+  .row:last-child { border-bottom: none; }
+  .row.thick { border-bottom: 2px solid #000; }
+  .row.expand { flex-grow: 1; align-items: stretch; }
+  .cell { padding: 6px 8px; display: flex; flex-direction: column; }
+  .logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
+  .logo-box img { max-height: 70px; width: auto; }
+  .hdr-c { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; }
+  .hdr-c h3 { margin: 0; font-size: 14px; }
+  .hdr-c h4 { margin: 4px 0; font-size: 12px; }
+  .hdr-c p  { margin: 0; font-size: 11px; font-weight: bold; }
+  .hdr-r { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; }
+  .os-num { color: #c0392b; font-size: 16px; font-weight: bold; margin: 0; }
+  .sec { background: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
+  .sec.top { border-top: 1px solid #000; }
+  .lbl { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
+  .val { font-size: 12px; text-transform: uppercase; }
+  .val.big { font-size: 13px; font-weight: bold; padding-top: 5px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
+  .sigs { min-height: 90px; align-items: flex-end; padding: 20px 0 15px; }
+  .sig { flex: 1; text-align: center; padding: 0 15px; }
   .sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
   .sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
   .footer { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
+  /* Botão fechar — visível na tela, oculto na impressão */
+  #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
+    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999; }
+  @media print { #btn-fechar { display: none !important; } }
 </style>
 </head>
 <body>
+<button id="btn-fechar" onclick="window.close()">✕ Fechar</button>
+
 <div class="os-container">
-  <div class="os-grid-row thick">
-    <div class="os-logo"><img src="brasao.jpg" alt="SP"></div>
-    <div class="os-hdr-center">
+  <div class="row thick">
+    <div class="logo-box"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></div>
+    <div class="hdr-c">
       <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
       <h4>SECRETARIA DA EDUCAÇÃO</h4>
       <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
     </div>
-    <div class="os-hdr-right">
+    <div class="hdr-r">
       ${topTextHTML}
       ${logoHTML}
-      <h3 class="os-numero">${osLabel}${osNum}</h3>
+      <h3 class="os-num">${osLabel}${osNum}</h3>
     </div>
   </div>
 
-  <div class="os-sec">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
-  <div class="os-grid-row">
-    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
-      <div class="os-label">DATA E HORA DE ABERTURA</div>
-      <div class="os-value">${dataBr}, ${d.hora || '--:--'}</div>
+  <div class="sec">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
+  <div class="row">
+    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
+      <div class="lbl">DATA E HORA DE ABERTURA</div>
+      <div class="val">${dataBr}, ${d.hora || '--:--'}</div>
     </div>
-    <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-      <div class="os-label">SOLICITANTE / CONTATO</div>
-      <div class="os-value">${d.solicitante.toUpperCase()}</div>
+    <div class="cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
+      <div class="lbl">SOLICITANTE / CONTATO</div>
+      <div class="val">${(d.solicitante||'').toUpperCase()}</div>
     </div>
-    <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
-      <div class="os-label">PRIORIDADE NO SISTEMA</div>
-      <div class="os-value">${d.prioridade.toUpperCase()}</div>
-    </div>
-  </div>
-  <div class="os-grid-row thick">
-    <div class="os-cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
-      <div class="os-label">UNIDADE / SETOR DE ORIGEM</div>
-      <div class="os-value">${d.setor.toUpperCase()}</div>
-    </div>
-    <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
-      <div class="os-label">STATUS ATUAL</div>
-      <div class="os-value">${d.status.toUpperCase()}</div>
+    <div class="cell" style="flex:0 0 25%;max-width:25%;">
+      <div class="lbl">PRIORIDADE NO SISTEMA</div>
+      <div class="val">${(d.prioridade||'').toUpperCase()}</div>
     </div>
   </div>
-
-  <div class="os-sec">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
-  <div class="os-grid-row thick" style="min-height:80px;">
-    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-      <div class="os-value destaque">${d.titulo.toUpperCase()}</div>
+  <div class="row thick">
+    <div class="cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
+      <div class="lbl">UNIDADE / SETOR DE ORIGEM</div>
+      <div class="val">${(d.setor||'').toUpperCase()}</div>
+    </div>
+    <div class="cell" style="flex:0 0 25%;max-width:25%;">
+      <div class="lbl">STATUS ATUAL</div>
+      <div class="val">${(d.status||'').toUpperCase()}</div>
     </div>
   </div>
 
-  <div class="os-sec">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
-  <div class="os-grid-row">
-    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-      <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
-      <div class="chk-grid">
+  <div class="sec">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
+  <div class="row thick" style="min-height:80px;">
+    <div class="cell" style="flex:1;">
+      <div class="val big">${(d.titulo||'').toUpperCase()}</div>
+    </div>
+  </div>
+
+  <div class="sec">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
+  <div class="row">
+    <div class="cell" style="flex:1;">
+      <div class="lbl">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
+      <div class="grid3">
         <div>${chks.limpeza} LIMPEZA PREDIAL</div>
         <div>${chks.ar} AR CONDICIONADO</div>
         <div>${chks.manut} MANUTENÇÃO PREDIAL</div>
@@ -1899,10 +1932,10 @@
       </div>
     </div>
   </div>
-  <div class="os-grid-row thick">
-    <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-      <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
-      <div class="chk-grid locais">
+  <div class="row thick">
+    <div class="cell" style="flex:1;">
+      <div class="lbl">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
+      <div class="grid4">
         <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
         <div>☐ CASA VERDE</div><div>☐ SÃO DOMINGOS</div><div>☐ CAJAMAR</div><div>☐ TENENTE PENA</div>
         <div>☐ CENTRO OESTE</div><div>☐ CAPE</div>
@@ -1911,103 +1944,88 @@
     </div>
   </div>
 
-  <div class="os-grid-row expand">
-    <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-      <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
-      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(descricao || '').toUpperCase()}</div>
+  <div class="row expand">
+    <div class="cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
+      <div class="lbl">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
+      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(descricao||'').toUpperCase()}</div>
     </div>
-    <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
-      <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
-      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(materiais || '').toUpperCase()}</div>
-    </div>
-  </div>
-
-  <div class="os-sec top">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
-  <div class="os-grid-row">
-    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
-      <div class="os-label" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
-      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
-    </div>
-    <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
-      <div class="os-label" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
-      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
-    </div>
-    <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
-      <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
+    <div class="cell" style="flex:0 0 50%;max-width:50%;">
+      <div class="lbl">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
+      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(materiais||'').toUpperCase()}</div>
     </div>
   </div>
 
-  <div class="os-grid-row sigs">
-    <div class="sig-box"><div class="sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
-    <div class="sig-box"><div class="sig-line">GESTOR / FISCAL (DZEL)<span>Carimbo e Assinatura</span></div></div>
-    <div class="sig-box"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
+  <div class="sec top">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
+  <div class="row">
+    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;align-items:center;">
+      <div class="lbl" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
+      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
+    </div>
+    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;align-items:center;">
+      <div class="lbl" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
+      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
+    </div>
+    <div class="cell" style="flex:0 0 50%;max-width:50%;">
+      <div class="lbl">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
+    </div>
+  </div>
+
+  <div class="row sigs">
+    <div class="sig"><div class="sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
+    <div class="sig"><div class="sig-line">GESTOR / FISCAL (DZEL)<span>Carimbo e Assinatura</span></div></div>
+    <div class="sig"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
   </div>
 </div>
-<div class="footer">Documento impresso em ${new Date().toLocaleString('pt-BR')}</div>
+<div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
 <script>
+  // Espera imagens carregarem antes de imprimir para evitar página em branco
   window.addEventListener('load', function() {
-    setTimeout(function() { window.print(); }, 400);
+    var imgs = document.querySelectorAll('img');
+    var loaded = 0;
+    var total = imgs.length;
+    function tryPrint() {
+      loaded++;
+      if (loaded >= total) { setTimeout(function(){ window.print(); }, 300); }
+    }
+    if (total === 0) { setTimeout(function(){ window.print(); }, 300); }
+    else { imgs.forEach(function(img){ if(img.complete){ tryPrint(); } else { img.addEventListener('load', tryPrint); img.addEventListener('error', tryPrint); } }); }
   });
-  window.addEventListener('afterprint', function() {
-    // iOS não fecha automaticamente
-    try { window.close(); } catch(e) {}
-  });
+  window.addEventListener('afterprint', function() { try { window.close(); } catch(e) {} });
 <\/script>
 </body>
 </html>`;
-
-            /* Tenta abrir nova janela (funciona em Android/desktop).
-               iOS Safari por segurança bloqueia window.open em async — por isso usamos
-               um truque: chamamos imediatamente (ainda no contexto do click via modal). */
-            const pw = window.open('', '_blank');
-            if (pw) {
-                pw.document.open();
-                pw.document.write(html);
-                pw.document.close();
-            } else {
-                /* Fallback: se popup bloqueado, usa método antigo (desktop) */
-                document.getElementById('print-val-descricao').innerText = (descricao || '').toUpperCase();
-                document.getElementById('print-val-materiais').innerText = (materiais || '').toUpperCase();
-                imprimirOSDesktopFallback(id);
-            }
         }
 
-        /* Fallback para desktop caso popup seja bloqueado */
-        function imprimirOSDesktopFallback(id) {
-            const d = demandas.find(item => item.id == id); if (!d) return;
-            const cat = getCategoriaDemanda(d);
-            document.getElementById('print-id').innerText = d.numero_os ? d.numero_os : d.id;
-            const dataParts = d.data.split('-');
-            document.getElementById('print-data-hora').innerText = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}, ${d.hora || '--:--'}`;
-            document.getElementById('print-solicitante').innerText = d.solicitante.toUpperCase();
-            document.getElementById('print-prioridade').innerText = d.prioridade.toUpperCase();
-            document.getElementById('print-setor').innerText = d.setor.toUpperCase();
-            document.getElementById('print-status').innerText = d.status.toUpperCase();
-            document.getElementById('print-titulo').innerText = d.titulo.toUpperCase();
-            const logoEmpresa = document.getElementById('print-logo-empresa');
-            const textoTop = document.getElementById('print-top-text');
-            const labelNum = document.getElementById('print-os-label');
-            logoEmpresa.src = "";
-            if (cat === 'PREDIAL') { logoEmpresa.src = 'epura.jpg'; logoEmpresa.style.cssText = 'width:140px;height:60px;object-fit:cover;object-position:center;margin-bottom:5px;display:block;'; textoTop.style.display = 'none'; labelNum.innerText = "O.S Nº "; }
-            else if (cat === 'AR') { logoEmpresa.src = 'igm2.jpg'; logoEmpresa.style.cssText = 'width:145px;height:55px;object-fit:contain;margin-bottom:5px;display:block;'; textoTop.style.display = 'none'; labelNum.innerText = "O.S Nº "; }
-            else { logoEmpresa.style.display = 'none'; textoTop.style.display = 'block'; labelNum.innerText = "Nº "; }
-            const chks = ['chk-limpeza', 'chk-ar', 'chk-manut', 'chk-elevador', 'chk-ti', 'chk-telefonia', 'chk-extintores'];
-            chks.forEach(chk => document.getElementById(chk).innerText = '☐');
-            if (d.contratada) {
-                const c = d.contratada.toUpperCase();
-                if (c.includes('LIMPEZA')) document.getElementById('chk-limpeza').innerText = '☑';
-                else if (c.includes('AR CONDICIONADO')) document.getElementById('chk-ar').innerText = '☑';
-                else if (c.includes('PREDIAL') || c.includes('ELÉTRICA') || c.includes('PINTURA')) document.getElementById('chk-manut').innerText = '☑';
-                else if (c.includes('ELEVADOR')) document.getElementById('chk-elevador').innerText = '☑';
-                else if (c.includes('TELEFONIA')) document.getElementById('chk-telefonia').innerText = '☑';
-            }
-            document.getElementById('print-hoje').innerText = new Date().toLocaleString('pt-BR');
-            document.body.classList.add('printing-os');
-            setTimeout(() => { window.print(); }, 800);
-            const limpar = () => { document.body.classList.remove('printing-os'); };
-            window.onafterprint = limpar;
-            setTimeout(() => { if (document.hasFocus()) limpar(); else setTimeout(limpar, 5000); }, 2000);
+        /* Fallback: overlay full-screen quando popup está bloqueado */
+        function imprimirViaOverlay(html) {
+            // Remove overlay anterior se existir
+            const antigo = document.getElementById('os-print-overlay');
+            if (antigo) antigo.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'os-print-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:white;z-index:999999;overflow:auto;';
+
+            // Cria iframe dentro do overlay
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'width:100%;height:100%;border:none;';
+            overlay.appendChild(iframe);
+
+            // Botão fechar (visível na tela, oculto na impressão via CSS nativo do browser)
+            const btnFechar = document.createElement('button');
+            btnFechar.textContent = '✕ Fechar';
+            btnFechar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:1000000;background:#ef4444;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;';
+            btnFechar.onclick = () => overlay.remove();
+            overlay.appendChild(btnFechar);
+
+            document.body.appendChild(overlay);
+
+            // Escreve no iframe
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
         }
 
         window.imprimirDashboard = function() {
