@@ -12,6 +12,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary: #0f1923;
@@ -565,19 +567,29 @@
 </head>
 <body>
 
-    <!-- Modal Print -->
     <div id="modal-print" class="modal-overlay no-print">
         <div class="modal-box">
-            <h3 style="color:var(--text-primary); margin-bottom: 0.5rem;"><i class="fas fa-print" style="color:var(--accent);"></i> Preencher O.S. para Impressão</h3>
+            <h3 style="color:var(--text-primary); margin-bottom: 0.5rem;"><i class="fas fa-file-alt" style="color:var(--accent);"></i> Preencher O.S.</h3>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Preencha os campos abaixo. Se preferir preencher à mão, deixe em branco.</p>
             <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Descrição Detalhada dos Serviços Executados:</label>
             <textarea id="print-input-descricao" rows="4" placeholder="Ex: Foi realizada a troca da fechadura e lubrificação das dobradiças..." style="margin-bottom: 1rem;"></textarea>
             <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Materiais e Peças Utilizados (Reposição):</label>
-            <textarea id="print-input-materiais" rows="3" placeholder="Ex: 01 Fechadura Stam, 01 Óleo lubrificante..." style="margin-bottom: 1.5rem;"></textarea>
-            <div class="btn-container">
-                <button class="btn-primary" onclick="executarImpressao()"><i class="fas fa-print"></i> Gerar Impressão</button>
-                <button class="btn-cancel" style="display:block" onclick="fecharModalImpressao()">Cancelar</button>
+            <textarea id="print-input-materiais" rows="3" placeholder="Ex: 01 Fechadura Stam, 01 Óleo lubrificante..." style="margin-bottom: 1.25rem;"></textarea>
+
+            <!-- Dois botões de ação separados por função -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                <button id="btn-acao-imprimir" onclick="executarAcaoOS('print')"
+                    style="flex:1; min-width:140px; background:linear-gradient(135deg,#475569,#1e293b); color:white; border:none; padding:0.75rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.875rem; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                    <i class="fas fa-print"></i> Imprimir <span style="font-size:0.75rem; opacity:0.7;">(PC)</span>
+                </button>
+                <button id="btn-acao-pdf" onclick="executarAcaoOS('pdf')"
+                    style="flex:1; min-width:140px; background:linear-gradient(135deg,#dc2626,#991b1b); color:white; border:none; padding:0.75rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.875rem; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                    <i class="fas fa-file-pdf"></i> Baixar PDF <span style="font-size:0.75rem; opacity:0.7;">(Celular)</span>
+                </button>
             </div>
+            <button onclick="fecharModalImpressao()" style="width:100%; background:#f1f5f9; color:var(--text-secondary); border:1px solid var(--border); padding:0.65rem; border-radius:8px; cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.875rem;">
+                Cancelar
+            </button>
         </div>
     </div>
 
@@ -1780,23 +1792,119 @@
             document.getElementById('modal-print').style.display = "none";
         }
 
-        window.executarImpressao = function() {
+        window.executarAcaoOS = async function(modo) {
             const desc = document.getElementById('print-input-descricao').value;
             const mat  = document.getElementById('print-input-materiais').value;
-            fecharModalImpressao();
-
-            // window.open DEVE ser chamado aqui — dentro do handler de click síncrono
-            // para iOS/Android não bloquearem como popup
-            const pw = window.open('', '_blank');
-            const html = gerarHTMLOS(osPrintAtualId, desc, mat);
-
-            if (pw && !pw.closed) {
-                pw.document.open();
-                pw.document.write(html);
-                pw.document.close();
+            if (modo === 'pdf') {
+                await gerarPDFOS(osPrintAtualId, desc, mat);
             } else {
-                // Fallback: overlay full-screen (funciona mesmo com popup bloqueado)
-                imprimirViaOverlay(html);
+                fecharModalImpressao();
+                const pw = window.open('', '_blank');
+                const html = gerarHTMLOS(osPrintAtualId, desc, mat);
+                if (pw && !pw.closed) {
+                    pw.document.open();
+                    pw.document.write(html);
+                    pw.document.close();
+                } else {
+                    imprimirViaOverlay(html);
+                }
+            }
+        }
+
+        /* Mantém compatibilidade */
+        window.executarImpressao = function() { executarAcaoOS('print'); }
+
+        /* ---- GERAÇÃO DE PDF (Mobile + Desktop) via html2canvas + jsPDF ---- */
+        async function gerarPDFOS(id, descricao, materiais) {
+            const btnPDF = document.getElementById('btn-acao-pdf');
+            const textoOriginal = btnPDF.innerHTML;
+            btnPDF.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+            btnPDF.disabled = true;
+
+            try {
+                const d = montarDadosOS(id);
+                if (!d) throw new Error('O.S. não encontrada.');
+
+                const html = gerarHTMLOS(id, descricao, materiais);
+
+                // Container oculto largura A4 (794px ≈ 210mm @ 96dpi)
+                const container = document.createElement('div');
+                container.style.cssText = 'position:fixed;top:0;left:-9999px;width:794px;background:white;z-index:-1;overflow:hidden;';
+
+                // Importa apenas o conteúdo da OS (sem botão fechar / scripts)
+                const parser  = new DOMParser();
+                const docOS   = parser.parseFromString(html, 'text/html');
+                const osNode  = docOS.querySelector('.os-container');
+                const footer  = docOS.querySelector('.footer');
+                if (osNode) container.appendChild(document.importNode(osNode, true));
+                if (footer) container.appendChild(document.importNode(footer, true));
+                document.body.appendChild(container);
+
+                // Aguarda imagens
+                const imgs = container.querySelectorAll('img');
+                await Promise.all(Array.from(imgs).map(img =>
+                    new Promise(resolve => {
+                        if (img.complete) { resolve(); return; }
+                        img.onload  = resolve;
+                        img.onerror = resolve;
+                    })
+                ));
+                // Pausa para garantir render CSS
+                await new Promise(r => setTimeout(r, 180));
+
+                // Captura canvas (scale:2 → resolução nítida no PDF)
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    width: 794,
+                    windowWidth: 794,
+                    logging: false
+                });
+                document.body.removeChild(container);
+
+                // Monta PDF A4
+                const { jsPDF } = window.jspdf;
+                const pdf    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pageW  = pdf.internal.pageSize.getWidth();   // 210 mm
+                const pageH  = pdf.internal.pageSize.getHeight();  // 297 mm
+                const margin = 5;
+                const imgW   = pageW - margin * 2;
+                const imgH   = (canvas.height * imgW) / canvas.width;
+                const imgData = canvas.toDataURL('image/jpeg', 0.93);
+
+                if (imgH <= pageH - margin * 2) {
+                    pdf.addImage(imgData, 'JPEG', margin, margin, imgW, imgH);
+                } else {
+                    // Divide em páginas se necessário
+                    const slicePx  = Math.floor(canvas.width * (pageH - margin * 2) / imgW);
+                    let   offsetPx = 0;
+                    let   firstPage = true;
+                    while (offsetPx < canvas.height) {
+                        const sliceH   = Math.min(slicePx, canvas.height - offsetPx);
+                        const sliceCanvas = document.createElement('canvas');
+                        sliceCanvas.width  = canvas.width;
+                        sliceCanvas.height = sliceH;
+                        sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+                        const sliceImgH = (sliceH * imgW) / canvas.width;
+                        if (!firstPage) pdf.addPage();
+                        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, imgW, sliceImgH);
+                        offsetPx  += slicePx;
+                        firstPage = false;
+                    }
+                }
+
+                const osNum = d.numero_os ? String(d.numero_os).replace(/[^a-zA-Z0-9]/g, '_') : d.id;
+                pdf.save(`OS_${osNum}.pdf`);
+                fecharModalImpressao();
+
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('Não foi possível gerar o PDF.\n\nAlternativa: use o botão Imprimir e escolha "Salvar como PDF" no menu do browser.');
+            } finally {
+                btnPDF.innerHTML = textoOriginal;
+                btnPDF.disabled  = false;
             }
         }
 
