@@ -3248,16 +3248,49 @@
             Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
 
             // IMPORTANTE: definir fonte ANTES do splitTextToSize para métricas corretas
-            pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), PW - 18);
-            const lnH      = 5.2;
-            // Histórico maior — mínimo 130mm
-            const descBoxH = Math.max(130, descLines.length * lnH + 20);
+            pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+            const boxTxtW   = PW - 22;   // largura de texto disponível na caixa
+            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), boxTxtW);
+            const lnH       = 6.5;
+            const topPad    = 10;
+            const descBoxH  = Math.max(130, descLines.length * lnH + topPad + 8);
 
-            // Caixa limpa, fundo branco, bordas pretas — sem linhas de pauta
+            // Caixa limpa — sem linhas de pauta
             caixa(OX, Y, PW, descBoxH);
-            pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.25);
-            pdf.text(descLines, OX+5, Y+8);
+
+            // Texto JUSTIFICADO — cada linha ocupa a largura total
+            const txtX = OX + 6;       // margem esquerda interna
+            const txtXR = RX - 6;      // margem direita interna
+
+            descLines.forEach((linha, i) => {
+                const posY      = Y + topPad + i * lnH;
+                const ehUltima  = (i === descLines.length - 1);
+
+                // Última linha e linhas muito curtas ficam alinhadas à esquerda
+                const largLinha = pdf.getTextWidth(linha);
+                const proporcao = largLinha / boxTxtW;
+
+                if (ehUltima || proporcao < 0.55) {
+                    // Alinha à esquerda
+                    pdf.text(linha, txtX, posY);
+                } else {
+                    // Justifica: distribui espaço extra entre palavras
+                    const palavras = linha.split(' ');
+                    if (palavras.length <= 1) {
+                        pdf.text(linha, txtX, posY);
+                        return;
+                    }
+                    const largPalavras = palavras.reduce((sum, p) => sum + pdf.getTextWidth(p), 0);
+                    const espacoExtra  = (boxTxtW - largPalavras) / (palavras.length - 1);
+                    let curX = txtX;
+                    palavras.forEach((palavra, pi) => {
+                        pdf.text(palavra, curX, posY);
+                        if (pi < palavras.length - 1) {
+                            curX += pdf.getTextWidth(palavra) + espacoExtra;
+                        }
+                    });
+                }
+            });
             Y += descBoxH + 1;
 
             // ════════════════════════════════════════════════════════
