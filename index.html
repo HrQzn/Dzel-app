@@ -12,7 +12,6 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
@@ -1814,7 +1813,11 @@
         /* Mantém compatibilidade */
         window.executarImpressao = function() { executarAcaoOS('print'); }
 
-        /* ---- GERAÇÃO DE PDF (Mobile + Desktop) via html2canvas + jsPDF ---- */
+        /* ================================================================
+           GERAÇÃO DE PDF — jsPDF puro (sem html2canvas)
+           Desenha a O.S. com coordenadas explícitas → layout perfeito
+           em qualquer dispositivo (Android, iOS, Desktop).
+        ================================================================ */
         async function gerarPDFOS(id, descricao, materiais) {
             const btnPDF = document.getElementById('btn-acao-pdf');
             const textoOriginal = btnPDF.innerHTML;
@@ -1825,83 +1828,306 @@
                 const d = montarDadosOS(id);
                 if (!d) throw new Error('O.S. não encontrada.');
 
-                const html = gerarHTMLOS(id, descricao, materiais);
-
-                // Container oculto largura A4 (794px ≈ 210mm @ 96dpi)
-                const container = document.createElement('div');
-                container.style.cssText = 'position:fixed;top:0;left:-9999px;width:794px;background:white;z-index:-1;overflow:hidden;';
-
-                // Importa apenas o conteúdo da OS (sem botão fechar / scripts)
-                const parser  = new DOMParser();
-                const docOS   = parser.parseFromString(html, 'text/html');
-                const osNode  = docOS.querySelector('.os-container');
-                const footer  = docOS.querySelector('.footer');
-                if (osNode) container.appendChild(document.importNode(osNode, true));
-                if (footer) container.appendChild(document.importNode(footer, true));
-                document.body.appendChild(container);
-
-                // Aguarda imagens
-                const imgs = container.querySelectorAll('img');
-                await Promise.all(Array.from(imgs).map(img =>
-                    new Promise(resolve => {
-                        if (img.complete) { resolve(); return; }
-                        img.onload  = resolve;
-                        img.onerror = resolve;
-                    })
-                ));
-                // Pausa para garantir render CSS
-                await new Promise(r => setTimeout(r, 180));
-
-                // Captura canvas (scale:2 → resolução nítida no PDF)
-                const canvas = await html2canvas(container, {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff',
-                    width: 794,
-                    windowWidth: 794,
-                    logging: false
-                });
-                document.body.removeChild(container);
-
-                // Monta PDF A4
                 const { jsPDF } = window.jspdf;
-                const pdf    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-                const pageW  = pdf.internal.pageSize.getWidth();   // 210 mm
-                const pageH  = pdf.internal.pageSize.getHeight();  // 297 mm
-                const margin = 5;
-                const imgW   = pageW - margin * 2;
-                const imgH   = (canvas.height * imgW) / canvas.width;
-                const imgData = canvas.toDataURL('image/jpeg', 0.93);
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-                if (imgH <= pageH - margin * 2) {
-                    pdf.addImage(imgData, 'JPEG', margin, margin, imgW, imgH);
-                } else {
-                    // Divide em páginas se necessário
-                    const slicePx  = Math.floor(canvas.width * (pageH - margin * 2) / imgW);
-                    let   offsetPx = 0;
-                    let   firstPage = true;
-                    while (offsetPx < canvas.height) {
-                        const sliceH   = Math.min(slicePx, canvas.height - offsetPx);
-                        const sliceCanvas = document.createElement('canvas');
-                        sliceCanvas.width  = canvas.width;
-                        sliceCanvas.height = sliceH;
-                        sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-                        const sliceImgH = (sliceH * imgW) / canvas.width;
-                        if (!firstPage) pdf.addPage();
-                        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, imgW, sliceImgH);
-                        offsetPx  += slicePx;
-                        firstPage = false;
+                // ── Dimensões da página ──────────────────────────────────────
+                const PW = 200;   // largura útil (210 - 5mm cada lado)
+                const OX = 5;     // origem X
+                let   Y  = 8;     // cursor Y (avança linha a linha)
+
+                // ── Helpers de desenho ───────────────────────────────────────
+                const linhah  = (y, x1, x2) => { pdf.line(x1 ?? OX, y, x2 ?? OX+PW, y); };
+                const linhav  = (x, y1, y2) => { pdf.line(x, y1, x, y2); };
+                const rect    = (x, y, w, h) => { pdf.rect(x, y, w, h); };
+                const txt = (t, x, y, sz, bold, color, maxW) => {
+                    pdf.setFontSize(sz || 9);
+                    pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+                    if (color) pdf.setTextColor(...color); else pdf.setTextColor(0,0,0);
+                    const str = String(t || '');
+                    if (maxW) {
+                        const lines = pdf.splitTextToSize(str, maxW);
+                        pdf.text(lines, x, y);
+                        return lines.length;
                     }
+                    pdf.text(str, x, y);
+                    return 1;
+                };
+                const label = (t, x, y) => txt(t, x, y, 7, true,  [80,80,80]);
+                const valor = (t, x, y, maxW) => txt(t.toUpperCase(), x, y, 9, false, [0,0,0], maxW);
+                const secao = (t, y, h) => {
+                    pdf.setFillColor(230,230,230);
+                    pdf.rect(OX, y, PW, h, 'F');
+                    pdf.setDrawColor(0); pdf.rect(OX, y, PW, h);
+                    txt(t, OX + PW/2, y + h - 1.5, 8, true, [0,0,0]);
+                    pdf.setTextColor(0,0,0);
+                    return y + h;
+                };
+
+                // Garante cor e fonte padrão
+                pdf.setDrawColor(0,0,0);
+                pdf.setLineWidth(0.3);
+
+                // ══════════════════════════════════════════════════════════════
+                // CABEÇALHO
+                // ══════════════════════════════════════════════════════════════
+                const hdrH = 22;
+                rect(OX, Y, PW, hdrH);
+                // Divisor vertical logo | texto | OS num
+                const c1x = OX + PW * 0.15;
+                const c2x = OX + PW * 0.75;
+                linhav(c1x, Y, Y + hdrH);
+                linhav(c2x, Y, Y + hdrH);
+
+                // Tenta carregar brasão como base64 para o PDF
+                // (se falhar, exibe texto substituto)
+                try {
+                    await new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width  = img.naturalWidth  || img.width;
+                            canvas.height = img.naturalHeight || img.height;
+                            canvas.getContext('2d').drawImage(img, 0, 0);
+                            const data = canvas.toDataURL('image/png');
+                            pdf.addImage(data, 'PNG', OX + 0.5, Y + 1, 13, 13);
+                            resolve();
+                        };
+                        img.onerror = resolve; // continua sem imagem
+                        img.src = 'brasao.jpg';
+                    });
+                } catch(e) {}
+
+                // Logo da contratada (Épura / IGM) no canto direito
+                const cat = getCategoriaDemanda(d);
+                try {
+                    const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
+                    if (logoSrc) {
+                        await new Promise((resolve) => {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width  = img.naturalWidth  || img.width;
+                                canvas.height = img.naturalHeight || img.height;
+                                canvas.getContext('2d').drawImage(img, 0, 0);
+                                const data = canvas.toDataURL('image/jpeg');
+                                pdf.addImage(data, 'JPEG', c2x + 1, Y + 1, 18, 8);
+                                resolve();
+                            };
+                            img.onerror = resolve;
+                            img.src = logoSrc;
+                        });
+                    }
+                } catch(e) {}
+
+                // Texto central
+                txt('GOVERNO DO ESTADO DE SÃO PAULO', OX + PW * 0.5 - 2, Y + 6, 10, true);
+                pdf.setTextColor(0,0,0);
+                txt('SECRETARIA DA EDUCAÇÃO', OX + PW * 0.5 - 2, Y + 10.5, 9, true);
+                txt('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', OX + PW * 0.5 - 2, Y + 14.5, 7.5, false);
+                txt('DIVISÃO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, 7.5, false);
+                // Alinhamento central manual (jsPDF não tem align via txt helper aqui, usamos centragem manual)
+                // Re-draw com alinhamento correto
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold');
+                pdf.text('GOVERNO DO ESTADO DE SÃO PAULO', OX + PW * 0.5 - 2, Y + 6, {align:'center'});
+                pdf.setFontSize(9);
+                pdf.text('SECRETARIA DA EDUCAÇÃO', OX + PW * 0.5 - 2, Y + 10.5, {align:'center'});
+                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', OX + PW * 0.5 - 2, Y + 14.5, {align:'center'});
+                pdf.text('DIVISÃO DE ZELADORIA', OX + PW * 0.5 - 2, Y + 18, {align:'center'});
+
+                // Nº OS
+                const osNum = d.numero_os ? d.numero_os : d.id;
+                if (!(cat === 'PREDIAL' || cat === 'AR')) {
+                    txt('ORDEM DE SERVIÇO', c2x + (PW - (c2x - OX))/2, Y + 7, 8, true, [0,0,0]);
+                    pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+                    pdf.text('ORDEM DE SERVIÇO', c2x + (OX + PW - c2x)/2, Y + 7, {align:'center'});
+                }
+                pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
+                pdf.text(`Nº ${osNum}`, c2x + (OX + PW - c2x)/2, Y + (cat==='PREDIAL'||cat==='AR' ? 17 : 14), {align:'center'});
+                pdf.setTextColor(0,0,0);
+
+                pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
+                Y += hdrH;
+
+                // ══════════════════════════════════════════════════════════════
+                // SEÇÃO 1 — IDENTIFICAÇÃO
+                // ══════════════════════════════════════════════════════════════
+                Y = secao('1. IDENTIFICAÇÃO DA SOLICITAÇÃO', Y, 5);
+
+                const dataParts = (d.data || '').split('-');
+                const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : (d.data || '');
+
+                // Linha: Data | Solicitante | Prioridade
+                const r1h = 11;
+                const r1c1 = OX + PW * 0.25;
+                const r1c2 = OX + PW * 0.75;
+                linhav(r1c1, Y, Y+r1h); linhav(r1c2, Y, Y+r1h);
+                label('DATA E HORA DE ABERTURA', OX+1, Y+3.5);
+                valor(`${dataBr}  ${d.hora||''}`, OX+1, Y+8, r1c1-OX-2);
+                label('SOLICITANTE / CONTATO', r1c1+1, Y+3.5);
+                valor(d.solicitante||'', r1c1+1, Y+8, r1c2-r1c1-2);
+                label('PRIORIDADE NO SISTEMA', r1c2+1, Y+3.5);
+                valor(d.prioridade||'', r1c2+1, Y+8);
+                linhah(Y+r1h); Y += r1h;
+
+                // Linha: Setor | Status
+                const r2h = 11;
+                const r2c1 = OX + PW * 0.75;
+                linhav(r2c1, Y, Y+r2h);
+                label('UNIDADE / SETOR DE ORIGEM', OX+1, Y+3.5);
+                valor(d.setor||'', OX+1, Y+8, r2c1-OX-2);
+                label('STATUS ATUAL', r2c1+1, Y+3.5);
+                valor(d.status||'', r2c1+1, Y+8);
+                pdf.setLineWidth(0.5); linhah(Y+r2h); pdf.setLineWidth(0.3);
+                Y += r2h;
+
+                // ══════════════════════════════════════════════════════════════
+                // SEÇÃO 2 — DESCRIÇÃO DA DEMANDA
+                // ══════════════════════════════════════════════════════════════
+                Y = secao('2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)', Y, 5);
+
+                const titulo = (d.titulo||'').toUpperCase();
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                const tLines = pdf.splitTextToSize(titulo, PW - 4);
+                const descH  = Math.max(14, tLines.length * 5 + 5);
+                pdf.text(tLines, OX+2, Y+6);
+                pdf.setLineWidth(0.5); linhah(Y+descH); pdf.setLineWidth(0.3);
+                Y += descH;
+
+                // ══════════════════════════════════════════════════════════════
+                // SEÇÃO 3 — EQUIPES E LOCAIS
+                // ══════════════════════════════════════════════════════════════
+                Y = secao('3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)', Y, 5);
+
+                // Checkboxes equipes (2 colunas)
+                label('EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA', OX+1, Y+4);
+                const chks = montarCheckboxes(d);
+                const equipes = [
+                    [chks.limpeza,    'LIMPEZA PREDIAL'],
+                    [chks.ar,         'AR CONDICIONADO'],
+                    [chks.manut,      'MANUTENÇÃO PREDIAL'],
+                    [chks.elevador,   'MANUT. DE ELEVADORES'],
+                    [chks.ti,         'SUPORTE TI'],
+                    [chks.telefonia,  'TELEFONIA'],
+                    [chks.extintores, 'MANUT. E RECARGA EXTINTORES'],
+                    ['☐',             'OUTROS: _______________________'],
+                ];
+                pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+                const colW3 = PW / 3;
+                equipes.forEach((eq, i) => {
+                    const col = i % 3;
+                    const row = Math.floor(i / 3);
+                    const ex  = OX + 2 + col * colW3;
+                    const ey  = Y + 8 + row * 5.5;
+                    pdf.setFont('helvetica', eq[0]==='☑' ? 'bold' : 'normal');
+                    pdf.setTextColor(eq[0]==='☑' ? 0 : 80, eq[0]==='☑' ? 100 : 80, eq[0]==='☑' ? 0 : 80);
+                    pdf.text(`${eq[0]} ${eq[1]}`, ex, ey);
+                });
+                pdf.setTextColor(0,0,0);
+                const eqH = Math.ceil(equipes.length / 3) * 5.5 + 11;
+                linhah(Y+eqH); Y += eqH;
+
+                // Checkboxes locais (4 colunas)
+                label('LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO', OX+1, Y+4);
+                const locais = ['SEDE','AROUCHE','EFAPE','ARMÊNIA','CASA VERDE','SÃO DOMINGOS','CAJAMAR','TENENTE PENA','CENTRO OESTE','CAPE'];
+                pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
+                const colW4 = PW / 4;
+                locais.forEach((loc, i) => {
+                    const col = i % 4;
+                    const row = Math.floor(i / 4);
+                    pdf.text(`☐ ${loc}`, OX + 2 + col * colW4, Y + 8 + row * 5.5);
+                });
+                const rowsLoc = Math.ceil(locais.length / 4);
+                pdf.text(`☐ OUTRO: ______________________________`, OX + 2, Y + 8 + rowsLoc * 5.5);
+                pdf.setTextColor(0,0,0);
+                const locH = (rowsLoc + 1) * 5.5 + 10;
+                pdf.setLineWidth(0.5); linhah(Y+locH); pdf.setLineWidth(0.3);
+                Y += locH;
+
+                // Campos de texto livres (Descrição serviços | Materiais)
+                const camposMH = 35;
+                const midX = OX + PW / 2;
+                linhav(midX, Y, Y + camposMH);
+
+                label('DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS', OX+1, Y+4);
+                if (descricao && descricao.trim()) {
+                    pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
+                    const dLines = pdf.splitTextToSize((descricao||'').toUpperCase(), midX - OX - 4);
+                    pdf.text(dLines, OX+2, Y+9);
                 }
 
-                const osNum = d.numero_os ? String(d.numero_os).replace(/[^a-zA-Z0-9]/g, '_') : d.id;
-                pdf.save(`OS_${osNum}.pdf`);
+                label('MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)', midX+1, Y+4);
+                if (materiais && materiais.trim()) {
+                    pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
+                    const mLines = pdf.splitTextToSize((materiais||'').toUpperCase(), OX + PW - midX - 4);
+                    pdf.text(mLines, midX+2, Y+9);
+                }
+                pdf.setLineWidth(0.5); linhah(Y+camposMH); pdf.setLineWidth(0.3);
+                Y += camposMH;
+
+                // ══════════════════════════════════════════════════════════════
+                // SEÇÃO 4 — ENCERRAMENTO
+                // ══════════════════════════════════════════════════════════════
+                Y = secao('4. TERMO DE ENCERRAMENTO E ACEITE FISCAL', Y, 5);
+
+                const enc4H = 14;
+                const e1x = OX + PW * 0.25;
+                const e2x = OX + PW * 0.50;
+                linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
+                label('INÍCIO DO ATENDIMENTO',   OX+1,  Y+3.5);
+                pdf.setFontSize(8); pdf.text('___/___/20___ ÀS ___:___', OX+2, Y+9);
+                label('TÉRMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
+                pdf.setFontSize(8); pdf.text('___/___/20___ ÀS ___:___', e1x+2, Y+9);
+                label('OBSERVAÇÕES FINAIS / PENDÊNCIAS', e2x+1, Y+3.5);
+                linhah(Y+enc4H); Y += enc4H;
+
+                // ══════════════════════════════════════════════════════════════
+                // ASSINATURAS
+                // ══════════════════════════════════════════════════════════════
+                const sigH = 28;
+                const sigW = PW / 3;
+                linhav(OX + sigW,     Y, Y + sigH);
+                linhav(OX + sigW * 2, Y, Y + sigH);
+
+                const sigs = [
+                    ['TÉCNICO EXECUTOR',        'Nome legível / Matrícula / Empresa'],
+                    ['GESTOR / FISCAL (DZEL)',   'Carimbo e Assinatura'],
+                    ['SOLICITANTE / RECEBEDOR',  'Atesto a conformidade do serviço'],
+                ];
+                sigs.forEach((sig, i) => {
+                    const sx = OX + 3 + i * sigW;
+                    // Linha de assinatura
+                    pdf.setLineWidth(0.2);
+                    pdf.line(sx, Y + sigH - 10, sx + sigW - 6, Y + sigH - 10);
+                    pdf.setLineWidth(0.3);
+                    pdf.setFontSize(8);  pdf.setFont('helvetica','bold');
+                    pdf.text(sig[0], sx + (sigW-6)/2, Y + sigH - 6, {align:'center'});
+                    pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
+                    pdf.text(sig[1], sx + (sigW-6)/2, Y + sigH - 2.5, {align:'center'});
+                    pdf.setTextColor(0,0,0);
+                });
+                linhah(Y + sigH); Y += sigH;
+
+                // Borda externa da OS inteira
+                pdf.setLineWidth(0.7);
+                pdf.rect(OX, 8, PW, Y - 8);
+                pdf.setLineWidth(0.3);
+
+                // Rodapé
+                pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(100,100,100);
+                pdf.text(`Documento gerado em ${new Date().toLocaleString('pt-BR')}`, OX + PW/2, Y + 4, {align:'center'});
+
+                // ── Salva ────────────────────────────────────────────────────
+                const nomeArq = d.numero_os ? String(d.numero_os).replace(/[^a-zA-Z0-9]/g,'_') : d.id;
+                pdf.save(`OS_${nomeArq}.pdf`);
                 fecharModalImpressao();
 
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);
-                alert('Não foi possível gerar o PDF.\n\nAlternativa: use o botão Imprimir e escolha "Salvar como PDF" no menu do browser.');
+                alert('Não foi possível gerar o PDF: ' + err.message);
             } finally {
                 btnPDF.innerHTML = textoOriginal;
                 btnPDF.disabled  = false;
