@@ -1348,12 +1348,15 @@
          * @param {object} dado    - objeto com os dados do registro
          */
         async function syncSheets(modulo, operacao, dado) {
-            if (!GOOGLE_SCRIPT_URL) return; // desativado se URL não configurada
+            if (!GOOGLE_SCRIPT_URL) return;
             try {
+                // Usa no-cors + FormData para contornar bloqueio CORS do Apps Script
+                const form = new FormData();
+                form.append('payload', JSON.stringify({ modulo, operacao, dado }));
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' }, // Apps Script exige text/plain para evitar preflight CORS
-                    body: JSON.stringify({ modulo, operacao, dado })
+                    mode: 'no-cors',   // ignora erro de CORS — resposta não é lida mas o POST chega
+                    body: form
                 });
             } catch(e) {
                 console.warn('Sync Sheets falhou (não crítico):', e.message);
