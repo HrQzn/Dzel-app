@@ -3376,10 +3376,10 @@
   <!-- Caixa descrição — flex:1 preenche o restante -->
   <div class="desc-box">${descSentence}</div>
 
-</div>
+  <!-- Rodapé DENTRO do container flex para que desc-box desconte seu espaço -->
+  <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
-<!-- Rodapé fora do container flex -->
-<div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
+</div>
 
 <script>
   window.addEventListener('load', function() {
