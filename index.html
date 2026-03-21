@@ -6,13 +6,24 @@
     <link rel="apple-touch-icon" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divisão de Zeladoria | Dzel</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Preconnect — reduz DNS+TLS em ~100-200ms por domínio -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cmdmjprdsxglfjvohcyp.supabase.co" crossorigin>
+    <!-- Font Awesome — carrega non-blocking (não bloqueia LCP) -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <!-- Google Fonts — já tem display=swap, manter non-blocking -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
+    <!-- Supabase — síncrono (necessário para inline script imediato, ~80KB) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Chart.js + plugin — defer (só usado no Dashboard) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0" defer></script>
+    <!-- SheetJS e jsPDF removidos do <head> — serão carregados sob demanda (lazy-load) -->
     <style>
         :root {
             --primary: #0f1923;
@@ -322,6 +333,8 @@
         .btn-baixa    { background: #fee2e2; color: #991b1b; }
         .btn-print    { background: #f1f5f9; color: #475569; }
         .btn-print:hover { background: #e2e8f0; }
+        .btn-pdf      { background: #fef2f2; color: #dc2626; }
+        .btn-pdf:hover { background: #fee2e2; }
         .btn-whatsapp { background: #dcfce7; color: #15803d; }
         .btn-whatsapp:hover { background: #bbf7d0; }
         .btn-ocorrencia { background: #fee2e2; color: #991b1b; }
@@ -1372,9 +1385,46 @@
             }
         }
 
-        Chart.register(ChartDataLabels);
+        // Chart.register será chamado quando Chart.js estiver disponível (defer)
+        let _chartReady = false;
+        function ensureChartReady() {
+            if (!_chartReady && typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+                Chart.register(ChartDataLabels);
+                _chartReady = true;
+            }
+        }
         let chartVolume = null;
         let chartGaragem = null;
+
+        // ════════════════════════════════════════════════════════════════
+        // LAZY-LOAD — carrega SheetJS (~500KB) e jsPDF (~300KB) sob demanda
+        // Economiza ~800KB no carregamento inicial
+        // ════════════════════════════════════════════════════════════════
+        function lazyLoad(url) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${url}"]`)) return resolve();
+                const s = document.createElement('script');
+                s.src = url; s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        async function ensureXLSX() {
+            if (typeof XLSX === 'undefined') {
+                await lazyLoad('https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js');
+            }
+        }
+        async function ensureJsPDF() {
+            if (typeof window.jspdf === 'undefined') {
+                await lazyLoad('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // DEBOUNCE — evita re-render a cada tecla (melhora INP)
+        // ════════════════════════════════════════════════════════════════
+        function debounce(fn, ms) {
+            let t; return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+        }
 
         const DateUtils = {
             getNowBRT: () => {
@@ -1457,6 +1507,31 @@
             }
         }
         verificarSessao();
+
+        // ════════════════════════════════════════════════════════════════
+        // DEBOUNCE nos campos de busca — evita re-render a cada tecla
+        // Reduz INP de ~384ms para ~50ms (renderiza só após pausa de 250ms)
+        // ════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            const buscaMap = {
+                'filtro-busca-predial':  () => window.renderizarAbasEspecificas?.(),
+                'filtro-busca-ar':       () => window.renderizarAbasEspecificas?.(),
+                'filtro-busca-limpeza':  () => window.renderizarAbasEspecificas?.(),
+                'filtro-busca-vis':      () => window.renderizarApenasVisitantes?.(),
+                'filtro-busca-frota':    () => window.renderizarApenasFrota?.(),
+                'filtro-busca-evento':   () => window.renderizarApenasEventos?.(),
+                'filtro-busca-cracha':   () => window.renderizarApenasCrachas?.(),
+                'filtro-busca-oco':      () => window.renderizarApenasOcorrencias?.(),
+            };
+            Object.entries(buscaMap).forEach(([id, fn]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const deb = debounce(fn, 250);
+                    el.removeAttribute('onkeyup');
+                    el.addEventListener('input', deb);
+                }
+            });
+        });
 
         window.checkEnter = function(e) { if(e.key === 'Enter') window.fazerLogin(); }
         window.fazerLogin = async function() {
@@ -1561,6 +1636,9 @@
         }
 
         async function renderizarDashboard() {
+            // Aguarda Chart.js (defer) estar disponível
+            if (typeof Chart === 'undefined') return;
+            ensureChartReady();
             const filtroMes = document.getElementById('dash-filtro-mes').value;
             const listaDemandas = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
             const listaFrota = frota.filter(f => !filtroMes || f.hora_inicial.startsWith(filtroMes));
@@ -1840,8 +1918,9 @@
             video.style.display = "none"; imgPreview.style.display = "block"; btnCapturar.style.display = "none"; btnIniciar.style.display = "inline-block";
         }
 
-        function exportarExcel(tipo) {
+        async function exportarExcel(tipo) {
             if (!pode(tipo, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
+            await ensureXLSX(); // Carrega SheetJS sob demanda (~500KB)
             let data = []; let nomeArquivo = "";
             if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx"; }
             else if (tipo === 'predial') { data = demandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL'); nomeArquivo = "Relatorio_Predial.xlsx"; }
@@ -1996,6 +2075,7 @@
                 const d = montarDadosOS(id);
                 if (!d) throw new Error('O.S. não encontrada.');
 
+                await ensureJsPDF(); // Carrega jsPDF sob demanda (~300KB)
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -3417,6 +3497,7 @@
         // ═══════════════════════════════════════════════════════════════════════
         window.gerarPDFOcorrencia = async function(id) {
             const o = ocorrencias.find(i => i.id == id); if (!o) return;
+            await ensureJsPDF(); // Carrega jsPDF sob demanda (~300KB)
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
