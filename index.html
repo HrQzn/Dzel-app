@@ -3205,15 +3205,15 @@
                 .replace(/(^|[.!?]\s+)([a-z])/g, (_,a,b) => a+b.toUpperCase())
                 .replace(/^[a-z]/, c => c.toUpperCase());
 
-            // Linha de encerramento (se houver)
+            // Linha extra de encerramento (se houver)
             let encRow = '';
             if (o.status === 'Encerrada' && o.data_encerramento) {
                 const dtE = new Date(o.data_encerramento);
                 encRow = `
-                <div class="row">
-                    <div class="cell half bdr"><div class="lbl">Data / Hora de Abertura</div><div class="val">${dataStr}  ${horaStr}</div></div>
-                    <div class="cell half"><div class="lbl">Data / Hora de Encerramento</div><div class="val">${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></div>
-                </div>`;
+              <tr>
+                <td class="cell" style="width:50%"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
+                <td class="cell"><span class="lbl">Data / Hora de Encerramento</span><span class="val">${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></td>
+              </tr>`;
             }
 
             return `<!DOCTYPE html>
@@ -3224,94 +3224,108 @@
 <base href="${baseHref}">
 <title>R.O. ${numero}</title>
 <style>
-  @page { size: A4 portrait; margin: 10mm; }
+  @page { size: A4 portrait; margin: 9mm 7.5mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
-  .ro-container { border: 1px solid #bfbfbf; width: 100%; display: flex; flex-direction: column; min-height: 270mm; }
+
+  /* Container principal */
+  .ro-wrap { width: 190mm; margin: 0 auto; }
+
+  /* ── Tabela de dados ── */
+  table.dados { width: 100%; border-collapse: collapse; }
+  table.dados td { border: 1px solid #bfbfbf; vertical-align: top; }
+  table.dados td.cell { padding: 3.5mm 3mm; }
+  table.dados td.cell .lbl { display: block; font-size: 7.5pt; color: #636363; margin-bottom: 1.5mm; font-weight: normal; }
+  table.dados td.cell .val { display: block; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; color: #000; }
 
   /* Cabeçalho */
-  .header { display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #bfbfbf; padding: 12px 15px; gap: 15px; }
-  .header img { width: 52px; height: 58px; object-fit: contain; }
-  .header-text { text-align: center; }
-  .header-text h2 { font-size: 16px; margin: 0; letter-spacing: 0.5px; }
-  .header-text p  { font-size: 10.5px; color: #555; margin: 2px 0; }
-  .header-text .bold { font-weight: bold; font-size: 9px; color: #000; }
-  .header-text hr { border: none; border-top: 1px solid #bfbfbf; margin: 5px 50px; }
-  .header-text .titulo-doc { font-size: 9px; font-weight: bold; letter-spacing: 1px; }
+  td.hdr { padding: 4mm 4mm; text-align: center; height: 32mm; vertical-align: middle; }
+  td.hdr img { width: 19mm; height: 21mm; object-fit: contain; vertical-align: middle; }
+  td.hdr .gov  { font-size: 16pt; font-weight: bold; margin: 0; }
+  td.hdr .coord { font-size: 10pt; color: #555; margin: 2px 0; }
+  td.hdr .dzel  { font-size: 9pt; font-weight: bold; margin: 2px 0; }
+  td.hdr .sep   { border: none; border-top: 1px solid #bfbfbf; margin: 4px 50px; }
+  td.hdr .titulo { font-size: 9pt; font-weight: bold; letter-spacing: 0.8px; }
 
-  /* Seções */
-  .sec { background: #f2f2f2; border-bottom: 1px solid #bfbfbf; padding: 4px 10px; font-size: 8.5px; font-weight: bold; color: #1e1e1e; }
+  /* Seção (barra cinza) */
+  td.sec { background: #f2f2f2; padding: 2mm 3mm; font-size: 8pt; font-weight: bold; color: #1e1e1e; }
 
-  /* Linhas de dados */
-  .row { display: flex; border-bottom: 1px solid #bfbfbf; }
-  .cell { padding: 4px 10px; display: flex; flex-direction: column; justify-content: center; }
-  .cell.half  { width: 50%; }
-  .cell.w55   { width: 55%; }
-  .cell.w45   { width: 45%; }
-  .cell.full  { width: 100%; }
-  .cell.bdr   { border-right: 1px solid #bfbfbf; }
-  .lbl { font-size: 7.5px; color: #636363; margin-bottom: 2px; }
-  .val { font-size: 9.5px; font-weight: bold; text-transform: uppercase; }
+  /* ── Caixa de descrição ── */
+  .desc-box {
+    border: 1px solid #bfbfbf;
+    border-top: none;
+    padding: 6mm;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    text-align: justify;
+    min-height: 100mm;
+  }
 
-  /* Caixa de descrição */
-  .desc-box { flex: 1; border-bottom: 1px solid #bfbfbf; padding: 14px 18px; font-size: 10.5px; line-height: 1.65; text-align: justify; min-height: 120mm; }
+  /* ── Assinatura ── */
+  .sig-area { padding: 18mm 0 12mm; text-align: center; }
+  .sig-line { border-top: 1px solid #000; display: inline-block; width: 70mm; padding-top: 2mm;
+              font-size: 8.5pt; font-weight: bold; text-align: center; }
+  .sig-sub  { display: block; font-size: 7.5pt; color: #555; font-weight: normal; margin-top: 1mm; }
 
-  /* Assinatura */
-  .sig-area { padding: 30px 50px 20px; text-align: center; }
-  .sig-line { border-top: 1px solid #000; display: inline-block; width: 260px; padding-top: 5px; font-size: 9px; font-weight: bold; }
-  .sig-sub  { font-size: 8px; color: #555; font-weight: normal; }
-
-  /* Rodapé */
-  .footer { text-align: center; font-size: 8px; font-style: italic; color: #aaa; padding: 6px 0; }
+  /* ── Rodapé ── */
+  .footer { text-align: center; font-size: 7.5pt; font-style: italic; color: #aaa; margin-top: 4mm; }
 
   /* Botão fechar */
   #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
-    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999; }
-  @media print { #btn-fechar { display: none !important; } }
+    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999;
+    font-family: inherit; }
+  @media print { #btn-fechar { display: none !important; } .ro-wrap { margin: 0; } }
 </style>
 </head>
 <body>
-<button id="btn-fechar" onclick="window.close()">✕ Fechar</button>
+<button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
-<div class="ro-container">
-  <div class="header">
-    <img src="brasao.jpg" alt="SP" onerror="this.style.display='none'">
-    <div class="header-text">
-      <h2>GOVERNO DO ESTADO DE S\u00C3O PAULO</h2>
-      <p>Coordenadoria Geral de Suporte Administrativo</p>
-      <p class="bold">Divis\u00E3o de Zeladoria (DZEL)</p>
-      <hr>
-      <div class="titulo-doc">REGISTRO DE OCORR\u00CANCIA</div>
-    </div>
-  </div>
+<div class="ro-wrap">
+  <table class="dados">
+    <!-- CABEÇALHO -->
+    <tr>
+      <td class="hdr" colspan="2">
+        <img src="brasao.jpg" alt="SP" onerror="this.style.display='none'" style="margin-bottom:2mm;"><br>
+        <div class="gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
+        <div class="coord">Coordenadoria Geral de Suporte Administrativo</div>
+        <div class="dzel">Divis\u00E3o de Zeladoria (DZEL)</div>
+        <hr class="sep">
+        <div class="titulo">REGISTRO DE OCORR\u00CANCIA</div>
+      </td>
+    </tr>
 
-  <div class="sec">1 - Dados do Registro</div>
+    <!-- SEÇÃO 1 -->
+    <tr><td class="sec" colspan="2">1 - Dados do Registro</td></tr>
 
-  <div class="row">
-    <div class="cell w55 bdr"><div class="lbl">N\u00BA do Registro</div><div class="val">${numero}</div></div>
-    <div class="cell w45"><div class="lbl">Status</div><div class="val">${o.status || '-'}</div></div>
-  </div>
-  <div class="row">
-    <div class="cell w55 bdr"><div class="lbl">Data / Hora de Abertura</div><div class="val">${dataStr}  ${horaStr}</div></div>
-    <div class="cell w45"><div class="lbl">Tipo de Ocorr\u00EAncia</div><div class="val">${o.categoria || '-'}</div></div>
-  </div>
-  <div class="row">
-    <div class="cell half bdr"><div class="lbl">Respons\u00E1vel (Fiscal/Autor)</div><div class="val">${o.responsavel || '-'}</div></div>
-    <div class="cell half"><div class="lbl">Contratada</div><div class="val">${o.contratada || '-'}</div></div>
-  </div>
-  <div class="row">
-    <div class="cell half bdr"><div class="lbl">Unidade / Pr\u00E9dio</div><div class="val">${o.unidade || '-'}</div></div>
-    <div class="cell half"><div class="lbl">Setor / Local</div><div class="val">${o.local || '-'}</div></div>
-  </div>
-  ${encRow}
+    <tr>
+      <td class="cell" style="width:50%"><span class="lbl">N\u00BA do Registro</span><span class="val">${numero}</span></td>
+      <td class="cell"><span class="lbl">Status</span><span class="val">${o.status || '-'}</span></td>
+    </tr>
+    <tr>
+      <td class="cell"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
+      <td class="cell"><span class="lbl">Tipo de Ocorr\u00EAncia</span><span class="val">${o.categoria || '-'}</span></td>
+    </tr>
+    <tr>
+      <td class="cell"><span class="lbl">Respons\u00E1vel (Fiscal/Autor)</span><span class="val">${o.responsavel || '-'}</span></td>
+      <td class="cell"><span class="lbl">Contratada</span><span class="val">${o.contratada || '-'}</span></td>
+    </tr>
+    <tr>
+      <td class="cell"><span class="lbl">Unidade / Pr\u00E9dio</span><span class="val">${o.unidade || '-'}</span></td>
+      <td class="cell"><span class="lbl">Setor / Local</span><span class="val">${o.local || '-'}</span></td>
+    </tr>
+    ${encRow}
 
-  <div class="sec">2 - Descri\u00E7\u00E3o</div>
+    <!-- SEÇÃO 2 -->
+    <tr><td class="sec" colspan="2">2 - Descri\u00E7\u00E3o</td></tr>
+  </table>
+
   <div class="desc-box">${descSentence}</div>
 
   <div class="sig-area">
-    <div class="sig-line">GESTOR / FISCAL (DZEL)<br><span class="sig-sub">Carimbo e Assinatura</span></div>
+    <div class="sig-line">GESTOR / FISCAL (DZEL)<span class="sig-sub">Carimbo e Assinatura</span></div>
   </div>
 </div>
+
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
 <script>
