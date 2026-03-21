@@ -3187,7 +3187,15 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════════
-        // IMPRESSÃO HTML — REGISTRO DE OCORRÊNCIA (via window.open / overlay)
+        // IMPRESSÃO HTML — REGISTRO DE OCORRÊNCIA (pixel-perfect do DOCX)
+        // Specs extraídas via unpacked XML do RO_03_2026.docx:
+        //   Página: 210×297mm | Margens: top=8.1 right=7.5 bottom=4.9 left=7.5
+        //   Tabela: 190mm, indent=2.7mm | Bordas: #BFBFBF 1pt
+        //   Header: 31.6mm | Seção: 7.2mm fill=#F2F2F2 | Rows: 11.7mm × 95mm+95mm
+        //   Labels: 7pt #626262 | Valores: 9pt bold | Brasão: 19×21mm
+        //   Descrição: Arial 10.5pt, line=350/240=1.458×, ind L=8.5mm R=8.3mm, jc=both
+        //   Caixa desc: 190×142mm, borda #BFBFBF 0.85pt
+        //   Assinatura: linha 90mm | Rodapé: 7.5pt italic #AAAAAA
         // ═══════════════════════════════════════════════════════════════════════
         function gerarHTMLOcorrencia(id) {
             const o = ocorrencias.find(i => i.id == id);
@@ -3210,8 +3218,8 @@
             if (o.status === 'Encerrada' && o.data_encerramento) {
                 const dtE = new Date(o.data_encerramento);
                 encRow = `
-              <tr>
-                <td class="cell" style="width:50%"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
+              <tr class="data-row">
+                <td class="cell"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
                 <td class="cell"><span class="lbl">Data / Hora de Encerramento</span><span class="val">${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></td>
               </tr>`;
             }
@@ -3224,108 +3232,140 @@
 <base href="${baseHref}">
 <title>R.O. ${numero}</title>
 <style>
-  @page { size: A4 portrait; margin: 9mm 7.5mm; }
+  /* ── Página A4 — margens extraídas do DOCX (sectPr/pgMar) ── */
+  @page { size: A4 portrait; margin: 8.1mm 7.5mm 4.9mm 7.5mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
+  body { font-family: 'Arial MT', Arial, Helvetica, sans-serif; color: #000; background: #fff; }
 
-  /* Container principal */
-  .ro-wrap { width: 190mm; margin: 0 auto; }
+  /* ── Tabela principal — tblW=10772 twips=190mm, tblInd=153 twips=2.7mm ── */
+  table.ro { width: 190mm; margin-left: 2.7mm; border-collapse: collapse; }
+  table.ro td { border: 1pt solid #BFBFBF; }
 
-  /* ── Tabela de dados ── */
-  table.dados { width: 100%; border-collapse: collapse; }
-  table.dados td { border: 1px solid #bfbfbf; vertical-align: top; }
-  table.dados td.cell { padding: 3.5mm 3mm; }
-  table.dados td.cell .lbl { display: block; font-size: 7.5pt; color: #636363; margin-bottom: 1.5mm; font-weight: normal; }
-  table.dados td.cell .val { display: block; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; color: #000; }
+  /* ── Cabeçalho — trHeight=1794 twips=31.6mm ── */
+  td.hdr {
+    height: 31.6mm; text-align: center; vertical-align: middle;
+    padding: 3mm 4mm; border: 1pt solid #BFBFBF;
+  }
+  td.hdr img { width: 19mm; height: 21mm; object-fit: contain; display: block; margin: 0 auto 2mm; }
+  td.hdr .gov   { font-size: 16pt; font-weight: bold; line-height: 1.2; }
+  td.hdr .coord { font-size: 10pt; color: #545454; margin: 1.5px 0; }
+  td.hdr .dzel  { font-size: 9pt; font-weight: bold; }
+  td.hdr .sep   { border: none; border-top: 1pt solid #BFBFBF; margin: 3px 50px; }
+  td.hdr .titulo { font-size: 9pt; font-weight: bold; letter-spacing: 0.5px; }
 
-  /* Cabeçalho */
-  td.hdr { padding: 4mm 4mm; text-align: center; height: 32mm; vertical-align: middle; }
-  td.hdr img { width: 19mm; height: 21mm; object-fit: contain; vertical-align: middle; }
-  td.hdr .gov  { font-size: 16pt; font-weight: bold; margin: 0; }
-  td.hdr .coord { font-size: 10pt; color: #555; margin: 2px 0; }
-  td.hdr .dzel  { font-size: 9pt; font-weight: bold; margin: 2px 0; }
-  td.hdr .sep   { border: none; border-top: 1px solid #bfbfbf; margin: 4px 50px; }
-  td.hdr .titulo { font-size: 9pt; font-weight: bold; letter-spacing: 0.8px; }
-
-  /* Seção (barra cinza) */
-  td.sec { background: #f2f2f2; padding: 2mm 3mm; font-size: 8pt; font-weight: bold; color: #1e1e1e; }
-
-  /* ── Caixa de descrição ── */
-  .desc-box {
-    border: 1px solid #bfbfbf;
-    border-top: none;
-    padding: 6mm;
-    font-size: 10.5pt;
-    line-height: 1.7;
-    text-align: justify;
-    min-height: 100mm;
+  /* ── Barra de seção — trHeight=407 twips=7.2mm, fill=#F2F2F2 ── */
+  td.sec {
+    height: 7.2mm; background: #F2F2F2; vertical-align: middle;
+    padding: 0 3mm; font-size: 8pt; font-weight: bold; color: #1E1E1E;
   }
 
-  /* ── Assinatura ── */
-  .sig-area { padding: 18mm 0 12mm; text-align: center; }
-  .sig-line { border-top: 1px solid #000; display: inline-block; width: 70mm; padding-top: 2mm;
-              font-size: 8.5pt; font-weight: bold; text-align: center; }
-  .sig-sub  { display: block; font-size: 7.5pt; color: #555; font-weight: normal; margin-top: 1mm; }
+  /* ── Linhas de dados — trHeight=665 twips=11.7mm, tcW=5386=95mm ── */
+  tr.data-row td.cell {
+    height: 11.7mm; width: 95mm; vertical-align: top;
+    padding: 2mm 3mm;
+  }
+  td.cell .lbl {
+    display: block; font-size: 7pt; color: #626262;
+    font-weight: normal; margin-bottom: 1mm; line-height: 1.2;
+  }
+  td.cell .val {
+    display: block; font-size: 9pt; font-weight: bold;
+    text-transform: uppercase; color: #000; line-height: 1.3;
+  }
 
-  /* ── Rodapé ── */
-  .footer { text-align: center; font-size: 7.5pt; font-style: italic; color: #aaa; margin-top: 4mm; }
+  /* ── Caixa de descrição — 190mm×142mm, borda #BFBFBF 0.85pt ── */
+  .desc-box {
+    width: 190mm; margin-left: 2.7mm;
+    border: 0.85pt solid #BFBFBF; border-top: none;
+    min-height: 142mm;
+    /* Texto: Arial 10.5pt, spacing line=350/240=1.458×, ind L=8.5mm R=8.3mm, jc=both */
+    padding: 7mm 8.3mm 5mm 8.5mm;
+    font-size: 10.5pt; line-height: 1.458;
+    text-align: justify;
+  }
 
-  /* Botão fechar */
-  #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
-    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999;
-    font-family: inherit; }
-  @media print { #btn-fechar { display: none !important; } .ro-wrap { margin: 0; } }
+  /* ── Barra de seção 2 (fora da tabela, dentro da caixa visual) ── */
+  .sec-bar {
+    width: 190mm; margin-left: 2.7mm;
+    height: 7.5mm; background: #F2F2F2;
+    border: 0.85pt solid #BFBFBF; border-bottom: none;
+    display: flex; align-items: center;
+    padding: 0 5.5mm;
+    font-size: 8pt; font-weight: bold; color: #1E1E1E;
+  }
+
+  /* ── Assinatura — linha 90mm centralizada ── */
+  .sig-area { text-align: center; margin-top: 15mm; }
+  .sig-line {
+    border-top: 1pt solid #000; display: inline-block;
+    width: 90mm; padding-top: 2mm;
+    font-size: 8pt; font-weight: bold; text-align: center;
+  }
+  .sig-sub {
+    display: block; font-size: 7pt; color: #555;
+    font-weight: normal; margin-top: 0.8mm;
+  }
+
+  /* ── Rodapé — 7.5pt italic #AAAAAA ── */
+  .footer {
+    text-align: center; font-size: 7.5pt;
+    font-style: italic; color: #AAAAAA; margin-top: 4mm;
+  }
+
+  /* Botão fechar (só tela) */
+  #btn-fechar {
+    position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
+    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; z-index: 9999; font-family: inherit;
+  }
+  @media print { #btn-fechar { display: none !important; } }
 </style>
 </head>
 <body>
 <button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
-<div class="ro-wrap">
-  <table class="dados">
-    <!-- CABEÇALHO -->
-    <tr>
-      <td class="hdr" colspan="2">
-        <img src="brasao.jpg" alt="SP" onerror="this.style.display='none'" style="margin-bottom:2mm;"><br>
-        <div class="gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
-        <div class="coord">Coordenadoria Geral de Suporte Administrativo</div>
-        <div class="dzel">Divis\u00E3o de Zeladoria (DZEL)</div>
-        <hr class="sep">
-        <div class="titulo">REGISTRO DE OCORR\u00CANCIA</div>
-      </td>
-    </tr>
+<!-- ═══ TABELA DE DADOS ═══ -->
+<table class="ro">
+  <tr><td class="hdr" colspan="2">
+    <img src="brasao.jpg" alt="SP" onerror="this.style.display='none'">
+    <div class="gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
+    <div class="coord">Coordenadoria Geral de Suporte Administrativo</div>
+    <div class="dzel">Divis\u00E3o de Zeladoria (DZEL)</div>
+    <hr class="sep">
+    <div class="titulo">REGISTRO DE OCORR\u00CANCIA</div>
+  </td></tr>
 
-    <!-- SEÇÃO 1 -->
-    <tr><td class="sec" colspan="2">1 - Dados do Registro</td></tr>
+  <tr><td class="sec" colspan="2">1 - Dados do Registro</td></tr>
 
-    <tr>
-      <td class="cell" style="width:50%"><span class="lbl">N\u00BA do Registro</span><span class="val">${numero}</span></td>
-      <td class="cell"><span class="lbl">Status</span><span class="val">${o.status || '-'}</span></td>
-    </tr>
-    <tr>
-      <td class="cell"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
-      <td class="cell"><span class="lbl">Tipo de Ocorr\u00EAncia</span><span class="val">${o.categoria || '-'}</span></td>
-    </tr>
-    <tr>
-      <td class="cell"><span class="lbl">Respons\u00E1vel (Fiscal/Autor)</span><span class="val">${o.responsavel || '-'}</span></td>
-      <td class="cell"><span class="lbl">Contratada</span><span class="val">${o.contratada || '-'}</span></td>
-    </tr>
-    <tr>
-      <td class="cell"><span class="lbl">Unidade / Pr\u00E9dio</span><span class="val">${o.unidade || '-'}</span></td>
-      <td class="cell"><span class="lbl">Setor / Local</span><span class="val">${o.local || '-'}</span></td>
-    </tr>
-    ${encRow}
+  <tr class="data-row">
+    <td class="cell"><span class="lbl">N\u00BA do Registro</span><span class="val">${numero}</span></td>
+    <td class="cell"><span class="lbl">Status</span><span class="val">${o.status || '-'}</span></td>
+  </tr>
+  <tr class="data-row">
+    <td class="cell"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
+    <td class="cell"><span class="lbl">Tipo de Ocorr\u00EAncia</span><span class="val">${o.categoria || '-'}</span></td>
+  </tr>
+  <tr class="data-row">
+    <td class="cell"><span class="lbl">Respons\u00E1vel (Fiscal/Autor)</span><span class="val">${o.responsavel || '-'}</span></td>
+    <td class="cell"><span class="lbl">Contratada</span><span class="val">${o.contratada || '-'}</span></td>
+  </tr>
+  <tr class="data-row">
+    <td class="cell"><span class="lbl">Unidade / Pr\u00E9dio</span><span class="val">${o.unidade || '-'}</span></td>
+    <td class="cell"><span class="lbl">Setor / Local</span><span class="val">${o.local || '-'}</span></td>
+  </tr>
+  ${encRow}
+</table>
 
-    <!-- SEÇÃO 2 -->
-    <tr><td class="sec" colspan="2">2 - Descri\u00E7\u00E3o</td></tr>
-  </table>
+<!-- ═══ SEÇÃO 2 — DESCRIÇÃO (shapes group no DOCX) ═══ -->
+<div class="sec-bar">2 - Descri\u00E7\u00E3o</div>
+<div class="desc-box">${descSentence}</div>
 
-  <div class="desc-box">${descSentence}</div>
-
-  <div class="sig-area">
-    <div class="sig-line">GESTOR / FISCAL (DZEL)<span class="sig-sub">Carimbo e Assinatura</span></div>
-  </div>
+<!-- ═══ ASSINATURA ═══ -->
+<div class="sig-area">
+  <div class="sig-line">GESTOR / FISCAL (DZEL)<span class="sig-sub">Carimbo e Assinatura</span></div>
 </div>
 
+<!-- ═══ RODAPÉ ═══ -->
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
 <script>
