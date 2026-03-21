@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divisão de Zeladoria | Dzel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -69,17 +69,26 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* UPPERCASE RULE */
-        input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; }
-        #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; }
+        input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; font-size: 16px; }
+        #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; font-size: 16px; }
 
         /* ======== MODAL ======== */
+        /* FIX SCROLL MODAL:
+           overflow-y:auto no overlay + align-items:flex-start permitem que
+           .modal-box cresca alem da viewport SEM cortar o conteudo.
+           O overlay (nao o box) e quem rola. margin:auto centraliza quando ha espaco. */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px;
+            z-index: 99999; display: none; justify-content: center;
+            align-items: flex-start;          /* era: center - cortava box > viewport */
+            padding: 20px;
+            overflow-y: auto;                 /* overlay scrollavel */
+            -webkit-overflow-scrolling: touch; /* scroll inercial iOS */
         }
         .modal-box {
             background: var(--bg-card); border-radius: var(--radius-lg); padding: 2rem;
             width: 100%; max-width: 550px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease;
+            margin: auto; /* centraliza vertical quando ha espaco; empurra quando nao ha */
         }
         /* Mobile modal fix */
         @media (max-width: 600px) {
@@ -1710,8 +1719,36 @@
             tbody.innerHTML = htmlRows;
         }
 
+        // Cache do dataURL do brasao -- evita recriar Image+Canvas a cada PDF gerado
+        let _brasaoDataURL = null;
+        async function getBrasaoDataURL() {
+            if (_brasaoDataURL) return _brasaoDataURL;
+            return new Promise(resolve => {
+                const img = new Image(); img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const cv = document.createElement('canvas');
+                    cv.width = img.naturalWidth || img.width;
+                    cv.height = img.naturalHeight || img.height;
+                    cv.getContext('2d').drawImage(img, 0, 0);
+                    _brasaoDataURL = cv.toDataURL('image/png');
+                    resolve(_brasaoDataURL);
+                };
+                img.onerror = () => resolve(null);
+                img.src = 'brasao.jpg';
+            });
+        }
+
         function iniciarRealtime() {
-            sb.channel('mudancas-db').on('postgres_changes', { event: '*', schema: 'public' }, (payload) => { carregarDados(); }).subscribe();
+            /* FIX PERFORMANCE: debounce 400ms evita re-renderizacao em cascata
+               quando multiplos eventos chegam juntos (ex: saves em lote). */
+            let _rtTimer = null;
+            const debouncedCarregar = () => {
+                clearTimeout(_rtTimer);
+                _rtTimer = setTimeout(() => carregarDados(), 400);
+            };
+            sb.channel('mudancas-db')
+                .on('postgres_changes', { event: '*', schema: 'public' }, debouncedCarregar)
+                .subscribe();
         }
 
         function renderizarLogs() {
@@ -2487,33 +2524,76 @@
 
         /* Fallback: overlay full-screen quando popup está bloqueado */
         function imprimirViaOverlay(html) {
-            // Remove overlay anterior se existir
+            /* FIX SCROLL iOS/Android:
+               iframe com height:100% dentro de position:fixed nao rola no Safari (bug WebKit).
+               Solucao: overlay com overflow-y:auto + conteudo em div direta (sem iframe).
+               Barra de acoes com position:sticky fica visivel durante todo o scroll. */
             const antigo = document.getElementById('os-print-overlay');
             if (antigo) antigo.remove();
 
             const overlay = document.createElement('div');
             overlay.id = 'os-print-overlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:white;z-index:999999;overflow:auto;';
+            overlay.style.cssText = [
+                'position:fixed;inset:0;background:white;z-index:999999;',
+                'overflow-y:auto;-webkit-overflow-scrolling:touch;',
+                'display:flex;flex-direction:column;'
+            ].join('');
 
-            // Cria iframe dentro do overlay
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'width:100%;height:100%;border:none;';
-            overlay.appendChild(iframe);
+            // Barra de acoes sticky -- sempre visivel durante o scroll
+            const barraAcoes = document.createElement('div');
+            barraAcoes.style.cssText = [
+                'position:sticky;top:0;z-index:999998;',
+                'background:rgba(255,255,255,0.97);backdrop-filter:blur(4px);',
+                'display:flex;justify-content:flex-end;gap:8px;',
+                'padding:8px 12px;border-bottom:1px solid #e2e8f0;',
+                'box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;'
+            ].join('');
 
-            // Botão fechar (visível na tela, oculto na impressão via CSS nativo do browser)
+            const btnImprimir = document.createElement('button');
+            btnImprimir.textContent = 'Imprimir';
+            btnImprimir.style.cssText = [
+                'background:#1e3a5f;color:white;border:none;padding:10px 16px;',
+                'border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;'
+            ].join('');
+            btnImprimir.onclick = () => {
+                barraAcoes.style.display = 'none';
+                window.print();
+                barraAcoes.style.display = 'flex';
+            };
+
             const btnFechar = document.createElement('button');
-            btnFechar.textContent = '✕ Fechar';
-            btnFechar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:1000000;background:#ef4444;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;';
-            btnFechar.onclick = () => overlay.remove();
-            overlay.appendChild(btnFechar);
+            btnFechar.textContent = 'Fechar';
+            btnFechar.style.cssText = [
+                'background:#ef4444;color:white;border:none;padding:10px 16px;',
+                'border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;'
+            ].join('');
+            btnFechar.onclick = () => {
+                overlay.remove();
+                document.body.style.overflow = '';
+            };
 
+            barraAcoes.appendChild(btnImprimir);
+            barraAcoes.appendChild(btnFechar);
+            overlay.appendChild(barraAcoes);
+
+            // Conteudo renderizado em div (sem iframe = sem trava de scroll iOS)
+            const conteudo = document.createElement('div');
+            conteudo.style.cssText = 'flex:1;padding:16px;';
+            const stripped = html
+                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                .replace(/<html[^>]*>/gi, '')
+                .replace(/<\/html>/gi, '')
+                .replace(/<head>[\s\S]*?<\/head>/gi, '')
+                .replace(/<body[^>]*>/gi, '')
+                .replace(/<\/body>/gi, '');
+            conteudo.innerHTML = stripped;
+            // Oculta o botao Fechar interno que o gerarHTMLOS injeta (substituido pela barra acima)
+            const btnInt = conteudo.querySelector('#btn-fechar');
+            if (btnInt) btnInt.style.display = 'none';
+
+            overlay.appendChild(conteudo);
             document.body.appendChild(overlay);
-
-            // Escreve no iframe
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            doc.open();
-            doc.write(html);
-            doc.close();
+            document.body.style.overflow = 'hidden'; // evita scroll duplo no body
         }
 
         window.imprimirDashboard = function() {
@@ -3175,23 +3255,13 @@
             vline(cx2, Y, Y+hdrH, 0.3);
             vline(cx3, Y, Y+hdrH, 0.3);
 
-            // Brasão
+            // Brasao -- usa cache global para evitar recriar Image+Canvas a cada PDF
             try {
-                await new Promise(resolve => {
-                    const img = new Image(); img.crossOrigin = 'anonymous';
-                    img.onload = () => {
-                        const cv = document.createElement('canvas');
-                        cv.width = img.naturalWidth||img.width;
-                        cv.height = img.naturalHeight||img.height;
-                        cv.getContext('2d').drawImage(img, 0, 0);
-                        const bW=15, bH=15;
-                        pdf.addImage(cv.toDataURL('image/png'),'PNG',
-                            OX+(cW1-bW)/2, Y+(hdrH-bH)/2, bW, bH);
-                        resolve();
-                    };
-                    img.onerror = resolve;
-                    img.src = 'brasao.jpg';
-                });
+                const bDataURL = await getBrasaoDataURL();
+                if (bDataURL) {
+                    const bW = 15, bH = 15;
+                    pdf.addImage(bDataURL, 'PNG', OX+(cW1-bW)/2, Y+(hdrH-bH)/2, bW, bH);
+                }
             } catch(e) {}
 
             // Texto central
@@ -3275,85 +3345,105 @@
             }
             Y += fH + 1;
 
-            // ════════════════════════════════════════════════════════
-            // SEÇÃO 2 — HISTÓRICO / DESCRIÇÃO
-            // ════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
+            // SECAO 2 -- HISTORICO / DESCRICAO (com suporte a multiplas paginas)
+            // ═══════════════════════════════════════════════════════════════
             Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
 
-            // IMPORTANTE: definir fonte ANTES do splitTextToSize para métricas corretas
+            // IMPORTANTE: definir fonte ANTES do splitTextToSize para metricas corretas
             pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-            const boxTxtW   = PW - 22;   // largura de texto disponível na caixa
+            const boxTxtW   = PW - 22;
             const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), boxTxtW);
             const lnH       = 6.5;
             const topPad    = 10;
-            const descBoxH  = Math.max(130, descLines.length * lnH + topPad + 8);
 
-            // Caixa limpa — sem linhas de pauta
-            caixa(OX, Y, PW, descBoxH);
+            /* FIX MULTIPAGINA:
+               jsPDF nao pagina automaticamente -- qualquer conteudo alem de ~287mm e cortado.
+               PAGE_H  = 287mm (altura util A4)
+               SIG_BLOCK = espaco minimo para Secao 3 (assinatura) + rodape (~46mm) */
+            const PAGE_H    = 287;
+            const SIG_BLOCK = 46;
+            const txtX      = OX + 6;  // margem esquerda interna do texto
 
-            // Texto JUSTIFICADO — cada linha ocupa a largura total
-            const txtX = OX + 6;       // margem esquerda interna
-            const txtXR = RX - 6;      // margem direita interna
-
-            descLines.forEach((linha, i) => {
-                const posY      = Y + topPad + i * lnH;
-                const ehUltima  = (i === descLines.length - 1);
-
-                // Última linha e linhas muito curtas ficam alinhadas à esquerda
+            // Helper: desenha linha de texto com justificacao
+            function desenharLinha(linha, posY, ehUltima) {
                 const largLinha = pdf.getTextWidth(linha);
                 const proporcao = largLinha / boxTxtW;
-
                 if (ehUltima || proporcao < 0.55) {
-                    // Alinha à esquerda
                     pdf.text(linha, txtX, posY);
                 } else {
-                    // Justifica: distribui espaço extra entre palavras
                     const palavras = linha.split(' ');
-                    if (palavras.length <= 1) {
-                        pdf.text(linha, txtX, posY);
-                        return;
-                    }
+                    if (palavras.length <= 1) { pdf.text(linha, txtX, posY); return; }
                     const largPalavras = palavras.reduce((sum, p) => sum + pdf.getTextWidth(p), 0);
                     const espacoExtra  = (boxTxtW - largPalavras) / (palavras.length - 1);
                     let curX = txtX;
                     palavras.forEach((palavra, pi) => {
                         pdf.text(palavra, curX, posY);
-                        if (pi < palavras.length - 1) {
-                            curX += pdf.getTextWidth(palavra) + espacoExtra;
-                        }
+                        if (pi < palavras.length - 1) curX += pdf.getTextWidth(palavra) + espacoExtra;
                     });
                 }
-            });
-            Y += descBoxH + 1;
+            }
 
-            // ════════════════════════════════════════════════════════
-            // SEÇÃO 3 — ASSINATURA ÚNICA (GESTOR/FISCAL) — compacta
-            // ════════════════════════════════════════════════════════
+            // Distribui linhas por paginas conforme o espaco disponivel
+            let linhasRestantes = [...descLines];
+            let paginaY = 8;  // Y do topo da borda da pagina atual
+
+            while (linhasRestantes.length > 0) {
+                const espacoDisp      = PAGE_H - Y - SIG_BLOCK;
+                const maxLinhasPagina = Math.max(1, Math.floor((espacoDisp - topPad - 8) / lnH));
+                const lote            = linhasRestantes.splice(0, maxLinhasPagina);
+                const boxH            = lote.length * lnH + topPad + 8;
+
+                caixa(OX, Y, PW, boxH);
+                pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+                lote.forEach((linha, i) => {
+                    const posY     = Y + topPad + i * lnH;
+                    const ehUltima = (i === lote.length - 1) && (linhasRestantes.length === 0);
+                    desenharLinha(linha, posY, ehUltima);
+                });
+                Y += boxH + 1;
+
+                // Ainda ha linhas? --> quebra de pagina
+                if (linhasRestantes.length > 0) {
+                    pdf.setLineWidth(0.7); pdf.setDrawColor(0,0,0);
+                    pdf.rect(OX, paginaY, PW, Y - paginaY, 'S');
+                    pdf.addPage();
+                    Y = 8; paginaY = 8;
+                    Y = secHeader('2.', 'HISTORICO / DESCRICAO DETALHADA (continuacao)', Y);
+                    pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // SECAO 3 -- ASSINATURA UNICA (GESTOR/FISCAL)
+            // Quebra de pagina se nao houver espaco suficiente
+            // ═══════════════════════════════════════════════════════════════
+            if (Y + SIG_BLOCK > PAGE_H) {
+                pdf.setLineWidth(0.7); pdf.setDrawColor(0,0,0);
+                pdf.rect(OX, paginaY, PW, Y - paginaY, 'S');
+                pdf.addPage();
+                Y = 8; paginaY = 8;
+            }
             Y = secHeader('3.', 'TERMO DE CIENCIA E ASSINATURA DO FISCAL', Y);
 
             const sigH = 22;
             const sigW = PW * 0.55;
             const sigX = OX + (PW - sigW) / 2;
 
-            // Linha de assinatura simples — sem caixas, sem campo DATA
             pdf.setLineWidth(0.4); pdf.setDrawColor(0,0,0);
             pdf.line(sigX, Y+sigH-9, sigX+sigW, Y+sigH-9);
             pdf.setLineWidth(0.25);
-
             pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
             pdf.text('GESTOR / FISCAL  (DZEL)', sigX+sigW/2, Y+sigH-4.5, {align:'center'});
             pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
             pdf.text('Carimbo, Assinatura e Matricula', sigX+sigW/2, Y+sigH-1.2, {align:'center'});
-
             Y += sigH;
 
-            // ════════════════════════════════════════════════════════
-            // BORDA EXTERNA GERAL
-            // ════════════════════════════════════════════════════════
+            // Borda externa (pagina final)
             pdf.setLineWidth(0.7); pdf.setDrawColor(0,0,0);
-            pdf.rect(OX, 8, PW, Y-8, 'S');
+            pdf.rect(OX, paginaY, PW, Y - paginaY, 'S');
 
-            // Rodapé simples sem cor
+            // Rodape
             pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(80,80,80);
             pdf.text(
                 `Documento gerado em ${new Date().toLocaleString('pt-BR')}   |   DIVISAO DE ZELADORIA - COGESPA`,
