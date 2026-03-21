@@ -3400,8 +3400,8 @@
 
             let restantes = [...descLines];
             while (restantes.length > 0) {
-                // Espaço disponível: rodapé reserva 12mm
-                const espDisp = PAGE_H - Y - 12;
+                // Espaço disponível: rodapé reserva 18mm (gap 6mm + footer 8mm + margem 4mm)
+                const espDisp = PAGE_H - Y - 18;
                 const maxLns  = Math.max(1, Math.floor((espDisp-padTop-padBot)/lnH));
                 const lote    = restantes.splice(0, maxLns);
 
