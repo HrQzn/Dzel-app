@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divisão de Zeladoria | Dzel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -69,17 +69,26 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* UPPERCASE RULE */
-        input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; }
-        #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; }
+        input[type="text"], input[type="search"], textarea, select, input[list] { text-transform: uppercase; font-size: 16px; }
+        #login-email, #login-pass, #novo-user-email, #novo-user-pass, #novo-user-nome { text-transform: none !important; font-size: 16px; }
 
         /* ======== MODAL ======== */
+        /* FIX SCROLL MODAL:
+           overflow-y:auto no overlay + align-items:flex-start permitem que
+           .modal-box cresca alem da viewport SEM cortar o conteudo.
+           O overlay (nao o box) e quem rola. margin:auto centraliza quando ha espaco. */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px;
+            z-index: 99999; display: none; justify-content: center;
+            align-items: flex-start;          /* era: center - cortava box > viewport */
+            padding: 20px;
+            overflow-y: auto;                 /* overlay scrollavel */
+            -webkit-overflow-scrolling: touch; /* scroll inercial iOS */
         }
         .modal-box {
             background: var(--bg-card); border-radius: var(--radius-lg); padding: 2rem;
             width: 100%; max-width: 550px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease;
+            margin: auto; /* centraliza vertical quando ha espaco; empurra quando nao ha */
         }
         /* Mobile modal fix */
         @media (max-width: 600px) {
@@ -1710,8 +1719,36 @@
             tbody.innerHTML = htmlRows;
         }
 
+        // Cache do dataURL do brasao -- evita recriar Image+Canvas a cada PDF gerado
+        let _brasaoDataURL = null;
+        async function getBrasaoDataURL() {
+            if (_brasaoDataURL) return _brasaoDataURL;
+            return new Promise(resolve => {
+                const img = new Image(); img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const cv = document.createElement('canvas');
+                    cv.width = img.naturalWidth || img.width;
+                    cv.height = img.naturalHeight || img.height;
+                    cv.getContext('2d').drawImage(img, 0, 0);
+                    _brasaoDataURL = cv.toDataURL('image/png');
+                    resolve(_brasaoDataURL);
+                };
+                img.onerror = () => resolve(null);
+                img.src = 'brasao.jpg';
+            });
+        }
+
         function iniciarRealtime() {
-            sb.channel('mudancas-db').on('postgres_changes', { event: '*', schema: 'public' }, (payload) => { carregarDados(); }).subscribe();
+            /* FIX PERFORMANCE: debounce 400ms evita re-renderizacao em cascata
+               quando multiplos eventos chegam juntos (ex: saves em lote). */
+            let _rtTimer = null;
+            const debouncedCarregar = () => {
+                clearTimeout(_rtTimer);
+                _rtTimer = setTimeout(() => carregarDados(), 400);
+            };
+            sb.channel('mudancas-db')
+                .on('postgres_changes', { event: '*', schema: 'public' }, debouncedCarregar)
+                .subscribe();
         }
 
         function renderizarLogs() {
@@ -2487,33 +2524,76 @@
 
         /* Fallback: overlay full-screen quando popup está bloqueado */
         function imprimirViaOverlay(html) {
-            // Remove overlay anterior se existir
+            /* FIX SCROLL iOS/Android:
+               iframe com height:100% dentro de position:fixed nao rola no Safari (bug WebKit).
+               Solucao: overlay com overflow-y:auto + conteudo em div direta (sem iframe).
+               Barra de acoes com position:sticky fica visivel durante todo o scroll. */
             const antigo = document.getElementById('os-print-overlay');
             if (antigo) antigo.remove();
 
             const overlay = document.createElement('div');
             overlay.id = 'os-print-overlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:white;z-index:999999;overflow:auto;';
+            overlay.style.cssText = [
+                'position:fixed;inset:0;background:white;z-index:999999;',
+                'overflow-y:auto;-webkit-overflow-scrolling:touch;',
+                'display:flex;flex-direction:column;'
+            ].join('');
 
-            // Cria iframe dentro do overlay
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'width:100%;height:100%;border:none;';
-            overlay.appendChild(iframe);
+            // Barra de acoes sticky -- sempre visivel durante o scroll
+            const barraAcoes = document.createElement('div');
+            barraAcoes.style.cssText = [
+                'position:sticky;top:0;z-index:999998;',
+                'background:rgba(255,255,255,0.97);backdrop-filter:blur(4px);',
+                'display:flex;justify-content:flex-end;gap:8px;',
+                'padding:8px 12px;border-bottom:1px solid #e2e8f0;',
+                'box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;'
+            ].join('');
 
-            // Botão fechar (visível na tela, oculto na impressão via CSS nativo do browser)
+            const btnImprimir = document.createElement('button');
+            btnImprimir.textContent = 'Imprimir';
+            btnImprimir.style.cssText = [
+                'background:#1e3a5f;color:white;border:none;padding:10px 16px;',
+                'border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;'
+            ].join('');
+            btnImprimir.onclick = () => {
+                barraAcoes.style.display = 'none';
+                window.print();
+                barraAcoes.style.display = 'flex';
+            };
+
             const btnFechar = document.createElement('button');
-            btnFechar.textContent = '✕ Fechar';
-            btnFechar.style.cssText = 'position:fixed;top:10px;right:10px;z-index:1000000;background:#ef4444;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;';
-            btnFechar.onclick = () => overlay.remove();
-            overlay.appendChild(btnFechar);
+            btnFechar.textContent = 'Fechar';
+            btnFechar.style.cssText = [
+                'background:#ef4444;color:white;border:none;padding:10px 16px;',
+                'border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;'
+            ].join('');
+            btnFechar.onclick = () => {
+                overlay.remove();
+                document.body.style.overflow = '';
+            };
 
+            barraAcoes.appendChild(btnImprimir);
+            barraAcoes.appendChild(btnFechar);
+            overlay.appendChild(barraAcoes);
+
+            // Conteudo renderizado em div (sem iframe = sem trava de scroll iOS)
+            const conteudo = document.createElement('div');
+            conteudo.style.cssText = 'flex:1;padding:16px;';
+            const stripped = html
+                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                .replace(/<html[^>]*>/gi, '')
+                .replace(/<\/html>/gi, '')
+                .replace(/<head>[\s\S]*?<\/head>/gi, '')
+                .replace(/<body[^>]*>/gi, '')
+                .replace(/<\/body>/gi, '');
+            conteudo.innerHTML = stripped;
+            // Oculta o botao Fechar interno que o gerarHTMLOS injeta (substituido pela barra acima)
+            const btnInt = conteudo.querySelector('#btn-fechar');
+            if (btnInt) btnInt.style.display = 'none';
+
+            overlay.appendChild(conteudo);
             document.body.appendChild(overlay);
-
-            // Escreve no iframe
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            doc.open();
-            doc.write(html);
-            doc.close();
+            document.body.style.overflow = 'hidden'; // evita scroll duplo no body
         }
 
         window.imprimirDashboard = function() {
@@ -3105,313 +3185,258 @@
             return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
         }
 
-        // ================================================================
-        // ================================================================
-        // ================================================================
-        // PDF DE OCORRÊNCIA — Documento Governamental Limpo (sem cores)
-        // ================================================================
+        // ═══════════════════════════════════════════════════════════════════════
+        // PDF — REGISTRO DE OCORRÊNCIA  (v7 — pixel-perfect do DOCX de referência)
+        // Specs extraídas via unpacked XML: trHeight, tcW, sz, color, shading
+        // ═══════════════════════════════════════════════════════════════════════
         window.gerarPDFOcorrencia = async function(id) {
             const o = ocorrencias.find(i => i.id == id); if (!o) return;
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-            const PW = 200, OX = 5, RX = 205;
-            let Y = 8;
+            // ── Dimensões exatas do DOCX de referência ───────────────────────
+            // Página A4: 11910×16840 twips → 210×297mm
+            // Margens: top=520, left/right=425 twips → top=9.2mm, lat=7.5mm
+            // Tabela: indent=153 twips=2.7mm da margem → OX=10.2mm≈10mm
+            //         largura=10772 twips → 190mm
+            const OX      = 10;          // margem tabela esquerda
+            const PW      = 190;         // largura útil da tabela
+            const RX      = OX + PW;
+            const PAGE_H  = 280;         // altura útil com margem inferior
+            let   Y       = 9;           // top margin (520 twips)
 
-            // Sanitize — remove acentos para compatibilidade jsPDF helvetica
-            const s = (v) => String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
+            // ── Paleta (diretamente do DOCX) ─────────────────────────────────
+            const BD  = [191,191,191];   // #BFBFBF — cor de todas as bordas
+            const SEC = [242,242,242];   // #F2F2F2 — fundo cabeçalho de seção
+            const LBL = [99, 99, 99];    // #636363 — cor dos labels
+            const SEC_TXT = [30,30,30];  // #1E1E1E — texto seção
+            const K   = [0,0,0];
+            const W   = [255,255,255];
 
-            // ── Helpers de desenho ───────────────────────────────────
-            const hline = (y, lw) => {
-                pdf.setLineWidth(lw||0.3); pdf.setDrawColor(0,0,0);
-                pdf.line(OX, y, RX, y);
+            // ── Sanitize ─────────────────────────────────────────────────────
+            const s = v => String(v||'').normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
+
+            // Sentence case — primeira letra de cada frase maiúscula
+            const sentCase = str => {
+                if (!str) return '';
+                return str.toLowerCase()
+                    .replace(/(^|[.!?]\s+)([a-z])/g, (_,a,b) => a+b.toUpperCase())
+                    .replace(/^[a-z]/, c => c.toUpperCase());
             };
-            const vline = (x, y1, y2, lw) => {
-                pdf.setLineWidth(lw||0.3); pdf.setDrawColor(0,0,0);
+
+            // Borda compartilhada entre células vizinhas (linha vertical fina)
+            const vln = (x, y1, y2) => {
+                pdf.setLineWidth(0.2); pdf.setDrawColor(...BD);
                 pdf.line(x, y1, x, y2);
             };
-            const caixa = (x, y, w, h) => {
-                pdf.setLineWidth(0.25); pdf.setDrawColor(0,0,0);
-                pdf.rect(x, y, w, h, 'S');
+
+            // ── Helper de célula (label cinza + valor bold) ───────────────────
+            // trHeight=665 twips → 11.7mm. Label baseline: +4.5mm. Valor baseline: +9.5mm
+            const pintaCell = (lbl, val, x, y, w, h) => {
+                pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+                pdf.setTextColor(...LBL);
+                pdf.text(s(lbl), x+3, y+4.5);
+                const linhas = pdf.splitTextToSize(s(String(val||'-').toUpperCase()), w-6);
+                pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+                pdf.setTextColor(...K);
+                pdf.text(linhas[0]||'-', x+3, y+h-3);
             };
 
-            // Cabeçalho de seção — fundo cinza claro APENAS para distinguir
-            const secHeader = (num, titulo, y) => {
-                const h = 6.5;
-                // Fundo branco, borda preta, texto em caixa alta
-                pdf.setFillColor(240,240,240);
-                pdf.setDrawColor(0,0,0);
-                pdf.setLineWidth(0.4);
-                pdf.rect(OX, y, PW, h, 'FD');
-                pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text(`${num}  ${s(titulo)}`, OX+PW/2, y+4.3, {align:'center'});
+            // ── Construtores de linha da tabela ───────────────────────────────
+            // Altura padrão: 665 twips × 25.4/1440 = 11.7mm → 12mm
+            const ROW_H = 12;
+
+            const row1 = (lbl, val, y, h=ROW_H) => {
+                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
+                pintaCell(lbl, val, OX, y, PW, h);
                 return y + h;
             };
 
-            // Campo: label + valor, sem qualquer cor de fundo
-            const campo = (lbl, val, x, y, w, h) => {
-                caixa(x, y, w, h);
-                pdf.setFontSize(6.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(60,60,60);
-                pdf.text(s(lbl), x+2, y+3.5);
-                // Define a fonte DO VALOR antes de calcular quebra de linha
-                pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-                const linhas = pdf.splitTextToSize(s(String(val||'-').toUpperCase()), w-4);
-                pdf.text(linhas[0]||'', x+2, y+h-2.5);
+            const row2 = (l1,v1,l2,v2, y, h=ROW_H) => {
+                const hw = PW/2;
+                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
+                vln(OX+hw, y, y+h);
+                pintaCell(l1,v1, OX,    y, hw, h);
+                pintaCell(l2,v2, OX+hw, y, hw, h);
+                return y + h;
             };
 
-            pdf.setDrawColor(0,0,0);
+            const row2x = (l1,v1,w1, l2,v2, y, h=ROW_H) => {
+                const w2 = PW-w1;
+                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
+                vln(OX+w1, y, y+h);
+                pintaCell(l1,v1, OX,    y, w1, h);
+                pintaCell(l2,v2, OX+w1, y, w2, h);
+                return y + h;
+            };
 
-            // ════════════════════════════════════════════════════════
-            // CABEÇALHO
-            // ════════════════════════════════════════════════════════
-            const hdrH = 28;
-            // Borda externa do cabeçalho
-            pdf.setLineWidth(0.6); pdf.setDrawColor(0,0,0);
-            pdf.rect(OX, Y, PW, hdrH, 'S');
+            // Cabeçalho de seção: fill=#F2F2F2, "N - Titulo" 8pt bold #1E1E1E
+            // trHeight=407 twips → 7.2mm
+            const SEC_H = 7.5;
+            const secHeader = (label, y) => {
+                pdf.setFillColor(...SEC); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, SEC_H, 'FD');
+                pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+                pdf.setTextColor(...SEC_TXT);
+                pdf.text(s(label), OX+3, y+5.2);
+                return y + SEC_H;
+            };
 
-            // Divisores verticais: 18% brasão | 55% texto | 27% nº
-            const cW1 = PW * 0.18, cW3 = PW * 0.27, cW2 = PW - cW1 - cW3;
-            const cx2 = OX+cW1, cx3 = OX+cW1+cW2;
-            vline(cx2, Y, Y+hdrH, 0.3);
-            vline(cx3, Y, Y+hdrH, 0.3);
+            // ════════════════════════════════════════════════════════════════
+            // ROW 0 — CABEÇALHO (trHeight=1794 twips → 31.6mm)
+            // Brasão: 19.3×21.2mm (696036×764275 EMU / 914400*25.4)
+            // "GOVERNO": 32 half-pts = 16pt bold
+            // "Coordenadoria": 21 half-pts = 10.5pt normal
+            // "Divisao DZEL": 18 half-pts = 9pt bold
+            // Linha separadora #BFBFBF
+            // "REGISTRO DE OCORRENCIA": 18 half-pts = 9pt bold
+            // ════════════════════════════════════════════════════════════════
+            const HDR_H = 32;   // 1794/1440*25.4 = 31.6mm ≈ 32mm
 
-            // Brasão
+            pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+            pdf.setLineWidth(0.3); pdf.rect(OX, Y, PW, HDR_H, 'FD');
+
+            // Brasão: 19×21mm, centrado verticalmente em 32mm → Y+(32-21)/2 = Y+5.5
             try {
-                await new Promise(resolve => {
-                    const img = new Image(); img.crossOrigin = 'anonymous';
-                    img.onload = () => {
-                        const cv = document.createElement('canvas');
-                        cv.width = img.naturalWidth||img.width;
-                        cv.height = img.naturalHeight||img.height;
-                        cv.getContext('2d').drawImage(img, 0, 0);
-                        const bW=15, bH=15;
-                        pdf.addImage(cv.toDataURL('image/png'),'PNG',
-                            OX+(cW1-bW)/2, Y+(hdrH-bH)/2, bW, bH);
-                        resolve();
-                    };
-                    img.onerror = resolve;
-                    img.src = 'brasao.jpg';
-                });
-            } catch(e) {}
+                const bd = await getBrasaoDataURL();
+                if (bd) pdf.addImage(bd,'PNG', OX+4, Y+5.5, 19, 21);
+            } catch(e){}
 
-            // Texto central
-            const ctrX = cx2 + cW2/2;
-            pdf.setTextColor(0,0,0);
-            pdf.setFontSize(10); pdf.setFont('helvetica','bold');
-            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y+6.5, {align:'center'});
-            pdf.setFontSize(8); pdf.setFont('helvetica','normal');
-            pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y+11, {align:'center'});
-            pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y+15, {align:'center'});
-            pdf.setFont('helvetica','bold');
-            pdf.text('DIVISAO DE ZELADORIA  -  DZEL', ctrX, Y+19.5, {align:'center'});
-            // Linha separadora fina
-            pdf.setLineWidth(0.2); pdf.line(cx2+5, Y+21.5, cx3-5, Y+21.5);
-            pdf.setFontSize(8.5); pdf.setFont('helvetica','bold');
-            pdf.text('REGISTRO DE OCORRENCIA', ctrX, Y+26, {align:'center'});
+            // Textos centrados sobre toda a largura PW
+            // "GOVERNO DO ESTADO DE SAO PAULO" — 16pt bold
+            const cX = OX + PW/2;
+            pdf.setFontSize(16); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', cX, Y+10, {align:'center'});
 
-            // Coluna direita: número + status
-            const roX = cx3, roW = cW3;
-            const numDisplay = o.numero ? `No. ${s(o.numero)}` : `ID ${o.id}`;
-            pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-            pdf.text('NUMERO DO REGISTRO', roX+roW/2, Y+7, {align:'center'});
-            pdf.setFontSize(14); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-            pdf.text(numDisplay, roX+roW/2, Y+15, {align:'center'});
-            // Status em caixa simples
-            const sW=roW-10, sH=5.5, sX=roX+5, sY=Y+hdrH-8;
-            caixa(sX, sY, sW, sH);
-            pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-            pdf.text(s(o.status).toUpperCase(), sX+sW/2, sY+3.8, {align:'center'});
+            // "Coordenadoria Geral de Suporte Administrativo" — 10.5pt normal cinza
+            pdf.setFontSize(10); pdf.setFont('helvetica','normal'); pdf.setTextColor(85,85,85);
+            pdf.text('Coordenadoria Geral de Suporte Administrativo', cX, Y+16, {align:'center'});
 
-            Y += hdrH;
+            // "Divisao de Zeladoria (DZEL)" — 9pt bold preto
+            pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+            pdf.text('Divisao de Zeladoria (DZEL)', cX, Y+21.5, {align:'center'});
 
-            // ════════════════════════════════════════════════════════
-            // BARRA DE RESUMO
-            // ════════════════════════════════════════════════════════
-            const barH = 8;
-            caixa(OX, Y, PW, barH);
-            // Gravidade em caixinha simples
-            const gW=32, gH=5, gX=OX+2, gY=Y+1.5;
-            caixa(gX, gY, gW, gH);
-            pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-            pdf.text(`GRAVIDADE: ${s(o.gravidade||'').toUpperCase()}`, gX+gW/2, gY+3.5, {align:'center'});
+            // Linha separadora fina #BFBFBF
+            pdf.setLineWidth(0.3); pdf.setDrawColor(...BD);
+            pdf.line(OX+50, Y+24, RX-50, Y+24);
 
-            const dt = o.data_hora ? new Date(o.data_hora) : new Date();
-            const dataStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+            // "REGISTRO DE OCORRENCIA" — 9pt bold
+            pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+            pdf.text('REGISTRO DE OCORRENCIA', cX, Y+29.5, {align:'center'});
+
+            Y += HDR_H;
+
+            // ════════════════════════════════════════════════════════════════
+            // ROW 1 — Seção "1 - Dados do Registro"
+            // ════════════════════════════════════════════════════════════════
+            Y = secHeader('1 - Dados do Registro', Y);
+
+            // ════════════════════════════════════════════════════════════════
+            // ROW 2-5 — Campos de dados (4 linhas × 12mm = 48mm)
+            // ════════════════════════════════════════════════════════════════
+            const dt      = o.data_hora ? new Date(o.data_hora) : new Date();
+            const dataStr = dt.toLocaleDateString('pt-BR');
             const horaStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-            pdf.text('Abertura:', OX+38, Y+3.5);
-            pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-            pdf.text(`${dataStr}  ${horaStr}`, OX+38, Y+7);
 
-            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-            pdf.text('Responsavel:', OX+90, Y+3.5);
-            pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-            pdf.text(s((o.responsavel||'').toUpperCase()).substring(0,44), OX+90, Y+7);
+            Y = row2x('No do Registro',          o.numero||String(o.id),
+                      95, 'Status',              o.status||'-', Y);
+            Y = row2x('Data / Hora de Abertura', `${dataStr}  ${horaStr}`,
+                      95, 'Tipo de Ocorrencia',  o.categoria||'-', Y);
+            Y = row2( 'Responsavel (Fiscal/Autor)', o.responsavel||'-',
+                      'Contratada',              o.contratada||'-', Y);
+            Y = row2( 'Unidade / Predio',        o.unidade||'-',
+                      'Setor / Local',           o.local||'-', Y);
 
-            Y += barH + 1;
-
-            // ════════════════════════════════════════════════════════
-            // SEÇÃO 1 — IDENTIFICAÇÃO
-            // ════════════════════════════════════════════════════════
-            Y = secHeader('1.', 'IDENTIFICACAO DA OCORRENCIA', Y);
-
-            const fH = 11, hw = PW/2;
-
-            campo('UNIDADE / PREDIO',      o.unidade||'-',    OX,    Y, hw, fH);
-            campo('LOCAL / SETOR',         o.local||'-',      OX+hw, Y, hw, fH);
-            Y += fH;
-            campo('CATEGORIA',             o.categoria||'-',  OX,    Y, hw, fH);
-            campo('CONTRATADA / EMPRESA',  o.contratada||'-', OX+hw, Y, hw, fH);
-            Y += fH;
-
-            const temEnc = o.status === 'Encerrada' && o.data_encerramento;
-            if (temEnc) {
-                const dtE = new Date(o.data_encerramento);
+            // Linha extra se encerrada (data de encerramento)
+            if (o.status === 'Encerrada' && o.data_encerramento) {
+                const dtE    = new Date(o.data_encerramento);
                 const encStr = `${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-                campo('DATA / HORA DE ABERTURA',     `${dataStr}  ${horaStr}`, OX,    Y, hw, fH);
-                campo('DATA / HORA DE ENCERRAMENTO', encStr,                   OX+hw, Y, hw, fH);
-            } else {
-                campo('DATA / HORA DE ABERTURA', `${dataStr}  ${horaStr}`, OX, Y, PW, fH);
+                Y = row2x('Data / Hora de Abertura',     `${dataStr}  ${horaStr}`,
+                          95, 'Data / Hora de Encerramento', encStr, Y);
             }
-            Y += fH + 1;
 
-            // ════════════════════════════════════════════════════════
-            // SEÇÃO 2 — HISTÓRICO / DESCRIÇÃO
-            // ════════════════════════════════════════════════════════
-            Y = secHeader('2.', 'HISTORICO  /  DESCRICAO DETALHADA DA OCORRENCIA', Y);
+            Y += 4;   // espaço entre tabela e seção 2
 
-            // IMPORTANTE: definir fonte ANTES do splitTextToSize para métricas corretas
-            pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-            const boxTxtW  = PW - 22;   // largura de texto disponível na caixa
-            const descLines = pdf.splitTextToSize(s((o.descricao||'').toUpperCase()), boxTxtW);
-            const lnH      = 6.5;
-            const topPad   = 10;
-            const botPad   = 8;
-            const txtX     = OX + 6;   // margem esquerda interna
+            // ════════════════════════════════════════════════════════════════
+            // SEÇÃO 2 — Descrição  (shape textbox no DOCX)
+            // Specs do textbox: Arial 10.5pt, line-spacing 391/240=1.63×
+            // Indent: left=333 dxa=5.9mm, right=327 dxa=5.8mm
+            // Border: #BFBFBF 0.3mm, fill branco
+            // Preenche o restante da página
+            // ════════════════════════════════════════════════════════════════
+            Y = secHeader('2 - Descricao', Y);
 
-            // Constantes de layout para calcular espaço disponível
-            const PAGE_H      = 297;
-            const SIG_BLOCK_H = 6.5 + 22 + 1;  // secHeader + sigH + padding
-            const FOOTER_H    = 12;
+            const descTxt   = s(sentCase(o.descricao||''));
 
-            // ── Helper: desenha N linhas justificadas a partir de (startX, startY) ──
-            const drawDescLines = (linhas, startY, totalLinhas) => {
-                linhas.forEach((linha, i) => {
-                    const posY     = startY + topPad + i * lnH;
-                    const largLinha = pdf.getTextWidth(linha);
-                    const proporcao = largLinha / boxTxtW;
-                    // Índice global da linha para decidir se é a última de TODO o texto
-                    const idxGlobal = descLines.indexOf(linha, i);
-                    const ehUltima  = (idxGlobal === descLines.length - 1) || (i === linhas.length - 1 && linhas === descLines.slice(descLines.length - linhas.length));
-                    if (ehUltima || proporcao < 0.55) {
-                        pdf.text(linha, txtX, posY);
-                    } else {
-                        const palavras = linha.split(' ');
-                        if (palavras.length <= 1) { pdf.text(linha, txtX, posY); return; }
-                        const largPalavras = palavras.reduce((sum, p) => sum + pdf.getTextWidth(p), 0);
-                        const espacoExtra  = (boxTxtW - largPalavras) / (palavras.length - 1);
-                        let curX = txtX;
-                        palavras.forEach((palavra, pi) => {
-                            pdf.text(palavra, curX, posY);
-                            if (pi < palavras.length - 1) curX += pdf.getTextWidth(palavra) + espacoExtra;
-                        });
-                    }
-                });
-            };
+            // Line-height: 391/240 × 10.5pt × 0.3528mm/pt = 6.04mm → 6.2mm
+            pdf.setFontSize(10.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
+            const bTxtW     = PW - 12;      // 5.9mm + 5.8mm = ~6mm cada lado
+            const descLines = pdf.splitTextToSize(descTxt, bTxtW);
+            const lnH       = 6.2;
+            const padTop    = 8;
+            const padBot    = 6;
+            const txtX      = OX + 6;
 
-            // ── Helper: fecha borda + rodapé da página atual ──
-            const finalizarPagina = (yFinal, pageStartY) => {
-                pdf.setLineWidth(0.7); pdf.setDrawColor(0,0,0);
-                pdf.rect(OX, pageStartY, PW, yFinal - pageStartY, 'S');
-                pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(80,80,80);
-                pdf.text(
-                    `Documento gerado em ${new Date().toLocaleString('pt-BR')}   |   DIVISAO DE ZELADORIA - COGESPA`,
-                    OX + PW/2, yFinal + 4, {align:'center'}
-                );
-            };
-
-            // ── Helper: seção de assinatura ──
-            const desenharAssinatura = () => {
-                Y = secHeader('3.', 'TERMO DE CIENCIA E ASSINATURA DO FISCAL', Y);
-                const sigH = 22;
-                const sigW = PW * 0.55;
-                const sigX = OX + (PW - sigW) / 2;
-                pdf.setLineWidth(0.4); pdf.setDrawColor(0,0,0);
-                pdf.line(sigX, Y + sigH - 9, sigX + sigW, Y + sigH - 9);
-                pdf.setLineWidth(0.25);
-                pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text('GESTOR / FISCAL  (DZEL)', sigX + sigW/2, Y + sigH - 4.5, {align:'center'});
-                pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-                pdf.text('Carimbo, Assinatura e Matricula', sigX + sigW/2, Y + sigH - 1.2, {align:'center'});
-                Y += sigH;
-            };
-
-            // ── Calcula quantas linhas cabem na página atual ──
-            const availDescPrimeira = PAGE_H - Y - SIG_BLOCK_H - FOOTER_H - 2;
-            const linesPerPage = (avail) => Math.max(1, Math.floor((avail - topPad - botPad) / lnH));
-            const lppFirst = linesPerPage(availDescPrimeira);
-
-            if (descLines.length <= lppFirst) {
-                // ── Caso 1: descrição inteira cabe na primeira página ──────────────
-                const descBoxH = Math.max(40, descLines.length * lnH + topPad + botPad);
-                const pageStartY = 8;
-
-                caixa(OX, Y, PW, descBoxH);
-                pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-                drawDescLines(descLines, Y, descLines.length);
-                Y += descBoxH + 1;
-
-                // ════ SEÇÃO 3 — ASSINATURA ══════════════════════════════════════
-                desenharAssinatura();
-
-                // Borda externa + rodapé — tudo na página 1
-                finalizarPagina(Y, pageStartY);
-
-            } else {
-                // ── Caso 2: descrição longa — divide em múltiplas páginas ────────
-                let remaining  = [...descLines];
-                let pageNum    = 1;
-                let pageStartY = 8;
-
-                while (remaining.length > 0) {
-                    pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(0,0,0);
-
-                    const isLast   = remaining.length <= lppFirst;
-                    const avail    = PAGE_H - Y - (isLast ? SIG_BLOCK_H : 0) - FOOTER_H - 2;
-                    const lpp      = linesPerPage(avail);
-                    const chunk    = remaining.slice(0, lpp);
-                    const boxH     = Math.max(40, chunk.length * lnH + topPad + botPad);
-
-                    caixa(OX, Y, PW, boxH);
-                    drawDescLines(chunk, Y, chunk.length);
-                    Y += boxH + 1;
-                    remaining = remaining.slice(lpp);
-
-                    if (remaining.length > 0) {
-                        // Ainda tem conteúdo — fecha página e abre nova
-                        finalizarPagina(Y, pageStartY);
-                        pdf.addPage();
-                        pageNum++;
-                        pageStartY = 8;
-                        Y = 8;
-
-                        // Mini-cabeçalho de continuação
-                        const contH = 9;
-                        pdf.setFillColor(240,240,240); pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.4);
-                        pdf.rect(OX, Y, PW, contH, 'FD');
-                        pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                        const numCont = o.numero ? `R.O. No. ${s(o.numero)}` : `R.O. ID ${o.id}`;
-                        pdf.text(`DESCRICAO DA OCORRENCIA (cont. pg. ${pageNum})  —  ${numCont}`, OX + PW/2, Y + 6.2, {align:'center'});
-                        Y += contH + 2;
-                    }
+            // Justificação manual (jc=both no DOCX)
+            function justLine(linha, py, ehUltima) {
+                const larg = pdf.getTextWidth(linha);
+                if (ehUltima || larg/bTxtW < 0.55 || !linha.trim()) {
+                    pdf.text(linha, txtX, py); return;
                 }
-
-                // ════ SEÇÃO 3 — ASSINATURA na última página ═════════════════════
-                desenharAssinatura();
-                finalizarPagina(Y, pageStartY);
+                const pals = linha.split(' ').filter(p=>p.length>0);
+                if (pals.length<=1) { pdf.text(linha, txtX, py); return; }
+                const largPals = pals.reduce((sum,p)=>sum+pdf.getTextWidth(p),0);
+                const gap = (bTxtW-largPals)/(pals.length-1);
+                let cx = txtX;
+                pals.forEach((p,pi)=>{
+                    pdf.text(p,cx,py);
+                    if(pi<pals.length-1) cx+=pdf.getTextWidth(p)+gap;
+                });
             }
 
-            // Salva
+            let restantes = [...descLines];
+            while (restantes.length > 0) {
+                // Espaço disponível: rodapé reserva 12mm
+                const espDisp = PAGE_H - Y - 12;
+                const maxLns  = Math.max(1, Math.floor((espDisp-padTop-padBot)/lnH));
+                const lote    = restantes.splice(0, maxLns);
+
+                // A caixa preenche o espaço restante quando texto é curto
+                const conteudoH = lote.length*lnH + padTop + padBot;
+                const boxH      = Math.max(espDisp, conteudoH);
+
+                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.3); pdf.rect(OX, Y, PW, boxH, 'FD');
+
+                pdf.setFontSize(10.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
+                lote.forEach((linha,i) => {
+                    const py       = Y + padTop + i*lnH;
+                    const ehUltima = (i===lote.length-1) && restantes.length===0;
+                    justLine(linha, py, ehUltima);
+                });
+                Y += boxH;
+
+                if (restantes.length > 0) {
+                    pdf.addPage(); Y = 9;
+                    Y = secHeader('2 - Descricao (continuacao)', Y);
+                    pdf.setFontSize(10.5); pdf.setFont('helvetica','normal');
+                }
+            }
+
+            Y += 6;
+    
+            if (Y + 8 > PAGE_H) { pdf.addPage(); Y = PAGE_H - 10; }
+            pdf.setFontSize(7.5); pdf.setFont('helvetica','italic');
+            pdf.setTextColor(170,170,170);
+            pdf.text(
+                `Documento gerado em ${new Date().toLocaleString('pt-BR')}   |   DIVISAO DE ZELADORIA - COGESPA`,
+                OX+PW/2, Y, {align:'center'}
+            );
+
             const nomeArq = o.numero ? String(o.numero).replace(/[^a-zA-Z0-9]/g,'_') : o.id;
             pdf.save(`RO_${nomeArq}.pdf`);
         };
