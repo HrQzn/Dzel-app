@@ -3186,34 +3186,31 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════════
-        // PDF — REGISTRO DE OCORRÊNCIA  (v5 — fiel ao modelo do usuário)
+        // PDF — REGISTRO DE OCORRÊNCIA  (v6 — A4 preenchido, fiel ao modelo)
         // ═══════════════════════════════════════════════════════════════════════
         window.gerarPDFOcorrencia = async function(id) {
             const o = ocorrencias.find(i => i.id == id); if (!o) return;
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-            // ── Constantes de layout ─────────────────────────────────────────
-            const OX     = 12;          // margem esquerda
-            const PW     = 186;         // largura útil
+            // ── Layout A4 297mm ──────────────────────────────────────────────
+            const OX     = 15;      // margem lateral
+            const PW     = 180;     // largura útil (210 - 30mm)
             const RX     = OX + PW;
-            const PAGE_H = 277;         // altura útil
-            const SIG_H  = 30;          // altura bloco de assinatura
-            let   Y      = 14;
+            const PAGE_H = 270;     // altura útil (297 - 27mm margens)
+            let   Y      = 15;      // cursor vertical
 
-            // ── Cores ────────────────────────────────────────────────────────
-            const K       = [0,0,0];
-            const CINZA55 = [85,85,85];
-            const CINZA90 = [150,150,150];
-            const CINZABD = [200,200,200];   // borda dos campos
-            const SEC_BG  = [240,240,240];   // fundo do cabeçalho de seção
-            const BRANCO  = [255,255,255];
+            // ── Paleta ──────────────────────────────────────────────────────
+            const K       = [0, 0, 0];
+            const CINZA_L = [90, 90, 90];     // labels dos campos
+            const CINZA_B = [200, 200, 200];  // bordas
+            const SEC_BG  = [238, 238, 238];  // fundo seção cinza claro
+            const BRANCO  = [255, 255, 255];
 
             // ── Utils ────────────────────────────────────────────────────────
             const s = v => String(v||'').normalize('NFD')
                 .replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
 
-            // Sentence case (primeira letra de cada frase maiúscula)
             const sentCase = str => {
                 if (!str) return '';
                 return str.toLowerCase()
@@ -3221,146 +3218,145 @@
                     .replace(/^[a-z]/, c => c.toUpperCase());
             };
 
-            // Divisor vertical interno entre células
             const vln = (x, y1, y2) => {
-                pdf.setLineWidth(0.2); pdf.setDrawColor(...CINZABD);
+                pdf.setLineWidth(0.25); pdf.setDrawColor(...CINZA_B);
                 pdf.line(x, y1, x, y2);
             };
 
-            // ── Célula de campo ──────────────────────────────────────────────
-            // Borda externa do bloco é desenhada UMA vez por linha (rect),
-            // vln adiciona apenas o divisor central sem duplicar bordas.
+            // ── Primitivo de campo ───────────────────────────────────────────
+            // h = 17mm → label a 5.5mm do topo, valor a 4mm do fundo
             const pintaCell = (lbl, val, x, y, w, h) => {
-                pdf.setFontSize(7); pdf.setFont('helvetica','normal');
-                pdf.setTextColor(...CINZA90);
-                pdf.text(s(lbl), x+3, y+4.8);
-                const maxW = w - 6;
+                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+                pdf.setTextColor(...CINZA_L);
+                pdf.text(s(lbl), x+3.5, y+5.5);
                 const linhas = pdf.splitTextToSize(
-                    s(String(val||'-').toUpperCase()), maxW
+                    s(String(val||'-').toUpperCase()), w-7
                 );
-                pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold');
                 pdf.setTextColor(...K);
-                pdf.text(linhas[0]||'-', x+3, y+h-3.5);
+                pdf.text(linhas[0]||'-', x+3.5, y+h-4);
             };
 
-            // Linha com 1 coluna
-            const row1 = (lbl, val, y, h=12) => {
-                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZABD);
+            // ── Construtores de linha ────────────────────────────────────────
+            const CELL_H = 17;  // altura padrão de cada linha de campo
+
+            const row1 = (lbl, val, y, h=CELL_H) => {
+                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZA_B);
                 pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
                 pintaCell(lbl, val, OX, y, PW, h);
                 return y + h;
             };
 
-            // Linha com 2 colunas (50/50)
-            const row2 = (l1, v1, l2, v2, y, h=12) => {
-                const hw = PW / 2;
-                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZABD);
+            const row2 = (l1,v1,l2,v2, y, h=CELL_H) => {
+                const hw = PW/2;
+                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZA_B);
                 pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
                 vln(OX+hw, y, y+h);
-                pintaCell(l1, v1, OX,    y, hw, h);
-                pintaCell(l2, v2, OX+hw, y, hw, h);
+                pintaCell(l1,v1, OX,    y, hw, h);
+                pintaCell(l2,v2, OX+hw, y, hw, h);
                 return y + h;
             };
 
-            // Linha com 2 colunas (largura customizada)
-            const row2x = (l1, v1, w1, l2, v2, y, h=12) => {
-                const w2 = PW - w1;
-                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZABD);
+            const row2x = (l1,v1,w1, l2,v2, y, h=CELL_H) => {
+                const w2 = PW-w1;
+                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZA_B);
                 pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
                 vln(OX+w1, y, y+h);
-                pintaCell(l1, v1, OX,    y, w1, h);
-                pintaCell(l2, v2, OX+w1, y, w2, h);
+                pintaCell(l1,v1, OX,    y, w1, h);
+                pintaCell(l2,v2, OX+w1, y, w2, h);
                 return y + h;
             };
 
-            // Cabeçalho de seção: fundo cinza claro, texto bold à esquerda
+            // Cabeçalho de seção: cinza claro, label bold 9pt à esquerda
             const secHeader = (label, y) => {
-                const h = 7.5;
-                pdf.setFillColor(...SEC_BG); pdf.setDrawColor(...CINZABD);
+                const h = 9;
+                pdf.setFillColor(...SEC_BG); pdf.setDrawColor(...CINZA_B);
                 pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
-                pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+                pdf.setFontSize(9); pdf.setFont('helvetica','bold');
                 pdf.setTextColor(...K);
-                pdf.text(s(label), OX+3, y+5.3);
+                pdf.text(s(label), OX+3.5, y+6.2);
                 return y + h;
             };
 
             // ════════════════════════════════════════════════════════════════
-            // CABEÇALHO — brasão esquerda + texto institucional centralizado
-            // Borda fina ao redor, sem colunas laterais
+            // CABEÇALHO — 58mm de altura para preencher o A4 corretamente
+            // Brasão 24mm à esquerda + texto institucional centralizado
             // ════════════════════════════════════════════════════════════════
-            const hdrH  = 34;
-            const brasW = 26;         // largura reservada para o brasão
+            const hdrH  = 58;
+            const brasW = 28;
+            const brasS = 24;
 
-            pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZABD);
+            pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZA_B);
             pdf.setLineWidth(0.3); pdf.rect(OX, Y, PW, hdrH, 'FD');
 
             // Brasão
             try {
                 const bd = await getBrasaoDataURL();
-                if (bd) {
-                    const bS = 20;
-                    pdf.addImage(bd,'PNG', OX+3, Y+(hdrH-bS)/2, bS, bS);
-                }
+                if (bd) pdf.addImage(bd,'PNG', OX+2, Y+(hdrH-brasS)/2, brasS, brasS);
             } catch(e){}
 
-            // Texto centrado na área à direita do brasão
-            const txtCX = OX + brasW + (PW - brasW)/2;
+            // Texto institucional
+            const cX = OX + brasW + (PW-brasW)/2;
+            pdf.setFontSize(13); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', cX, Y+17, {align:'center'});
+            pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(...CINZA_L);
+            pdf.text('Coordenadoria Geral de Suporte Administrativo', cX, Y+25, {align:'center'});
+            pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+            pdf.text('Divisao de Zeladoria (DZEL)', cX, Y+33, {align:'center'});
+            // Linha separadora
+            pdf.setLineWidth(0.4); pdf.setDrawColor(...CINZA_B);
+            pdf.line(cX-45, Y+38, cX+45, Y+38);
             pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', txtCX, Y+9, {align:'center'});
-            pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(...CINZA55);
-            pdf.text('Coordenadoria Geral de Suporte Administrativo', txtCX, Y+14.5, {align:'center'});
-            pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('Divisao de Zeladoria (DZEL)', txtCX, Y+19.5, {align:'center'});
-            // Linha separadora sutil
-            pdf.setLineWidth(0.3); pdf.setDrawColor(...CINZABD);
-            pdf.line(txtCX-38, Y+22, txtCX+38, Y+22);
-            pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('REGISTRO DE OCORRENCIA', txtCX, Y+28.5, {align:'center'});
+            pdf.text('REGISTRO DE OCORRENCIA', cX, Y+49, {align:'center'});
 
-            Y += hdrH + 4;
+            Y += hdrH + 5;
 
             // ════════════════════════════════════════════════════════════════
             // SEÇÃO 1 — Dados do Registro
             // ════════════════════════════════════════════════════════════════
-            Y = secHeader('1 \u2013 Dados do Registro', Y);
+            Y = secHeader('1  Dados do Registro', Y);
 
             const dt      = o.data_hora ? new Date(o.data_hora) : new Date();
             const dataStr = dt.toLocaleDateString('pt-BR');
             const horaStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
-            // Linha 1: Nº do Registro  |  Status
-            Y = row2x('No do Registro', o.numero||String(o.id), 93, 'Status', o.status||'-', Y, 12);
-            // Linha 2: Data/Hora  |  Tipo de Ocorrência (categoria)
-            Y = row2x('Data / Hora de Abertura', `${dataStr}  ${horaStr}`, 93, 'Tipo de Ocorrencia', o.categoria||'-', Y, 12);
-            // Linha 3: Responsável  |  Contratada
-            Y = row2('Responsavel (Fiscal/Autor)', o.responsavel||'-', 'Contratada', o.contratada||'-', Y, 12);
-            // Linha 4: Unidade  |  Setor/Local
-            Y = row2('Unidade / Predio', o.unidade||'-', 'Setor / Local', o.local||'-', Y, 12);
+            // 4 linhas × 17mm = 68mm
+            Y = row2x('No do Registro',           o.numero||String(o.id),
+                      90,
+                      'Status',                   o.status||'-', Y);
+            Y = row2x('Data / Hora de Abertura',  `${dataStr}  ${horaStr}`,
+                      90,
+                      'Tipo de Ocorrencia',       o.categoria||'-', Y);
+            Y = row2( 'Responsavel (Fiscal/Autor)',o.responsavel||'-',
+                      'Contratada',               o.contratada||'-', Y);
+            Y = row2( 'Unidade / Predio',         o.unidade||'-',
+                      'Setor / Local',            o.local||'-', Y);
 
-            // Se encerrada: data de encerramento
             if (o.status === 'Encerrada' && o.data_encerramento) {
                 const dtE    = new Date(o.data_encerramento);
                 const encStr = `${dtE.toLocaleDateString('pt-BR')}  ${dtE.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-                Y = row2x('Data / Hora de Abertura', `${dataStr}  ${horaStr}`, 93, 'Data / Hora de Encerramento', encStr, Y, 12);
+                Y = row2x('Data / Hora de Abertura', `${dataStr}  ${horaStr}`,
+                          90, 'Data / Hora de Encerramento', encStr, Y);
             }
 
-            Y += 4;
+            Y += 5;
 
             // ════════════════════════════════════════════════════════════════
-            // SEÇÃO 2 — Descrição  (multipágina)
+            // SEÇÃO 2 — Descrição  (múltiplas páginas se necessário)
+            // Altura mínima: ocupa o restante da página → doc sempre parece A4 cheio
             // ════════════════════════════════════════════════════════════════
-            Y = secHeader('2 \u2013 Descri\u00e7\u00e3o', Y);
+            Y = secHeader('2  Descricao', Y);
 
-            const descTxt   = s(sentCase(o.descricao || ''));
+            const descTxt   = s(sentCase(o.descricao||''));
             pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
-            const bTxtW     = PW - 12;     // 6mm de margem interna em cada lado
+            const bTxtW     = PW - 14;      // 7mm de padding interno cada lado
             const descLines = pdf.splitTextToSize(descTxt, bTxtW);
-            const lnH       = 6.3;
-            const padTop    = 8;
-            const padBot    = 8;
-            const txtX      = OX + 6;
+            const lnH       = 6.5;          // line-height confortável
+            const padTop    = 10;
+            const padBot    = 10;
+            const txtX      = OX + 7;
 
-            // Justificação manual
+            // Justificação manual por linha
             function justLine(linha, py, ehUltima) {
                 const larg = pdf.getTextWidth(linha);
                 if (ehUltima || larg/bTxtW < 0.55 || !linha.trim()) {
@@ -3369,22 +3365,37 @@
                 const pals = linha.split(' ').filter(p => p.length > 0);
                 if (pals.length <= 1) { pdf.text(linha, txtX, py); return; }
                 const largPals = pals.reduce((sum,p) => sum+pdf.getTextWidth(p), 0);
-                const gap      = (bTxtW - largPals) / (pals.length-1);
+                const gap = (bTxtW - largPals) / (pals.length-1);
                 let cx = txtX;
                 pals.forEach((p,pi) => {
                     pdf.text(p, cx, py);
-                    if (pi < pals.length-1) cx += pdf.getTextWidth(p) + gap;
+                    if (pi < pals.length-1) cx += pdf.getTextWidth(p)+gap;
                 });
             }
 
-            let restantes = [...descLines];
-            while (restantes.length > 0) {
-                const espaco  = PAGE_H - Y - SIG_H;
-                const maxLns  = Math.max(1, Math.floor((espaco - padTop - padBot) / lnH));
-                const lote    = restantes.splice(0, maxLns);
-                const boxH    = Math.max(45, lote.length * lnH + padTop + padBot);
+            // Espaço restante na página para a caixa de descrição
+            // rodapé = 15mm → PAGE_H - Y - 15mm
+            const espacoRestante = PAGE_H - Y - 15;
+            // Altura ideal para o conteúdo
+            const alturaConteudo = descLines.length * lnH + padTop + padBot;
+            // A caixa preenche o espaço restante se o texto for curto,
+            // ou expande (com addPage) se o texto for longo
+            const boxH1 = Math.max(espacoRestante, alturaConteudo);
 
-                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZABD);
+            let restantes = [...descLines];
+            let primeiraVez = true;
+
+            while (restantes.length > 0) {
+                const espDisp = PAGE_H - Y - 15;
+                const maxLns  = Math.max(1, Math.floor((espDisp - padTop - padBot) / lnH));
+                const lote    = restantes.splice(0, maxLns);
+                // Na primeira caixa: preenche o restante da página inteira
+                const boxH    = primeiraVez
+                    ? Math.max(espDisp, lote.length * lnH + padTop + padBot)
+                    : Math.max(espacoRestante, lote.length * lnH + padTop + padBot);
+                primeiraVez = false;
+
+                pdf.setFillColor(...BRANCO); pdf.setDrawColor(...CINZA_B);
                 pdf.setLineWidth(0.25); pdf.rect(OX, Y, PW, boxH, 'FD');
 
                 pdf.setFontSize(9.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
@@ -3396,18 +3407,18 @@
                 Y += boxH;
 
                 if (restantes.length > 0) {
-                    pdf.addPage(); Y = 14;
-                    Y = secHeader('2 \u2013 Descri\u00e7\u00e3o (continuacao)', Y);
+                    pdf.addPage(); Y = 15;
+                    Y = secHeader('2  Descricao (continuacao)', Y);
                     pdf.setFontSize(9.5); pdf.setFont('helvetica','normal');
                 }
             }
 
-            Y += 6;
+            Y += 8;
 
             // ════════════════════════════════════════════════════════════════
-            // RODAPÉ DE DOCUMENTO
+            // RODAPÉ
             // ════════════════════════════════════════════════════════════════
-            if (Y + 10 > PAGE_H) { pdf.addPage(); Y = 14; }
+            if (Y + 8 > PAGE_H) { pdf.addPage(); Y = PAGE_H - 12; }
 
             pdf.setFontSize(7.5); pdf.setFont('helvetica','italic');
             pdf.setTextColor(170,170,170);
