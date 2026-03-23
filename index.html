@@ -103,33 +103,7 @@
         }
         /* Mobile modal fix */
         @media (max-width: 600px) {
-            .modal-overlay { padding: 12px; }
-            .modal-box {
-                padding: 1.15rem;
-                border-radius: var(--radius-md);
-                max-height: none;
-            }
-            .modal-box h3 { font-size: 1rem; margin-bottom: 0.75rem; }
-            .modal-box input,
-            .modal-box select,
-            .modal-box textarea {
-                font-size: 16px !important;
-                height: 46px;
-                min-height: 46px;
-                padding: 0 0.75rem;
-            }
-            .modal-box textarea {
-                height: auto;
-                min-height: 80px;
-                padding: 0.75rem;
-            }
-            .modal-box label { font-size: 0.78rem; }
-            .modal-box .btn-primary,
-            .modal-box .btn-cancel,
-            .modal-box button {
-                min-height: 46px;
-                font-size: 0.9rem;
-            }
+            .modal-box { padding: 1.25rem; border-radius: var(--radius-md); }
         }
 
         /* ======== LOGIN ======== */
@@ -172,11 +146,6 @@
         }
         .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
         .login-error { color: #fca5a5; font-size: 0.85rem; margin-top: 10px; display: none; }
-        @media (max-width: 600px) {
-            .login-box { padding: 1.75rem 1.25rem; }
-            .login-box input { font-size: 16px; padding: 0.9rem 1rem; min-height: 48px; }
-            .login-btn { min-height: 48px; font-size: 1rem; }
-        }
 
         /* ======== APP LAYOUT — DESKTOP ======== */
         #app-content { display: none; }
@@ -314,8 +283,7 @@
         /* ======== FORMS & TABLES ======== */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
         label[style*="font-size:0.8rem"], label[style*="font-size: 0.8rem"] { font-size: 0.75rem !important; font-weight: 600 !important; color: var(--text-secondary) !important; display: block; margin-bottom: 4px; letter-spacing: 0.2px; }
-        input, select, textarea { width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.875rem; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-primary); background: var(--bg-card); transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; appearance: none; }
-        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px; padding-right: 34px; cursor: pointer; }
+        input, select, textarea { width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.875rem; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-primary); background: var(--bg-card); transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
         input::placeholder { color: var(--text-muted); font-size: 0.85rem; }
         .filter-container { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
@@ -529,126 +497,49 @@
             .chart-wrapper-dnut { height: 180px; max-width: 220px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
 
-            /* ======== FORMS — MOBILE FIX ======== */
-            .form-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 0.65rem;
-            }
+            /* Forms */
+            .form-grid { grid-template-columns: 1fr; gap: 0.65rem; }
             .form-grid > * { min-width: 0; }
-
-            .form-grid > div:not(.btn-container):not(.checkbox-wrapper):not(.tipo-selector):not(#container-permissoes):not(#container-status-veiculo) {
-                display: flex;
-                flex-direction: column;
+            /* Mantém a coluna dupla apenas para campos simples */
+            @supports (grid-template-columns: repeat(2, 1fr)) {
+                .form-grid { grid-template-columns: repeat(2, 1fr); }
+                .form-grid input[style*="grid-column"], 
+                .form-grid textarea { grid-column: 1 / -1; }
             }
-            .form-grid > div:not(.btn-container):not(.checkbox-wrapper):not(.tipo-selector):not(#container-permissoes):not(#container-status-veiculo) > label {
-                font-size: 0.72rem !important;
-                font-weight: 700 !important;
-                color: var(--text-secondary) !important;
-                margin-bottom: 4px;
-                letter-spacing: 0.2px;
-            }
-            .form-grid > div:not(.btn-container):not(.checkbox-wrapper):not(.tipo-selector):not(#container-permissoes):not(#container-status-veiculo) > input,
-            .form-grid > div:not(.btn-container):not(.checkbox-wrapper):not(.tipo-selector):not(#container-permissoes):not(#container-status-veiculo) > select {
-                flex: 1;
-            }
-
-            .form-grid textarea,
-            .form-grid input[style*="grid-column"],
-            .form-grid [style*="grid-column: 1 / -1"],
-            .form-grid [style*="grid-column:1/-1"] { grid-column: 1 / -1; }
-
-            .form-grid > [style*="grid-column:span 2"],
-            .form-grid > [style*="grid-column: span 2"] { grid-column: 1 / -1; }
-
-            .form-grid input[type="text"],
-            .form-grid input[type="number"],
-            .form-grid input[type="search"],
-            .form-grid input[type="date"],
-            .form-grid input[type="time"],
-            .form-grid input[type="month"],
-            .form-grid input[type="datetime-local"],
-            .form-grid input[type="password"],
-            .form-grid input[type="email"],
-            .form-grid input[list],
-            .form-grid select {
-                height: 46px;
-                min-height: 46px;
-                padding: 0 0.75rem;
-                font-size: 16px;
-                border-radius: var(--radius-sm);
-                -webkit-appearance: none;
-                appearance: none;
-            }
-            .form-grid select {
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-                background-repeat: no-repeat;
-                background-position: right 12px center;
-                padding-right: 32px;
-            }
-            .form-grid input::placeholder { font-size: 0.82rem; }
 
             .btn-container { flex-wrap: wrap; }
-            .btn-container button { flex: 1 1 auto; min-width: 120px; min-height: 46px; font-size: 0.9rem; }
+            .btn-container button { flex: 1 1 auto; min-width: 120px; }
 
-            /* ======== FILTROS — MOBILE ======== */
-            .filter-container { padding: 0.75rem; gap: 0.5rem; flex-direction: column; }
+            /* Filtros */
+            .filter-container { padding: 0.75rem; gap: 0.5rem; }
             .filter-group { min-width: 100%; }
-            .filter-group input,
-            .filter-group select {
-                height: 42px;
-                min-height: 42px;
-                font-size: 16px;
-            }
-            .btn-excel { width: 100%; justify-content: center; height: 42px; }
 
-            /* ======== TABELAS — MOBILE ======== */
-            .table-container {
-                border-radius: var(--radius-sm);
-                margin: 0 -0.25rem;
-                width: calc(100% + 0.5rem);
-            }
+            /* Tabelas — scroll horizontal */
+            .table-container { border-radius: var(--radius-sm); }
             table { min-width: 600px; }
-            td, th { padding: 0.7rem 0.65rem; font-size: 0.8rem; }
-            .action-btn {
-                padding: 8px 10px;
-                font-size: 0.75rem;
-                min-height: 38px;
-                min-width: 38px;
-                justify-content: center;
-            }
+            td, th { padding: 0.75rem 0.75rem; font-size: 0.82rem; }
+            .action-btn { padding: 7px 9px; font-size: 0.75rem; min-height: 36px; /* tap target */ }
 
-            /* ======== CARDS — MOBILE ======== */
-            .card { padding: 1rem; border-radius: var(--radius-md); }
-            .card h2 { font-size: 0.92rem; margin-bottom: 0.75rem; }
+            /* Cards */
+            .card { padding: 1.25rem; border-radius: var(--radius-md); }
+            .card h2 { font-size: 0.95rem; }
 
             /* Page header */
             .page-header { margin-bottom: 1rem; }
-            .page-header-left h2 { font-size: 1.15rem; }
-            .page-header-left p { font-size: 0.78rem; }
+            .page-header-left h2 { font-size: 1.2rem; }
 
             /* Tipo selector */
             .tipo-selector { gap: 0.5rem; padding: 0.65rem 0.75rem; }
-            .radio-label { padding: 6px 12px; font-size: 0.82rem; }
+            .radio-label { padding: 5px 10px; font-size: 0.82rem; }
 
             /* Checkbox wrapper */
-            .checkbox-wrapper { padding: 0.65rem 0.75rem; grid-column: 1 / -1; }
+            .checkbox-wrapper { padding: 0.65rem 0.75rem; }
 
             /* Foto container */
             .foto-container { padding: 0.85rem; }
 
             /* Perm table */
             .perm-table { min-width: 500px; }
-
-            /* ======== iOS / SAFARI FIXES ======== */
-            @supports (-webkit-touch-callout: none) {
-                input, select, textarea { font-size: 16px !important; }
-                input[type="date"],
-                input[type="time"],
-                input[type="datetime-local"],
-                input[type="month"] {
-                    -webkit-min-logical-height: 46px;
-                }
-            }
         }
 
         /* Tela muito pequena (< 400px) */
@@ -657,11 +548,6 @@
             .kpi-grid { grid-template-columns: 1fr; }
             header h1 { font-size: 0.78rem; }
             .metric-info p { font-size: 1.4rem; }
-            .form-grid { grid-template-columns: 1fr !important; }
-            .form-grid > [style*="grid-column:span 2"],
-            .form-grid > [style*="grid-column: span 2"] { grid-column: 1 / -1; }
-            main { padding: 0.75rem; }
-            .card { padding: 0.85rem; }
         }
 
         /* ======== PRINT — DESKTOP ======== */
@@ -713,6 +599,22 @@
         .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
         .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
         .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
+
+        /* ═══ SKELETON LOADING ═══ */
+        @keyframes skeleton-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+        .skeleton-row td { padding: 14px 10px !important; }
+        .skeleton-bar { height: 14px; border-radius: 6px; background: var(--border); animation: skeleton-pulse 1.2s ease-in-out infinite; }
+        .skeleton-bar.w60 { width: 60%; }
+        .skeleton-bar.w40 { width: 40%; margin-top:6px; }
+        .skeleton-bar.w30 { width: 30%; }
+        .skeleton-bar.w20 { width: 20%; }
+
+        /* ═══ PAGINAÇÃO ═══ */
+        .pagination-bar { display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 0; }
+        .pagination-bar button { background:var(--secondary); color:var(--text); border:1px solid var(--border); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.82rem; transition:all .2s; }
+        .pagination-bar button:hover { background:var(--accent); color:#fff; }
+        .pagination-bar button:disabled { opacity:.35; cursor:default; pointer-events:none; }
+        .pagination-bar .page-info { font-size:.8rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
     </style>
 </head>
 <body>
@@ -738,29 +640,6 @@
                 </button>
             </div>
             <button onclick="fecharModalImpressao()" style="width:100%; background:#f1f5f9; color:var(--text-secondary); border:1px solid var(--border); padding:0.65rem; border-radius:8px; cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.875rem;">
-                Cancelar
-            </button>
-        </div>
-    </div>
-
-    <!-- ═══ Modal Saída Veículo ═══ -->
-    <div id="modal-saida-veiculo" class="modal-overlay no-print" onclick="if(event.target===this)fecharModalSaida()">
-        <div class="modal-box" style="max-width:420px;">
-            <h3 style="color:var(--text-primary); margin-bottom:0.25rem;">
-                <i class="fas fa-sign-out-alt" style="color:var(--danger);"></i> Registrar Saída
-            </h3>
-            <p id="saida-info-veiculo" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.25rem;"></p>
-            <input type="hidden" id="saida-veiculo-id">
-            <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">
-                <i class="fas fa-clock"></i> Horário de Saída
-            </label>
-            <input type="datetime-local" id="saida-hora" style="margin-bottom:1.25rem; font-size:16px;">
-            <button onclick="confirmarSaidaVeiculo()"
-                style="width:100%; background:linear-gradient(135deg,var(--danger),#991b1b); color:white; border:none; padding:0.85rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; min-height:48px;">
-                <i class="fas fa-check-circle"></i> Confirmar Saída
-            </button>
-            <button onclick="fecharModalSaida()"
-                style="width:100%; background:#f1f5f9; color:var(--text-secondary); border:1px solid var(--border); padding:0.65rem; border-radius:8px; cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.875rem; min-height:44px;">
                 Cancelar
             </button>
         </div>
@@ -1016,10 +895,10 @@
                 </div>
                 <div class="card">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas(true)"></div>
                         <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
                         <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
+                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas(true)">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
@@ -1029,7 +908,7 @@
                     <div class="table-container">
                         <table id="tabela-demandas">
                             <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço / Contratada</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                            <tbody><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1224,6 +1103,7 @@
                             <input type="text" id="veiculo-setor" placeholder="Setor" required>
                             <input type="text" id="veiculo-contato" placeholder="Ramal / Contato">
                             <input type="text" id="veiculo-destino" placeholder="Obs / Destino">
+                            <div><label style="font-size:0.8rem">KM Entrada</label><input type="number" id="veiculo-km-saida" placeholder="0"></div>
                             <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
                             <div id="container-status-veiculo" style="display:none"><label style="font-size:0.8rem;color:var(--edit)">Status</label><select id="veiculo-status-edit"><option value="Aberto">Estacionado</option><option value="Fechado">Finalizado</option></select></div>
                         </div>
@@ -1241,8 +1121,8 @@
                     </div>
                     <div class="table-container">
                         <table id="tabela-veiculos">
-                            <thead><tr><th>Status</th><th>Tipo</th><th>Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+                            <thead><tr><th>Status</th><th>Tipo</th><th>Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1685,7 +1565,7 @@
             document.getElementById('user-role-display').innerText = userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão';
             const initials = userData.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
             document.getElementById('avatar-initials').innerText = initials;
-            carregarDados();
+            // switchTab já faz lazy-load dos dados necessários
             iniciarRealtime();
 
             const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias'];
@@ -1734,31 +1614,124 @@
             await sb.from('logs_auditoria').insert({ usuario: currentUserData.nome, acao, secao, detalhes });
         }
 
-        async function carregarDados() {
+        // ════════════════════════════════════════════════════════════════
+        // CARREGAMENTO POR MÓDULO (lazy) — só busca do Supabase quando necessário
+        // Reduz tempo de conexão inicial de ~2-3s para ~400ms
+        // ════════════════════════════════════════════════════════════════
+        const _loaded = {};  // rastreia quais módulos já foram carregados
+
+        function gerarSkeleton(cols, rows) {
+            let html = '';
+            for(let i=0; i<rows; i++) {
+                html += '<tr class="skeleton-row">';
+                for(let c=0; c<cols; c++) {
+                    const w = c===2 ? 'w60' : (c===0 ? 'w30' : 'w40');
+                    html += `<td><div class="skeleton-bar ${w}"></div>${c===2?'<div class="skeleton-bar w40"></div>':''}</td>`;
+                }
+                html += '</tr>';
+            }
+            return html;
+        }
+
+        async function carregarModulo(modulo, force) {
+            if (_loaded[modulo] && !force) return;
+            const isFirstLoad = !_loaded[modulo];
+            _loaded[modulo] = true;
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
-            const promises = []; const keys = [];
-            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(sb.from('demandas').select('*')); }
-            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*')); }
-            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*')); }
-            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*')); }
-            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*')); }
-            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*')); }
-            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
-            const results = await Promise.all(promises);
-            results.forEach((res, index) => {
-                const key = keys[index];
-                if(res.data) {
-                    if(key === 'demandas') { demandas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
-                    if(key === 'visitantes') { visitantes = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); }
-                    if(key === 'frota') { frota = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
-                    if(key === 'eventos') { eventos = res.data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
-                    if(key === 'crachas') { crachas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
-                    if(key === 'ocorrencias') { ocorrencias = res.data.sort((a,b) => new Date(b.data_hora) - new Date(a.data_hora)); window.renderizarApenasOcorrencias(); }
-                    if(key === 'logs') { logs = res.data; renderizarLogs(); }
-                }
-            });
-            if(document.getElementById('dashboard').classList.contains('active')) { renderizarDashboard(); }
+
+            // Skeleton map: show skeleton on first load only
+            if (isFirstLoad) {
+                const skeletonMap = {
+                    demandas: ['#tabela-demandas tbody'],
+                    visitantes: ['#tabela-visitantes tbody'],
+                    frota: ['#tabela-veiculos tbody'],
+                    eventos: ['#tabela-eventos tbody'],
+                    crachas: ['#tabela-crachas tbody'],
+                    ocorrencias: ['#tabela-ocorrencias tbody'],
+                    logs: ['#tabela-logs tbody']
+                };
+                const targets = skeletonMap[modulo] || [];
+                targets.forEach(sel => {
+                    const el = document.querySelector(sel);
+                    if (el) {
+                        const cols = el.closest('table')?.querySelector('thead tr')?.children.length || 6;
+                        el.innerHTML = gerarSkeleton(cols, 3);
+                    }
+                });
+            }
+
+            switch(modulo) {
+                case 'demandas':
+                    if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) {
+                        const {data} = await sb.from('demandas').select('*');
+                        if(data) { demandas = data.sort((a,b) => b.id - a.id); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
+                    }
+                    break;
+                case 'visitantes':
+                    if (admin || p.visitantes?.ver) {
+                        const {data} = await sb.from('visitantes').select('*');
+                        if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); }
+                    }
+                    break;
+                case 'frota':
+                    if (admin || p.veiculos?.ver) {
+                        const {data} = await sb.from('frota').select('*');
+                        if(data) { frota = data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
+                    }
+                    break;
+                case 'eventos':
+                    if (admin || p.eventos?.ver) {
+                        const {data} = await sb.from('eventos').select('*');
+                        if(data) { eventos = data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
+                    }
+                    break;
+                case 'crachas':
+                    if (admin || p.crachas?.ver) {
+                        const {data} = await sb.from('crachas').select('*');
+                        if(data) { crachas = data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
+                    }
+                    break;
+                case 'ocorrencias':
+                    if (admin || p.ocorrencias?.ver) {
+                        const {data} = await sb.from('ocorrencias').select('*');
+                        if(data) { ocorrencias = data.sort((a,b) => new Date(b.data_hora) - new Date(a.data_hora)); window.renderizarApenasOcorrencias(); }
+                    }
+                    break;
+                case 'logs':
+                    if (admin) {
+                        const {data} = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
+                        if(data) { logs = data; renderizarLogs(); }
+                    }
+                    break;
+            }
+        }
+
+        // Mapa de tab → módulo(s) necessário(s)
+        const _tabModulos = {
+            dashboard: ['demandas','frota'],
+            demandas: ['demandas'],
+            predial: ['demandas'],
+            ar: ['demandas'],
+            limpeza: ['demandas'],
+            visitantes: ['visitantes'],
+            veiculos: ['frota'],
+            eventos: ['eventos'],
+            crachas: ['crachas'],
+            ocorrencias: ['ocorrencias'],
+            auditoria: ['logs'],
+            usuarios: []
+        };
+
+        async function carregarDadosParaTab(tabId) {
+            const modulos = _tabModulos[tabId] || [];
+            await Promise.all(modulos.map(m => carregarModulo(m)));
+        }
+
+        // Retrocompat: carregarDados() agora só carrega o que a aba ativa precisa
+        async function carregarDados() {
+            const activeTab = document.querySelector('.section.active')?.id || 'demandas';
+            await carregarDadosParaTab(activeTab);
         }
 
         function getCategoriaDemanda(d) {
@@ -1953,16 +1926,32 @@
         }
 
         function iniciarRealtime() {
-            /* FIX PERFORMANCE: debounce 400ms evita re-renderizacao em cascata
-               quando multiplos eventos chegam juntos (ex: saves em lote). */
-            let _rtTimer = null;
-            const debouncedCarregar = () => {
-                clearTimeout(_rtTimer);
-                _rtTimer = setTimeout(() => carregarDados(), 400);
+            /* FIX PERFORMANCE: listeners POR TABELA em vez de '*' no schema inteiro.
+               Antes: qualquer mudança (inclusive logs) recarregava TUDO.
+               Agora: só recarrega o módulo afetado, e só se já foi carregado. */
+            const _rtTimers = {};
+            const debouncedReload = (modulo) => {
+                clearTimeout(_rtTimers[modulo]);
+                _rtTimers[modulo] = setTimeout(() => {
+                    if (_loaded[modulo]) carregarModulo(modulo, true);
+                    // Se dashboard visível, atualiza gráficos
+                    if (document.getElementById('dashboard').classList.contains('active')) renderizarDashboard();
+                }, 400);
             };
-            sb.channel('mudancas-db')
-                .on('postgres_changes', { event: '*', schema: 'public' }, debouncedCarregar)
-                .subscribe();
+            const tabelas = [
+                { table: 'demandas', modulo: 'demandas' },
+                { table: 'visitantes', modulo: 'visitantes' },
+                { table: 'frota', modulo: 'frota' },
+                { table: 'eventos', modulo: 'eventos' },
+                { table: 'crachas', modulo: 'crachas' },
+                { table: 'ocorrencias', modulo: 'ocorrencias' },
+                { table: 'logs_auditoria', modulo: 'logs' }
+            ];
+            const channel = sb.channel('mudancas-db');
+            tabelas.forEach(({table, modulo}) => {
+                channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => debouncedReload(modulo));
+            });
+            channel.subscribe();
         }
 
         function renderizarLogs() {
@@ -1991,11 +1980,15 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
-            if(tabId === 'dashboard') { 
-                renderizarDashboard(); 
-                // Força resize dos charts após o DOM estar visível
-                setTimeout(() => { if(chartVolume) chartVolume.resize(); if(chartGaragem) chartGaragem.resize(); }, 100);
-            }
+
+            // LAZY LOAD: carrega dados do módulo sob demanda
+            carregarDadosParaTab(tabId).then(() => {
+                if(tabId === 'dashboard') { 
+                    renderizarDashboard(); 
+                    setTimeout(() => { if(chartVolume) chartVolume.resize(); if(chartGaragem) chartGaragem.resize(); }, 100);
+                }
+            });
+
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = DateUtils.getToInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); }
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
@@ -2004,29 +1997,17 @@
             if(tabId === 'ocorrencias') { document.getElementById('oco-data').value = DateUtils.getToInput(); }
         }
 
-        // ── Formatação de tempo padronizada para todas as abas ──
-        function formatarTempo(diffMs) {
-            if (diffMs < 0) return '00m';
-            const totalMin  = Math.floor(diffMs / 60000);
-            const totalH    = Math.floor(totalMin / 60);
-            const totalD    = Math.floor(totalH / 24);
-            const m = totalMin % 60;
-            const h = totalH % 24;
-            const d = totalD % 30;
-            const meses = Math.floor(totalD / 30);
-            if (meses > 0)   return `${meses}M ${d}d`;
-            if (totalD > 0)  return `${totalD}d ${String(h).padStart(2,'0')}h`;
-            if (totalH > 0)  return `${String(totalH).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
-            return `${String(m).padStart(2,'0')}m`;
-        }
-
         function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
             const [ano, mes, dia] = dataStr.split('-').map(Number);
             const [h, m] = (horaStr || '00:00').split(':').map(Number);
             const inicio = new Date(Date.UTC(ano, mes - 1, dia, h + 3, m, 0));
             let fim;
             if (dataFimStr) { fim = new Date(dataFimStr); } else { fim = new Date(); }
-            return formatarTempo(fim - inicio);
+            const diffMs = fim - inicio;
+            if (diffMs < 0) return "00m";
+            const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            return `${String(diffHoras).padStart(2, '0')}h ${String(diffMinutos).padStart(2, '0')}m`;
         }
 
         function formatarData(dataISO) { if(!dataISO) return ''; const [ano, mes, dia] = dataISO.split('-'); return `${dia}/${mes}/${ano}`; }
@@ -2103,7 +2084,7 @@
             const novaDemanda = { numero_os, titulo, setor, solicitante, contratada: contratadaFixa.toUpperCase(), prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };
             const { error } = await sb.from('demandas').insert(novaDemanda);
             if(error) alert('Erro: ' + error.message);
-            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); const brt = DateUtils.getToInput(); document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10); document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16); carregarDados(); }
+            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); const brt = DateUtils.getToInput(); document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10); document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16); carregarModulo('demandas', true); }
         }
 
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
@@ -2138,7 +2119,7 @@
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarModulo('demandas', true); }
         });
 
         window.editarDemanda = function(id) {
@@ -2857,7 +2838,12 @@
             return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small style="color:var(--text-muted)">${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:170px">${btnAvancar}${btnWA2}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
-        window.renderizarApenasDemandas = function() {
+        // ═══ PAGINAÇÃO DEMANDAS ═══
+        let _paginaDemanda = 0;
+        const PAGE_SIZE = 30;
+
+        window.renderizarApenasDemandas = function(resetPage) {
+            if (resetPage) _paginaDemanda = 0;
             const filtroMes = document.getElementById('filtro-mes-demanda').value;
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
             const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase();
@@ -2874,7 +2860,27 @@
             document.getElementById('dash-demanda-concluido').innerText = lista.filter(d => d.status === 'Concluído').length;
             const tbody = document.querySelector('#tabela-demandas tbody');
             if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
-            else { tbody.innerHTML = lista.map(d => criarLinhaTabela(d)).join(''); }
+            else {
+                const totalPages = Math.ceil(lista.length / PAGE_SIZE);
+                if (_paginaDemanda >= totalPages) _paginaDemanda = totalPages - 1;
+                const start = _paginaDemanda * PAGE_SIZE;
+                const pagina = lista.slice(start, start + PAGE_SIZE);
+                tbody.innerHTML = pagina.map(d => criarLinhaTabela(d)).join('');
+                // Pagination bar
+                let paginationEl = document.getElementById('pagination-demandas');
+                if (!paginationEl) {
+                    paginationEl = document.createElement('div');
+                    paginationEl.id = 'pagination-demandas';
+                    paginationEl.className = 'pagination-bar';
+                    document.getElementById('tabela-demandas').after(paginationEl);
+                }
+                if (totalPages > 1) {
+                    paginationEl.innerHTML = `<button onclick="_paginaDemanda--;renderizarApenasDemandas()" ${_paginaDemanda===0?'disabled':''}><i class="fas fa-chevron-left"></i> Anterior</button><span class="page-info">${_paginaDemanda+1} / ${totalPages} (${lista.length} registros)</span><button onclick="_paginaDemanda++;renderizarApenasDemandas()" ${_paginaDemanda>=totalPages-1?'disabled':''}><i class="fas fa-chevron-right"></i> Próxima</button>`;
+                    paginationEl.style.display = 'flex';
+                } else {
+                    paginationEl.style.display = 'none';
+                }
+            }
         }
 
         window.renderizarAbasEspecificas = function() {
@@ -2907,18 +2913,28 @@
             let novoStatus = item.status, novaDataFim = item.data_fim;
             if(item.status === 'Pendente') novoStatus = 'Em Andamento';
             else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = DateUtils.getNowDatabaseISO(); }
-            await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
-            syncSheets('demandas', 'upsert', {...item, status: novoStatus, data_fim: novaDataFim});
-            carregarDados();
+            // OPTIMISTIC: atualiza array local e re-renderiza IMEDIATAMENTE
+            item.status = novoStatus;
+            item.data_fim = novaDataFim;
+            window.renderizarApenasDemandas();
+            window.renderizarAbasEspecificas();
+            // Background: persiste no Supabase + Sheets (sem await no render)
+            sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
+            syncSheets('demandas', 'upsert', {...item});
         }
 
         window.deletarDemanda = async function(id) {
             if(confirm('Excluir?')) {
                 const item = demandas.find(d => d.id == id);
-                await sb.from('demandas').delete().eq('id', id);
+                // OPTIMISTIC: remove do array local e re-renderiza IMEDIATAMENTE
+                demandas = demandas.filter(d => d.id != id);
+                window.renderizarApenasDemandas();
+                window.renderizarAbasEspecificas();
+                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda();
+                // Background: persiste no Supabase + log + Sheets
+                sb.from('demandas').delete().eq('id', id);
                 syncSheets('demandas', 'delete', {id});
                 registrarLog('Exclusão', 'Demandas', `Removeu demanda: ${item ? item.titulo : id}`);
-                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda(); carregarDados();
             }
         }
 
@@ -2933,7 +2949,7 @@
             const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
             if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarModulo('visitantes', true); }
         });
 
         window.editarVisitante = function(id) {
@@ -2957,7 +2973,7 @@
         }
 
         window.deletarVisitante = async function(id) {
-            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); }
+            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); visitantes = visitantes.filter(v => v.id != id); window.renderizarApenasVisitantes(); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); }
         }
 
         window.cancelarEdicaoVisitante = function() {
@@ -2997,7 +3013,7 @@
         }
 
         window.baixaVisitante = async function(id) {
-            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; await sb.from('visitantes').update(upd).eq('id', id); const item = visitantes.find(v=>v.id==id); syncSheets('visitantes','upsert',{...item,...upd}); carregarDados(); }
+            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; const item = visitantes.find(v=>v.id==id); if(item) { Object.assign(item, upd); window.renderizarApenasVisitantes(); } sb.from('visitantes').update(upd).eq('id', id); syncSheets('visitantes','upsert',{...item,...upd}); }
         }
 
         // ---- VEÍCULOS ----
@@ -3016,10 +3032,10 @@
             const id = idEdicao || Date.now();
             const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
             const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(DateUtils.getToInput());
-            const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', hora_final: null };
-            if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
+            const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null };
+            if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
             const { error } = await sb.from('frota').upsert(novoVeiculo);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarModulo('frota', true); }
         });
 
         window.editarVeiculo = function(id) {
@@ -3030,6 +3046,7 @@
             document.getElementById('veiculo-setor').value = f.setor || '';
             document.getElementById('veiculo-contato').value = f.contato || '';
             document.getElementById('veiculo-destino').value = f.destino;
+            document.getElementById('veiculo-km-saida').value = f.km_inicial;
             if(f.hora_inicial) { const dataLocal = new Date(f.hora_inicial); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('veiculo-hora-saida').value = dataLocal.toISOString().slice(0,16); }
             if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true;
             document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando';
@@ -3042,7 +3059,7 @@
         }
 
         window.deletarVeiculo = async function(id) {
-            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); }
+            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); frota = frota.filter(f => f.id != id); window.renderizarApenasFrota(); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); }
         }
 
         window.cancelarEdicaoVeiculo = function() {
@@ -3065,57 +3082,25 @@
             const tbody = document.querySelector('#tabela-veiculos tbody');
             const btnExport = document.getElementById('btn-export-veiculos');
             if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum veículo encontrado.</td></tr>'; }
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum veículo encontrado.</td></tr>'; }
             else {
                 tbody.innerHTML = lista.map(f => {
                     const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';
                     const icon = f.tipo === 'servidor' ? '<span style="color:var(--servidor);font-size:0.75rem;font-weight:700;"><i class="fas fa-id-badge"></i> Servidor</span>' : '<span style="color:var(--visitante);font-size:0.75rem;font-weight:700;"><i class="fas fa-user-tag"></i> Visitante</span>';
                     const dIn = formatarDataHoraReal(f.hora_inicial);
                     const dOut = f.hora_final ? formatarDataHoraReal(f.hora_final) : '-';
-                    let tempoStr = '--';
-                    if (f.hora_inicial) {
-                        const ini = new Date(f.hora_inicial);
-                        const fim = f.hora_final ? new Date(f.hora_final) : new Date();
-                        tempoStr = formatarTempo(fim - ini);
-                    }
-                    const tempoDisplay = (f.status === 'Fechado')
-                        ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>`
-                        : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
                     const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
                     let buttons = '';
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }).join('');
             }
         }
 
-        window.baixaVeiculo = function(id) {
-            const f = frota.find(v => v.id == id); if (!f) return;
-            document.getElementById('saida-veiculo-id').value = id;
-            document.getElementById('saida-info-veiculo').innerHTML = `<strong>${f.carro}</strong> — ${f.motorista} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(f.hora_inicial)}</small>`;
-            document.getElementById('saida-hora').value = DateUtils.getToInput();
-            document.getElementById('modal-saida-veiculo').style.display = 'flex';
-        }
-
-        window.fecharModalSaida = function() {
-            document.getElementById('modal-saida-veiculo').style.display = 'none';
-        }
-
-        window.confirmarSaidaVeiculo = async function() {
-            const id = document.getElementById('saida-veiculo-id').value;
-            const horaLocal = document.getElementById('saida-hora').value;
-            if (!horaLocal) { alert('Informe o horário de saída.'); return; }
-            const horaISO = DateUtils.toDatabaseISO(horaLocal);
-            const upd = { hora_final: horaISO, status: 'Fechado' };
-            await sb.from('frota').update(upd).eq('id', id);
-            const item = frota.find(f => f.id == id);
-            if (item) {
-                registrarLog('Saída', 'Garagem', `Saída: ${item.carro} — ${item.motorista}`);
-                syncSheets('frota', 'upsert', { ...item, ...upd });
-            }
-            fecharModalSaida();
-            carregarDados();
+        window.baixaVeiculo = async function(id) {
+            const km = prompt("KM de Saída (Opcional):", "0");
+            if (km !== null) { const upd = { km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }; const item = frota.find(f=>f.id==id); if(item) { Object.assign(item, upd); window.renderizarApenasFrota(); } sb.from('frota').update(upd).eq('id', id); syncSheets('frota','upsert',{...item,...upd}); }
         }
 
         // ---- EVENTOS ----
@@ -3127,7 +3112,7 @@
             const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
-            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); }
+            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarModulo('eventos', true); }
         });
 
         window.editarEvento = function(id) {
@@ -3159,7 +3144,7 @@
         }
 
         window.deletarEvento = async function(id) {
-            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); }
+            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); eventos = eventos.filter(e => e.id != id); window.renderizarApenasEventos(); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); }
         }
 
         window.renderizarApenasEventos = function() {
@@ -3196,7 +3181,7 @@
             const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
             if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
             const { error } = await sb.from('crachas').upsert(novoCracha);
-            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); }
+            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarModulo('crachas', true); }
         });
 
         window.editarCracha = function(id) {
@@ -3226,7 +3211,7 @@
         }
 
         window.deletarCracha = async function(id) {
-            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); }
+            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); crachas = crachas.filter(c => c.id != id); window.renderizarApenasCrachas(); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); }
         }
 
         window.renderizarApenasCrachas = function() {
@@ -3264,7 +3249,7 @@
         let timeoutBusca = null;
         document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
             clearTimeout(timeoutBusca);
-            timeoutBusca = setTimeout(() => window.renderizarApenasDemandas(), 300);
+            timeoutBusca = setTimeout(() => window.renderizarApenasDemandas(true), 300);
         });
 
         // Inicializa data das ocorrências
@@ -3339,7 +3324,7 @@
             }
             const { error } = await sb.from('ocorrencias').upsert(novaOco);
             if (error) alert('Erro: ' + error.message);
-            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); }
+            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarModulo('ocorrencias', true); }
         });
 
         window.editarOcorrencia = function(id) {
@@ -3383,10 +3368,11 @@
         window.deletarOcorrencia = async function(id) {
             if (!confirm('Excluir esta ocorrência?')) return;
             const item = ocorrencias.find(o => o.id == id);
-            await sb.from('ocorrencias').delete().eq('id', id);
+            ocorrencias = ocorrencias.filter(o => o.id != id);
+            window.renderizarApenasOcorrencias();
+            sb.from('ocorrencias').delete().eq('id', id);
             syncSheets('ocorrencias','delete',{id});
             registrarLog('Exclusão', 'Ocorrências', `Removeu ocorrência: ${item ? (item.numero || item.categoria) : id}`);
-            carregarDados();
         };
 
         window.renderizarApenasOcorrencias = function() {
@@ -3438,7 +3424,11 @@
             if (!dataISOInicio) return '--';
             const inicio = new Date(dataISOInicio);
             const fim    = dataISOFim ? new Date(dataISOFim) : new Date();
-            return formatarTempo(fim - inicio);
+            const diff   = fim - inicio;
+            if (diff < 0) return '00m';
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
         }
 
         // ═══════════════════════════════════════════════════════════════════════
