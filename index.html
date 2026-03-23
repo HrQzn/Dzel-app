@@ -599,22 +599,6 @@
         .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
         .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
         .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
-
-        /* ═══ SKELETON LOADING ═══ */
-        @keyframes skeleton-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
-        .skeleton-row td { padding: 14px 10px !important; }
-        .skeleton-bar { height: 14px; border-radius: 6px; background: var(--border); animation: skeleton-pulse 1.2s ease-in-out infinite; }
-        .skeleton-bar.w60 { width: 60%; }
-        .skeleton-bar.w40 { width: 40%; margin-top:6px; }
-        .skeleton-bar.w30 { width: 30%; }
-        .skeleton-bar.w20 { width: 20%; }
-
-        /* ═══ PAGINAÇÃO ═══ */
-        .pagination-bar { display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 0; }
-        .pagination-bar button { background:var(--secondary); color:var(--text); border:1px solid var(--border); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.82rem; transition:all .2s; }
-        .pagination-bar button:hover { background:var(--accent); color:#fff; }
-        .pagination-bar button:disabled { opacity:.35; cursor:default; pointer-events:none; }
-        .pagination-bar .page-info { font-size:.8rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
     </style>
 </head>
 <body>
@@ -895,10 +879,10 @@
                 </div>
                 <div class="card">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas(true)"></div>
+                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
                         <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
                         <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas(true)">
+                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
@@ -908,7 +892,7 @@
                     <div class="table-container">
                         <table id="tabela-demandas">
                             <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço / Contratada</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr><tr class="skeleton-row"><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w60"></div><div class="skeleton-bar w40"></div></td><td><div class="skeleton-bar w20"></div></td><td><div class="skeleton-bar w30"></div></td><td><div class="skeleton-bar w20"></div></td></tr></tbody>
+                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1565,7 +1549,7 @@
             document.getElementById('user-role-display').innerText = userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão';
             const initials = userData.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
             document.getElementById('avatar-initials').innerText = initials;
-            // switchTab já faz lazy-load dos dados necessários
+            carregarDados();
             iniciarRealtime();
 
             const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias'];
@@ -1614,124 +1598,31 @@
             await sb.from('logs_auditoria').insert({ usuario: currentUserData.nome, acao, secao, detalhes });
         }
 
-        // ════════════════════════════════════════════════════════════════
-        // CARREGAMENTO POR MÓDULO (lazy) — só busca do Supabase quando necessário
-        // Reduz tempo de conexão inicial de ~2-3s para ~400ms
-        // ════════════════════════════════════════════════════════════════
-        const _loaded = {};  // rastreia quais módulos já foram carregados
-
-        function gerarSkeleton(cols, rows) {
-            let html = '';
-            for(let i=0; i<rows; i++) {
-                html += '<tr class="skeleton-row">';
-                for(let c=0; c<cols; c++) {
-                    const w = c===2 ? 'w60' : (c===0 ? 'w30' : 'w40');
-                    html += `<td><div class="skeleton-bar ${w}"></div>${c===2?'<div class="skeleton-bar w40"></div>':''}</td>`;
-                }
-                html += '</tr>';
-            }
-            return html;
-        }
-
-        async function carregarModulo(modulo, force) {
-            if (_loaded[modulo] && !force) return;
-            const isFirstLoad = !_loaded[modulo];
-            _loaded[modulo] = true;
+        async function carregarDados() {
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
-
-            // Skeleton map: show skeleton on first load only
-            if (isFirstLoad) {
-                const skeletonMap = {
-                    demandas: ['#tabela-demandas tbody'],
-                    visitantes: ['#tabela-visitantes tbody'],
-                    frota: ['#tabela-veiculos tbody'],
-                    eventos: ['#tabela-eventos tbody'],
-                    crachas: ['#tabela-crachas tbody'],
-                    ocorrencias: ['#tabela-ocorrencias tbody'],
-                    logs: ['#tabela-logs tbody']
-                };
-                const targets = skeletonMap[modulo] || [];
-                targets.forEach(sel => {
-                    const el = document.querySelector(sel);
-                    if (el) {
-                        const cols = el.closest('table')?.querySelector('thead tr')?.children.length || 6;
-                        el.innerHTML = gerarSkeleton(cols, 3);
-                    }
-                });
-            }
-
-            switch(modulo) {
-                case 'demandas':
-                    if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) {
-                        const {data} = await sb.from('demandas').select('*');
-                        if(data) { demandas = data.sort((a,b) => b.id - a.id); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
-                    }
-                    break;
-                case 'visitantes':
-                    if (admin || p.visitantes?.ver) {
-                        const {data} = await sb.from('visitantes').select('*');
-                        if(data) { visitantes = data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); }
-                    }
-                    break;
-                case 'frota':
-                    if (admin || p.veiculos?.ver) {
-                        const {data} = await sb.from('frota').select('*');
-                        if(data) { frota = data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
-                    }
-                    break;
-                case 'eventos':
-                    if (admin || p.eventos?.ver) {
-                        const {data} = await sb.from('eventos').select('*');
-                        if(data) { eventos = data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
-                    }
-                    break;
-                case 'crachas':
-                    if (admin || p.crachas?.ver) {
-                        const {data} = await sb.from('crachas').select('*');
-                        if(data) { crachas = data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
-                    }
-                    break;
-                case 'ocorrencias':
-                    if (admin || p.ocorrencias?.ver) {
-                        const {data} = await sb.from('ocorrencias').select('*');
-                        if(data) { ocorrencias = data.sort((a,b) => new Date(b.data_hora) - new Date(a.data_hora)); window.renderizarApenasOcorrencias(); }
-                    }
-                    break;
-                case 'logs':
-                    if (admin) {
-                        const {data} = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
-                        if(data) { logs = data; renderizarLogs(); }
-                    }
-                    break;
-            }
-        }
-
-        // Mapa de tab → módulo(s) necessário(s)
-        const _tabModulos = {
-            dashboard: ['demandas','frota'],
-            demandas: ['demandas'],
-            predial: ['demandas'],
-            ar: ['demandas'],
-            limpeza: ['demandas'],
-            visitantes: ['visitantes'],
-            veiculos: ['frota'],
-            eventos: ['eventos'],
-            crachas: ['crachas'],
-            ocorrencias: ['ocorrencias'],
-            auditoria: ['logs'],
-            usuarios: []
-        };
-
-        async function carregarDadosParaTab(tabId) {
-            const modulos = _tabModulos[tabId] || [];
-            await Promise.all(modulos.map(m => carregarModulo(m)));
-        }
-
-        // Retrocompat: carregarDados() agora só carrega o que a aba ativa precisa
-        async function carregarDados() {
-            const activeTab = document.querySelector('.section.active')?.id || 'demandas';
-            await carregarDadosParaTab(activeTab);
+            const promises = []; const keys = [];
+            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(sb.from('demandas').select('*')); }
+            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*')); }
+            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*')); }
+            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*')); }
+            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*')); }
+            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*')); }
+            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
+            const results = await Promise.all(promises);
+            results.forEach((res, index) => {
+                const key = keys[index];
+                if(res.data) {
+                    if(key === 'demandas') { demandas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
+                    if(key === 'visitantes') { visitantes = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasVisitantes(); }
+                    if(key === 'frota') { frota = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasFrota(); }
+                    if(key === 'eventos') { eventos = res.data.sort((a,b) => new Date(b.data) - new Date(a.data)); window.renderizarApenasEventos(); }
+                    if(key === 'crachas') { crachas = res.data.sort((a,b) => b.id - a.id); window.renderizarApenasCrachas(); }
+                    if(key === 'ocorrencias') { ocorrencias = res.data.sort((a,b) => new Date(b.data_hora) - new Date(a.data_hora)); window.renderizarApenasOcorrencias(); }
+                    if(key === 'logs') { logs = res.data; renderizarLogs(); }
+                }
+            });
+            if(document.getElementById('dashboard').classList.contains('active')) { renderizarDashboard(); }
         }
 
         function getCategoriaDemanda(d) {
@@ -1926,32 +1817,16 @@
         }
 
         function iniciarRealtime() {
-            /* FIX PERFORMANCE: listeners POR TABELA em vez de '*' no schema inteiro.
-               Antes: qualquer mudança (inclusive logs) recarregava TUDO.
-               Agora: só recarrega o módulo afetado, e só se já foi carregado. */
-            const _rtTimers = {};
-            const debouncedReload = (modulo) => {
-                clearTimeout(_rtTimers[modulo]);
-                _rtTimers[modulo] = setTimeout(() => {
-                    if (_loaded[modulo]) carregarModulo(modulo, true);
-                    // Se dashboard visível, atualiza gráficos
-                    if (document.getElementById('dashboard').classList.contains('active')) renderizarDashboard();
-                }, 400);
+            /* FIX PERFORMANCE: debounce 400ms evita re-renderizacao em cascata
+               quando multiplos eventos chegam juntos (ex: saves em lote). */
+            let _rtTimer = null;
+            const debouncedCarregar = () => {
+                clearTimeout(_rtTimer);
+                _rtTimer = setTimeout(() => carregarDados(), 400);
             };
-            const tabelas = [
-                { table: 'demandas', modulo: 'demandas' },
-                { table: 'visitantes', modulo: 'visitantes' },
-                { table: 'frota', modulo: 'frota' },
-                { table: 'eventos', modulo: 'eventos' },
-                { table: 'crachas', modulo: 'crachas' },
-                { table: 'ocorrencias', modulo: 'ocorrencias' },
-                { table: 'logs_auditoria', modulo: 'logs' }
-            ];
-            const channel = sb.channel('mudancas-db');
-            tabelas.forEach(({table, modulo}) => {
-                channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => debouncedReload(modulo));
-            });
-            channel.subscribe();
+            sb.channel('mudancas-db')
+                .on('postgres_changes', { event: '*', schema: 'public' }, debouncedCarregar)
+                .subscribe();
         }
 
         function renderizarLogs() {
@@ -1980,15 +1855,11 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('tab-' + tabId); if(btn) btn.classList.add('active');
-
-            // LAZY LOAD: carrega dados do módulo sob demanda
-            carregarDadosParaTab(tabId).then(() => {
-                if(tabId === 'dashboard') { 
-                    renderizarDashboard(); 
-                    setTimeout(() => { if(chartVolume) chartVolume.resize(); if(chartGaragem) chartGaragem.resize(); }, 100);
-                }
-            });
-
+            if(tabId === 'dashboard') { 
+                renderizarDashboard(); 
+                // Força resize dos charts após o DOM estar visível
+                setTimeout(() => { if(chartVolume) chartVolume.resize(); if(chartGaragem) chartGaragem.resize(); }, 100);
+            }
             if(tabId === 'visitantes') { document.getElementById('vis-entrada').value = DateUtils.getToInput(); }
             if(tabId === 'veiculos') { document.getElementById('veiculo-hora-saida').value = DateUtils.getToInput(); }
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
@@ -2084,7 +1955,7 @@
             const novaDemanda = { numero_os, titulo, setor, solicitante, contratada: contratadaFixa.toUpperCase(), prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };
             const { error } = await sb.from('demandas').insert(novaDemanda);
             if(error) alert('Erro: ' + error.message);
-            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); const brt = DateUtils.getToInput(); document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10); document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16); carregarModulo('demandas', true); }
+            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); const brt = DateUtils.getToInput(); document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10); document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16); carregarDados(); }
         }
 
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
@@ -2119,7 +1990,7 @@
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarModulo('demandas', true); }
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
         });
 
         window.editarDemanda = function(id) {
@@ -2838,12 +2709,7 @@
             return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small style="color:var(--text-muted)">${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:170px">${btnAvancar}${btnWA2}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
-        // ═══ PAGINAÇÃO DEMANDAS ═══
-        let _paginaDemanda = 0;
-        const PAGE_SIZE = 30;
-
-        window.renderizarApenasDemandas = function(resetPage) {
-            if (resetPage) _paginaDemanda = 0;
+        window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value;
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
             const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase();
@@ -2860,27 +2726,7 @@
             document.getElementById('dash-demanda-concluido').innerText = lista.filter(d => d.status === 'Concluído').length;
             const tbody = document.querySelector('#tabela-demandas tbody');
             if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
-            else {
-                const totalPages = Math.ceil(lista.length / PAGE_SIZE);
-                if (_paginaDemanda >= totalPages) _paginaDemanda = totalPages - 1;
-                const start = _paginaDemanda * PAGE_SIZE;
-                const pagina = lista.slice(start, start + PAGE_SIZE);
-                tbody.innerHTML = pagina.map(d => criarLinhaTabela(d)).join('');
-                // Pagination bar
-                let paginationEl = document.getElementById('pagination-demandas');
-                if (!paginationEl) {
-                    paginationEl = document.createElement('div');
-                    paginationEl.id = 'pagination-demandas';
-                    paginationEl.className = 'pagination-bar';
-                    document.getElementById('tabela-demandas').after(paginationEl);
-                }
-                if (totalPages > 1) {
-                    paginationEl.innerHTML = `<button onclick="_paginaDemanda--;renderizarApenasDemandas()" ${_paginaDemanda===0?'disabled':''}><i class="fas fa-chevron-left"></i> Anterior</button><span class="page-info">${_paginaDemanda+1} / ${totalPages} (${lista.length} registros)</span><button onclick="_paginaDemanda++;renderizarApenasDemandas()" ${_paginaDemanda>=totalPages-1?'disabled':''}><i class="fas fa-chevron-right"></i> Próxima</button>`;
-                    paginationEl.style.display = 'flex';
-                } else {
-                    paginationEl.style.display = 'none';
-                }
-            }
+            else { tbody.innerHTML = lista.map(d => criarLinhaTabela(d)).join(''); }
         }
 
         window.renderizarAbasEspecificas = function() {
@@ -2913,28 +2759,18 @@
             let novoStatus = item.status, novaDataFim = item.data_fim;
             if(item.status === 'Pendente') novoStatus = 'Em Andamento';
             else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = DateUtils.getNowDatabaseISO(); }
-            // OPTIMISTIC: atualiza array local e re-renderiza IMEDIATAMENTE
-            item.status = novoStatus;
-            item.data_fim = novaDataFim;
-            window.renderizarApenasDemandas();
-            window.renderizarAbasEspecificas();
-            // Background: persiste no Supabase + Sheets (sem await no render)
-            sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
-            syncSheets('demandas', 'upsert', {...item});
+            await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
+            syncSheets('demandas', 'upsert', {...item, status: novoStatus, data_fim: novaDataFim});
+            carregarDados();
         }
 
         window.deletarDemanda = async function(id) {
             if(confirm('Excluir?')) {
                 const item = demandas.find(d => d.id == id);
-                // OPTIMISTIC: remove do array local e re-renderiza IMEDIATAMENTE
-                demandas = demandas.filter(d => d.id != id);
-                window.renderizarApenasDemandas();
-                window.renderizarAbasEspecificas();
-                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda();
-                // Background: persiste no Supabase + log + Sheets
-                sb.from('demandas').delete().eq('id', id);
+                await sb.from('demandas').delete().eq('id', id);
                 syncSheets('demandas', 'delete', {id});
                 registrarLog('Exclusão', 'Demandas', `Removeu demanda: ${item ? item.titulo : id}`);
+                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda(); carregarDados();
             }
         }
 
@@ -2949,7 +2785,7 @@
             const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
             if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarModulo('visitantes', true); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); }
         });
 
         window.editarVisitante = function(id) {
@@ -2973,7 +2809,7 @@
         }
 
         window.deletarVisitante = async function(id) {
-            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); visitantes = visitantes.filter(v => v.id != id); window.renderizarApenasVisitantes(); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); }
+            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); }
         }
 
         window.cancelarEdicaoVisitante = function() {
@@ -3013,7 +2849,7 @@
         }
 
         window.baixaVisitante = async function(id) {
-            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; const item = visitantes.find(v=>v.id==id); if(item) { Object.assign(item, upd); window.renderizarApenasVisitantes(); } sb.from('visitantes').update(upd).eq('id', id); syncSheets('visitantes','upsert',{...item,...upd}); }
+            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; await sb.from('visitantes').update(upd).eq('id', id); const item = visitantes.find(v=>v.id==id); syncSheets('visitantes','upsert',{...item,...upd}); carregarDados(); }
         }
 
         // ---- VEÍCULOS ----
@@ -3035,7 +2871,7 @@
             const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), km_inicial: document.getElementById('veiculo-km-saida').value || 0, hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', km_final: null, hora_final: null };
             if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; novoVeiculo.km_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; novoVeiculo.km_final = ant.km_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
             const { error } = await sb.from('frota').upsert(novoVeiculo);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarModulo('frota', true); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
         });
 
         window.editarVeiculo = function(id) {
@@ -3059,7 +2895,7 @@
         }
 
         window.deletarVeiculo = async function(id) {
-            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); frota = frota.filter(f => f.id != id); window.renderizarApenasFrota(); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); }
+            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); }
         }
 
         window.cancelarEdicaoVeiculo = function() {
@@ -3100,7 +2936,7 @@
 
         window.baixaVeiculo = async function(id) {
             const km = prompt("KM de Saída (Opcional):", "0");
-            if (km !== null) { const upd = { km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }; const item = frota.find(f=>f.id==id); if(item) { Object.assign(item, upd); window.renderizarApenasFrota(); } sb.from('frota').update(upd).eq('id', id); syncSheets('frota','upsert',{...item,...upd}); }
+            if (km !== null) { const upd = { km_final: km, hora_final: DateUtils.getNowDatabaseISO(), status: 'Fechado' }; await sb.from('frota').update(upd).eq('id', id); const item = frota.find(f=>f.id==id); syncSheets('frota','upsert',{...item,...upd}); carregarDados(); }
         }
 
         // ---- EVENTOS ----
@@ -3112,7 +2948,7 @@
             const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
-            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarModulo('eventos', true); }
+            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); }
         });
 
         window.editarEvento = function(id) {
@@ -3144,7 +2980,7 @@
         }
 
         window.deletarEvento = async function(id) {
-            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); eventos = eventos.filter(e => e.id != id); window.renderizarApenasEventos(); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); }
+            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); }
         }
 
         window.renderizarApenasEventos = function() {
@@ -3181,7 +3017,7 @@
             const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
             if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
             const { error } = await sb.from('crachas').upsert(novoCracha);
-            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarModulo('crachas', true); }
+            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); }
         });
 
         window.editarCracha = function(id) {
@@ -3211,7 +3047,7 @@
         }
 
         window.deletarCracha = async function(id) {
-            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); crachas = crachas.filter(c => c.id != id); window.renderizarApenasCrachas(); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); }
+            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); }
         }
 
         window.renderizarApenasCrachas = function() {
@@ -3249,7 +3085,7 @@
         let timeoutBusca = null;
         document.getElementById('filtro-texto-demanda').addEventListener('keyup', function() {
             clearTimeout(timeoutBusca);
-            timeoutBusca = setTimeout(() => window.renderizarApenasDemandas(true), 300);
+            timeoutBusca = setTimeout(() => window.renderizarApenasDemandas(), 300);
         });
 
         // Inicializa data das ocorrências
@@ -3324,7 +3160,7 @@
             }
             const { error } = await sb.from('ocorrencias').upsert(novaOco);
             if (error) alert('Erro: ' + error.message);
-            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarModulo('ocorrencias', true); }
+            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); }
         });
 
         window.editarOcorrencia = function(id) {
@@ -3368,11 +3204,10 @@
         window.deletarOcorrencia = async function(id) {
             if (!confirm('Excluir esta ocorrência?')) return;
             const item = ocorrencias.find(o => o.id == id);
-            ocorrencias = ocorrencias.filter(o => o.id != id);
-            window.renderizarApenasOcorrencias();
-            sb.from('ocorrencias').delete().eq('id', id);
+            await sb.from('ocorrencias').delete().eq('id', id);
             syncSheets('ocorrencias','delete',{id});
             registrarLog('Exclusão', 'Ocorrências', `Removeu ocorrência: ${item ? (item.numero || item.categoria) : id}`);
+            carregarDados();
         };
 
         window.renderizarApenasOcorrencias = function() {
