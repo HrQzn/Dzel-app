@@ -1748,12 +1748,12 @@
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
             const promises = []; const keys = [];
-            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(sb.from('demandas').select('*').order('id', { ascending: false }).limit(5000)); }
-            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*').order('id', { ascending: false }).limit(5000)); }
-            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*').order('id', { ascending: false }).limit(5000)); }
-            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*').order('data', { ascending: false }).limit(5000)); }
-            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*').order('id', { ascending: false }).limit(5000)); }
-            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(5000)); }
+            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(sb.from('demandas').select('*').order('id', { ascending: false }).limit(10000)); }
+            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*').order('id', { ascending: false }).limit(10000)); }
+            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*').order('id', { ascending: false }).limit(10000)); }
+            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*').order('data', { ascending: false }).limit(10000)); }
+            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*').order('id', { ascending: false }).limit(10000)); }
+            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(10000)); }
             if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
             const results = await Promise.all(promises);
             const activeTab = document.querySelector('.section.active')?.id || '';
@@ -1782,6 +1782,18 @@
             if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) return 'LIMPEZA';
             if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) return 'RAMAL';
             return 'OUTROS';
+        }
+
+        // Helper: atualiza KPI cards de Predial / AR / Limpeza sem recriar gráficos
+        function _atualizarKPIsAbas(lista) {
+            const fil = (cat, st) => lista.filter(d => getCategoriaDemanda(d) === cat && (!st || d.status === st)).length;
+            const e = id => document.getElementById(id);
+            [['predial','PREDIAL'],['ar','AR'],['limpeza','LIMPEZA']].forEach(([pfx,cat]) => {
+                if (e(`dash-${pfx}-total`))     e(`dash-${pfx}-total`).innerText     = fil(cat);
+                if (e(`dash-${pfx}-pendente`))  e(`dash-${pfx}-pendente`).innerText  = fil(cat,'Pendente');
+                if (e(`dash-${pfx}-andamento`)) e(`dash-${pfx}-andamento`).innerText = fil(cat,'Em Andamento');
+                if (e(`dash-${pfx}-concluido`)) e(`dash-${pfx}-concluido`).innerText = fil(cat,'Concluído');
+            });
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -1876,11 +1888,10 @@
                 set('dash-cracha-entregue',     listaCrachas.filter(c => c.status === 'Entregue').length);
 
                 // ── Cards Ocorrências ──
-                const listaOco = ocorrencias.filter(o => !filtroMes || (o.data_hora||'').startsWith(filtroMes));
-                set('dash-oco-total',     listaOco.length);
-                set('dash-oco-abertas',   listaOco.filter(o => o.status === 'Aberta').length);
-                set('dash-oco-tratativa', listaOco.filter(o => o.status === 'Em Tratativa').length);
-                set('dash-oco-encerradas',listaOco.filter(o => o.status === 'Encerrada').length);
+                set('dash-oco-total',     ocorrencias.length);
+                set('dash-oco-abertas',   ocorrencias.filter(o => o.status === 'Aberta').length);
+                set('dash-oco-tratativa', ocorrencias.filter(o => o.status === 'Em Tratativa').length);
+                set('dash-oco-encerradas',ocorrencias.filter(o => o.status === 'Encerrada').length);
 
             } catch(err) { console.warn('atualizarTodosKPIs:', err); }
         }
@@ -1892,8 +1903,8 @@
             if (typeof Chart === 'undefined') return;
             ensureChartReady();
             const filtroMes = document.getElementById('dash-filtro-mes').value;
-            const listaDemandas   = demandas.filter(d => !filtroMes || (d.data||'').startsWith(filtroMes));
-            const listaFrota      = frota.filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes));
+            const listaDemandas   = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
+            const listaFrota      = frota.filter(f => !filtroMes || f.hora_inicial.startsWith(filtroMes));
             let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
             listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
             const divisor = filtroMes ? 30 : 365;
@@ -2059,22 +2070,22 @@
                 _rtTimers[tabela] = setTimeout(async () => {
                     const activeTab = document.querySelector('.section.active')?.id || '';
                     if (tabela === 'demandas') {
-                        const { data } = await sb.from('demandas').select('*').order('id', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('demandas').select('*').order('id', { ascending: false }).limit(10000);
                         if (data) { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
                     } else if (tabela === 'visitantes') {
-                        const { data } = await sb.from('visitantes').select('*').order('id', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('visitantes').select('*').order('id', { ascending: false }).limit(10000);
                         if (data) { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes?.(); }
                     } else if (tabela === 'frota') {
-                        const { data } = await sb.from('frota').select('*').order('id', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('frota').select('*').order('id', { ascending: false }).limit(10000);
                         if (data) { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota?.(); }
                     } else if (tabela === 'eventos') {
-                        const { data } = await sb.from('eventos').select('*').order('data', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('eventos').select('*').order('data', { ascending: false }).limit(10000);
                         if (data) { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos?.(); }
                     } else if (tabela === 'crachas') {
-                        const { data } = await sb.from('crachas').select('*').order('id', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('crachas').select('*').order('id', { ascending: false }).limit(10000);
                         if (data) { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas?.(); }
                     } else if (tabela === 'ocorrencias') {
-                        const { data } = await sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(5000);
+                        const { data } = await sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(10000);
                         if (data) { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias?.(); }
                     } else if (tabela === 'logs_auditoria') {
                         const { data } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
@@ -2105,7 +2116,7 @@
 
         document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
         document.getElementById('demanda-data').value = DateUtils.getToInput().slice(0, 10);
-        document.getElementById('demanda-hora').value = DateUtils.getToInput().slice(11, 16);
+        document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         document.getElementById('evento-data').value = DateUtils.getToInput().slice(0, 10);
         document.getElementById('cracha-data').value = DateUtils.getToInput().slice(0, 10);
         document.getElementById('vis-entrada').value = DateUtils.getToInput();
@@ -2239,19 +2250,11 @@
                 const nomeAba = prefixo === 'predial' ? 'Predial' : prefixo === 'ar' ? 'Ar Condicionado' : 'Limpeza';
                 registrarLog('Criação', nomeAba, `Nova O.S. registrada: ${titulo} (${contratadaFixa})`);
                 syncSheets('demandas', 'insert', insertData || novaDemanda);
-                // Atualização otimista: insere na memória imediatamente sem esperar o banco
-                const registroSalvo = insertData || { ...novaDemanda, id: Date.now() };
-                demandas.unshift(registroSalvo);
-                _catCache = new WeakMap();
-                atualizarTodosKPIs();
-                window.renderizarApenasDemandas();
-                window.renderizarAbasEspecificas();
                 alert('Solicitação Registrada!');
                 document.getElementById(`form-${prefixo}`).reset();
                 const brt = DateUtils.getToInput();
                 document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10);
                 document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16);
-                // Recarrega em background para garantir sincronismo com o banco
                 carregarDados();
             }
         }
@@ -2285,18 +2288,8 @@
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
                 if(!error) syncSheets('demandas', 'upsert', novaDemanda);
             } else {
-                const res = await sb.from('demandas').insert(novaDemanda).select().single(); error = res.error;
-                if(!error) {
-                    registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`);
-                    syncSheets('demandas', 'insert', res.data || novaDemanda);
-                    // Atualização otimista: insere na memória imediatamente
-                    const registroSalvo = res.data || { ...novaDemanda, id: Date.now() };
-                    demandas.unshift(registroSalvo);
-                    _catCache = new WeakMap();
-                    atualizarTodosKPIs();
-                    window.renderizarApenasDemandas();
-                    window.renderizarAbasEspecificas();
-                }
+                const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
+                if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
             if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
         });
@@ -2323,7 +2316,7 @@
         window.cancelarEdicaoDemanda = function() {
             document.getElementById('demanda-id-edit').value = ""; formDemanda.reset();
             document.getElementById('demanda-data').value = DateUtils.getToInput().slice(0, 10);
-            document.getElementById('demanda-hora').value = DateUtils.getToInput().slice(11, 16);
+            document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação (Geral)';
             const btn = document.getElementById('btn-submit-demanda'); btn.innerText = "Registrar Demanda"; btn.style.background = "linear-gradient(135deg, var(--accent), #6366f1)";
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
@@ -2503,10 +2496,10 @@
 
                 // ── Texto central — alinhado ao CENTRO da coluna do meio ──
                 // (não ao centro da página inteira)
-                const textoY1 = Y + 5;
-                const textoY2 = Y + 10;
-                const textoY3 = Y + 14;
-                const textoY4 = Y + 18;
+                const textoY1 = logoSrc ? Y + 5  : Y + 5;
+                const textoY2 = logoSrc ? Y + 10 : Y + 10;
+                const textoY3 = logoSrc ? Y + 14 : Y + 14;
+                const textoY4 = logoSrc ? Y + 18 : Y + 18;
 
                 pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
                 pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, textoY1, {align:'center'});
@@ -2986,16 +2979,10 @@
 
         window.imprimirDashboard = function() {
             document.body.classList.add('printing-dashboard');
-            if (typeof Chart !== 'undefined') Object.values(Chart.instances).forEach(chart => chart.resize());
+            Object.values(Chart.instances).forEach(chart => chart.resize());
             setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() {
-                document.body.classList.remove('printing-dashboard');
-                if (typeof Chart !== 'undefined') Object.values(Chart.instances).forEach(chart => chart.resize());
-            };
-            setTimeout(function() {
-                document.body.classList.remove('printing-dashboard');
-                if (typeof Chart !== 'undefined') Object.values(Chart.instances).forEach(chart => chart.resize());
-            }, 5000);
+            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
+            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
         }
 
         function criarLinhaTabela(d) {
@@ -3031,7 +3018,7 @@
             let cPend = 0, cAnd = 0, cConc = 0;
             for (let i = 0, len = demandas.length; i < len; i++) {
                 const d = demandas[i];
-                if (filtroMes && !(d.data||'').startsWith(filtroMes)) continue;
+                if (filtroMes && !d.data.startsWith(filtroMes)) continue;
                 if (filtroStatus && d.status !== filtroStatus) continue;
                 if (filtroTexto && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toUpperCase().includes(filtroTexto)) continue;
                 lista.push(d);
@@ -3059,7 +3046,7 @@
                 for (let i = 0, len = demandas.length; i < len; i++) {
                     const d = demandas[i];
                     if (getCategoriaCached(d) !== categoriaAlvo) continue;
-                    if (mes && !(d.data||'').startsWith(mes)) continue;
+                    if (mes && !d.data.startsWith(mes)) continue;
                     if (busca && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante).toUpperCase().includes(busca)) continue;
                     if (status && d.status !== status) continue;
                     listaFinal.push(d);
@@ -3093,13 +3080,6 @@
             else if(item.status === 'Em Andamento') { novoStatus = 'Concluído'; novaDataFim = DateUtils.getNowDatabaseISO(); }
             await sb.from('demandas').update({ status: novoStatus, data_fim: novaDataFim }).eq('id', id);
             syncSheets('demandas', 'upsert', {...item, status: novoStatus, data_fim: novaDataFim});
-            // Atualização otimista: muda status na memória imediatamente
-            item.status = novoStatus;
-            item.data_fim = novaDataFim;
-            _catCache = new WeakMap();
-            atualizarTodosKPIs();
-            window.renderizarApenasDemandas();
-            window.renderizarAbasEspecificas();
             carregarDados();
         }
 
@@ -3109,14 +3089,7 @@
                 await sb.from('demandas').delete().eq('id', id);
                 syncSheets('demandas', 'delete', {id});
                 registrarLog('Exclusão', 'Demandas', `Removeu demanda: ${item ? item.titulo : id}`);
-                // Atualização otimista: remove da memória imediatamente
-                demandas = demandas.filter(d => d.id != id);
-                _catCache = new WeakMap();
-                atualizarTodosKPIs();
-                window.renderizarApenasDemandas();
-                window.renderizarAbasEspecificas();
-                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda();
-                carregarDados();
+                if(document.getElementById('demanda-id-edit').value == id) cancelarEdicaoDemanda(); carregarDados();
             }
         }
 
@@ -3125,17 +3098,11 @@
         formVis.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('visitante-id-edit').value;
+            const id = idEdicao || Date.now();
             const fotoBase64 = document.getElementById('vis-foto-base64').value;
             const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(DateUtils.getToInput());
-            const novoVisitante = { foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
-            if(idEdicao) {
-                novoVisitante.id = idEdicao;
-                const ant = visitantes.find(v => v.id == idEdicao);
-                if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto;
-                if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString();
-                else if (ant && ant.saida) novoVisitante.saida = ant.saida;
-                registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`);
-            }
+            const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
+            if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
             if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); }
         });
@@ -3161,17 +3128,7 @@
         }
 
         window.deletarVisitante = async function(id) {
-            if(confirm('Excluir?')) {
-                const item = visitantes.find(v => v.id == id);
-                await sb.from('visitantes').delete().eq('id', id);
-                syncSheets('visitantes', 'delete', {id});
-                registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`);
-                visitantes = visitantes.filter(v => v.id != id);
-                atualizarTodosKPIs();
-                window.renderizarApenasVisitantes();
-                if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante();
-                carregarDados();
-            }
+            if(confirm('Excluir?')) { const item = visitantes.find(v => v.id == id); await sb.from('visitantes').delete().eq('id', id); syncSheets('visitantes','delete',{id}); registrarLog('Exclusão', 'Visitantes', `Removeu visitante: ${item ? item.nome : id}`); if(document.getElementById('visitante-id-edit').value == id) cancelarEdicaoVisitante(); carregarDados(); }
         }
 
         window.cancelarEdicaoVisitante = function() {
@@ -3187,7 +3144,7 @@
         window.renderizarApenasVisitantes = function() {
             const mes = document.getElementById('filtro-mes-vis').value;
             const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();
-            const lista = visitantes.filter(v => { const bateMes = !mes || (v.entrada||'').startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; });
+            const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; });
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
             const tbody = document.querySelector('#tabela-visitantes tbody');
@@ -3211,16 +3168,7 @@
         }
 
         window.baixaVisitante = async function(id) {
-            if(confirm('Confirmar saída do visitante?')) {
-                const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() };
-                await sb.from('visitantes').update(upd).eq('id', id);
-                const item = visitantes.find(v => v.id == id);
-                if (item) { item.status = 'Saiu'; item.saida = upd.saida; }
-                syncSheets('visitantes', 'upsert', {...item, ...upd});
-                atualizarTodosKPIs();
-                window.renderizarApenasVisitantes();
-                carregarDados();
-            }
+            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; await sb.from('visitantes').update(upd).eq('id', id); const item = visitantes.find(v=>v.id==id); syncSheets('visitantes','upsert',{...item,...upd}); carregarDados(); }
         }
 
         // ---- VEÍCULOS ----
@@ -3236,15 +3184,11 @@
         formVeiculo.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('veiculo-id-edit').value;
+            const id = idEdicao || Date.now();
             const tipo = document.querySelector('input[name="tipoFluxo"]:checked').value;
             const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(DateUtils.getToInput());
-            const novoVeiculo = { tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', hora_final: null };
-            if(idEdicao) {
-                novoVeiculo.id = idEdicao;
-                const ant = frota.find(f => f.id == idEdicao);
-                if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; }
-                registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`);
-            }
+            const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', hora_final: null };
+            if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
             const { error } = await sb.from('frota').upsert(novoVeiculo);
             if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
         });
@@ -3269,17 +3213,7 @@
         }
 
         window.deletarVeiculo = async function(id) {
-            if(confirm('Excluir este registro?')) {
-                const item = frota.find(f => f.id == id);
-                await sb.from('frota').delete().eq('id', id);
-                syncSheets('frota', 'delete', {id});
-                registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`);
-                frota = frota.filter(f => f.id != id);
-                atualizarTodosKPIs();
-                window.renderizarApenasFrota();
-                if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo();
-                carregarDados();
-            }
+            if(confirm('Excluir este registro?')) { const item = frota.find(f => f.id == id); await sb.from('frota').delete().eq('id', id); syncSheets('frota','delete',{id}); registrarLog('Exclusão', 'Garagem', `Removeu veículo: ${item ? item.carro : id}`); if(document.getElementById('veiculo-id-edit').value == id) cancelarEdicaoVeiculo(); carregarDados(); }
         }
 
         window.cancelarEdicaoVeiculo = function() {
@@ -3294,7 +3228,7 @@
         window.renderizarApenasFrota = function() {
             const mes = document.getElementById('filtro-mes-frota').value;
             const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();
-            const lista = frota.filter(f => { const bData = !mes || (f.hora_inicial||'').startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; });
+            const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; });
             document.getElementById('dash-frota-total').innerText = lista.length;
             document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;
             document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;
@@ -3348,14 +3282,10 @@
             await sb.from('frota').update(upd).eq('id', id);
             const item = frota.find(f => f.id == id);
             if (item) {
-                item.hora_final = horaISO;
-                item.status = 'Fechado';
                 registrarLog('Saída', 'Garagem', `Saída: ${item.carro} — ${item.motorista}`);
                 syncSheets('frota', 'upsert', { ...item, ...upd });
             }
             fecharModalSaida();
-            atualizarTodosKPIs();
-            window.renderizarApenasFrota();
             carregarDados();
         }
 
@@ -3364,8 +3294,9 @@
         formEvento.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('evento-id-edit').value;
-            const novoEvento = { tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
-            if(idEdicao) { novoEvento.id = idEdicao; registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`); }
+            const id = idEdicao || Date.now();
+            const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
+            if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
             if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); }
         });
@@ -3399,17 +3330,7 @@
         }
 
         window.deletarEvento = async function(id) {
-            if(confirm('Excluir este evento?')) {
-                const item = eventos.find(e => e.id == id);
-                await sb.from('eventos').delete().eq('id', id);
-                syncSheets('eventos', 'delete', {id});
-                registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`);
-                eventos = eventos.filter(e => e.id != id);
-                atualizarTodosKPIs();
-                window.renderizarApenasEventos();
-                if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento();
-                carregarDados();
-            }
+            if(confirm('Excluir este evento?')) { const item = eventos.find(e => e.id == id); await sb.from('eventos').delete().eq('id', id); syncSheets('eventos','delete',{id}); registrarLog('Exclusão', 'Eventos', `Removeu evento: ${item ? item.nome : id}`); if(document.getElementById('evento-id-edit').value == id) cancelarEdicaoEvento(); carregarDados(); }
         }
 
         window.renderizarApenasEventos = function() {
@@ -3442,8 +3363,8 @@
         formCracha.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('cracha-id-edit').value;
-            const novoCracha = { nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
-            if(idEdicao) novoCracha.id = idEdicao;
+            const id = idEdicao || Date.now();
+            const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
             if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
             const { error } = await sb.from('crachas').upsert(novoCracha);
             if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); }
@@ -3476,17 +3397,7 @@
         }
 
         window.deletarCracha = async function(id) {
-            if(confirm('Excluir este crachá?')) {
-                const item = crachas.find(c => c.id == id);
-                await sb.from('crachas').delete().eq('id', id);
-                syncSheets('crachas', 'delete', {id});
-                registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`);
-                crachas = crachas.filter(c => c.id != id);
-                atualizarTodosKPIs();
-                window.renderizarApenasCrachas();
-                if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha();
-                carregarDados();
-            }
+            if(confirm('Excluir este crachá?')) { const item = crachas.find(c => c.id == id); await sb.from('crachas').delete().eq('id', id); syncSheets('crachas','delete',{id}); registrarLog('Exclusão', 'Crachás', `Removeu crachá: ${item ? item.nome : id}`); if(document.getElementById('cracha-id-edit').value == id) cancelarEdicaoCracha(); carregarDados(); }
         }
 
         window.renderizarApenasCrachas = function() {
@@ -3564,8 +3475,10 @@
         formOco.addEventListener('submit', async (e) => {
             e.preventDefault();
             const idEdicao = document.getElementById('ocorrencia-id-edit').value;
+            const id = idEdicao || Date.now();
             const statusN = idEdicao ? document.getElementById('oco-status-edit').value : 'Aberta';
             const novaOco = {
+                id,
                 numero:      document.getElementById('oco-numero').value.toUpperCase(),
                 unidade:     document.getElementById('oco-unidade').value.toUpperCase(),
                 local:       document.getElementById('oco-local').value.toUpperCase(),
@@ -3579,8 +3492,7 @@
                 data_encerramento: null
             };
             if (idEdicao) {
-                novaOco.id = idEdicao;
-                const ant = ocorrencias.find(o => o.id == idEdicao);
+                const ant = ocorrencias.find(o => o.id == id);
                 if (statusN === 'Encerrada' && (!ant || ant.status !== 'Encerrada'))
                     novaOco.data_encerramento = DateUtils.getNowDatabaseISO();
                 else if (ant && ant.data_encerramento)
@@ -3636,11 +3548,8 @@
             if (!confirm('Excluir esta ocorrência?')) return;
             const item = ocorrencias.find(o => o.id == id);
             await sb.from('ocorrencias').delete().eq('id', id);
-            syncSheets('ocorrencias', 'delete', {id});
+            syncSheets('ocorrencias','delete',{id});
             registrarLog('Exclusão', 'Ocorrências', `Removeu ocorrência: ${item ? (item.numero || item.categoria) : id}`);
-            ocorrencias = ocorrencias.filter(o => o.id != id);
-            atualizarTodosKPIs();
-            window.renderizarApenasOcorrencias();
             carregarDados();
         };
 
