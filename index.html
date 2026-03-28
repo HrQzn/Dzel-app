@@ -3014,22 +3014,35 @@
             const filtroMes = document.getElementById('filtro-mes-demanda').value;
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
             const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase();
+
+            // Total real: conta TODAS as demandas do mês (ignora filtros de status e texto)
+            let totalReal = 0, tPend = 0, tAnd = 0, tConc = 0;
+            for (let i = 0, len = demandas.length; i < len; i++) {
+                const d = demandas[i];
+                if (filtroMes && !d.data.startsWith(filtroMes)) continue;
+                totalReal++;
+                if (d.status === 'Pendente') tPend++;
+                else if (d.status === 'Em Andamento') tAnd++;
+                else tConc++;
+            }
+
+            // Lista filtrada: aplica todos os filtros para a tabela
             const lista = [];
-            let cPend = 0, cAnd = 0, cConc = 0;
             for (let i = 0, len = demandas.length; i < len; i++) {
                 const d = demandas[i];
                 if (filtroMes && !d.data.startsWith(filtroMes)) continue;
                 if (filtroStatus && d.status !== filtroStatus) continue;
                 if (filtroTexto && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toUpperCase().includes(filtroTexto)) continue;
                 lista.push(d);
-                if (d.status === 'Pendente') cPend++;
-                else if (d.status === 'Em Andamento') cAnd++;
-                else cConc++;
             }
-            document.getElementById('dash-demanda-total').innerText = lista.length;
-            document.getElementById('dash-demanda-pendente').innerText = cPend;
-            document.getElementById('dash-demanda-andamento').innerText = cAnd;
-            document.getElementById('dash-demanda-concluido').innerText = cConc;
+
+            // Card Total = sempre o total real (sem filtros de status/texto)
+            document.getElementById('dash-demanda-total').innerText = totalReal;
+            // Cards de status = total real por status (independente do filtro de status ativo)
+            document.getElementById('dash-demanda-pendente').innerText = tPend;
+            document.getElementById('dash-demanda-andamento').innerText = tAnd;
+            document.getElementById('dash-demanda-concluido').innerText = tConc;
+
             const tbody = document.querySelector('#tabela-demandas tbody');
             if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
             else { tbody.innerHTML = lista.map(d => criarLinhaTabela(d)).join(''); }
@@ -3041,8 +3054,21 @@
                 const mes = document.getElementById(`filtro-mes-${prefixo}`).value;
                 const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();
                 const status = document.getElementById(`filtro-status-${prefixo}`).value;
+
+                // Totais reais: conta todos da categoria no mês (ignora filtros de status/busca)
+                let totalReal = 0, tPend = 0, tAnd = 0, tConc = 0;
+                for (let i = 0, len = demandas.length; i < len; i++) {
+                    const d = demandas[i];
+                    if (getCategoriaCached(d) !== categoriaAlvo) continue;
+                    if (mes && !d.data.startsWith(mes)) continue;
+                    totalReal++;
+                    if (d.status === 'Pendente') tPend++;
+                    else if (d.status === 'Em Andamento') tAnd++;
+                    else tConc++;
+                }
+
+                // Lista filtrada: aplica busca e status para a tabela
                 const listaFinal = [];
-                let cPend = 0, cAnd = 0, cConc = 0;
                 for (let i = 0, len = demandas.length; i < len; i++) {
                     const d = demandas[i];
                     if (getCategoriaCached(d) !== categoriaAlvo) continue;
@@ -3050,15 +3076,14 @@
                     if (busca && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante).toUpperCase().includes(busca)) continue;
                     if (status && d.status !== status) continue;
                     listaFinal.push(d);
-                    if (d.status === 'Pendente') cPend++;
-                    else if (d.status === 'Em Andamento') cAnd++;
-                    else cConc++;
                 }
-                // Sempre atualiza os cards (independente de qual aba está visível)
-                document.getElementById(`dash-${prefixo}-total`).innerText = listaFinal.length;
-                document.getElementById(`dash-${prefixo}-pendente`).innerText = cPend;
-                document.getElementById(`dash-${prefixo}-andamento`).innerText = cAnd;
-                document.getElementById(`dash-${prefixo}-concluido`).innerText = cConc;
+
+                // Card Total = total real da categoria (sem filtros de status/busca)
+                document.getElementById(`dash-${prefixo}-total`).innerText = totalReal;
+                document.getElementById(`dash-${prefixo}-pendente`).innerText = tPend;
+                document.getElementById(`dash-${prefixo}-andamento`).innerText = tAnd;
+                document.getElementById(`dash-${prefixo}-concluido`).innerText = tConc;
+
                 // Só reconstrói a tabela DOM se a aba estiver visível (performance)
                 if (activeTab === prefixo || !activeTab) {
                     const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
