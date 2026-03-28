@@ -1762,10 +1762,9 @@
                 if(res.data) {
                     if(key === 'demandas') {
                         demandas = res.data; _catCache = new WeakMap();
-                        if (activeTab === 'demandas' || !activeTab) window.renderizarApenasDemandas();
-                        if (['predial','ar','limpeza'].includes(activeTab)) window.renderizarAbasEspecificas();
-                        // Sempre atualizar os KPIs das abas específicas (cards Predial/AR/Limpeza)
-                        _atualizarKPIsAbas(res.data);
+                        // Sempre renderiza demandas (atualiza cards) e abas específicas (atualiza cards predial/ar/limpeza)
+                        window.renderizarApenasDemandas();
+                        window.renderizarAbasEspecificas();
                     }
                     if(key === 'visitantes') { visitantes = res.data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes(); }
                     if(key === 'frota') { frota = res.data; if(activeTab === 'veiculos') window.renderizarApenasFrota(); }
@@ -2011,11 +2010,13 @@
                     const activeTab = document.querySelector('.section.active')?.id || '';
                     if (tabela === 'demandas') {
                         const { data } = await sb.from('demandas').select('*').order('id', { ascending: false });
-                        if (data) { demandas = data; _catCache = new WeakMap(); _atualizarKPIsAbas(data); }
-                        if (['demandas','predial','ar','limpeza','dashboard'].includes(activeTab)) {
-                            if (activeTab === 'demandas') window.renderizarApenasDemandas();
-                            else if (['predial','ar','limpeza'].includes(activeTab)) window.renderizarAbasEspecificas();
-                            else renderizarDashboard();
+                        if (data) {
+                            demandas = data; _catCache = new WeakMap();
+                            // Atualiza cards de todas as abas sempre
+                            window.renderizarApenasDemandas();
+                            window.renderizarAbasEspecificas();
+                            // Se o dashboard estiver aberto, atualiza também
+                            if (activeTab === 'dashboard') renderizarDashboard();
                         }
                     } else if (tabela === 'visitantes') {
                         const { data } = await sb.from('visitantes').select('*').order('id', { ascending: false });
@@ -2996,18 +2997,23 @@
                     else if (d.status === 'Em Andamento') cAnd++;
                     else cConc++;
                 }
+                // Sempre atualiza os cards (independente de qual aba está visível)
                 document.getElementById(`dash-${prefixo}-total`).innerText = listaFinal.length;
                 document.getElementById(`dash-${prefixo}-pendente`).innerText = cPend;
                 document.getElementById(`dash-${prefixo}-andamento`).innerText = cAnd;
                 document.getElementById(`dash-${prefixo}-concluido`).innerText = cConc;
-                const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
-                if(listaFinal.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum registro.</td></tr>'; }
-                else { tbody.innerHTML = listaFinal.map(d => criarLinhaTabelaSimples(d, prefixo)).join(''); }
+                // Só reconstrói a tabela DOM se a aba estiver visível (performance)
+                if (activeTab === prefixo || !activeTab) {
+                    const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
+                    if(listaFinal.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum registro.</td></tr>'; }
+                    else { tbody.innerHTML = listaFinal.map(d => criarLinhaTabelaSimples(d, prefixo)).join(''); }
+                }
             }
-            // Renderiza apenas a aba ativa (ou todas se chamado do carregarDados genérico)
-            if (activeTab === 'predial' || !activeTab) renderizarAba('predial', 'PREDIAL');
-            if (activeTab === 'ar' || !activeTab) renderizarAba('ar', 'AR');
-            if (activeTab === 'limpeza' || !activeTab) renderizarAba('limpeza', 'LIMPEZA');
+            // Sempre atualiza os cards das 3 abas (mantém KPIs sincronizados)
+            // Só reconstrói o innerHTML da tabela da aba visível (performance)
+            renderizarAba('predial', 'PREDIAL');
+            renderizarAba('ar', 'AR');
+            renderizarAba('limpeza', 'LIMPEZA');
         }
 
         window.avancarStatus = async function(id) {
