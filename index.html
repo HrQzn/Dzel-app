@@ -1762,10 +1762,10 @@
                 if(res.data) {
                     if(key === 'demandas') {
                         demandas = res.data; _catCache = new WeakMap();
-                        if (['demandas','predial','ar','limpeza'].includes(activeTab) || !activeTab) {
-                            if (activeTab === 'demandas' || !activeTab) window.renderizarApenasDemandas();
-                            if (['predial','ar','limpeza'].includes(activeTab)) window.renderizarAbasEspecificas();
-                        }
+                        if (activeTab === 'demandas' || !activeTab) window.renderizarApenasDemandas();
+                        if (['predial','ar','limpeza'].includes(activeTab)) window.renderizarAbasEspecificas();
+                        // Sempre atualizar os KPIs das abas específicas (cards Predial/AR/Limpeza)
+                        _atualizarKPIsAbas(res.data);
                     }
                     if(key === 'visitantes') { visitantes = res.data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes(); }
                     if(key === 'frota') { frota = res.data; if(activeTab === 'veiculos') window.renderizarApenasFrota(); }
@@ -1786,6 +1786,18 @@
             if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) return 'LIMPEZA';
             if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) return 'RAMAL';
             return 'OUTROS';
+        }
+
+        // Helper: atualiza KPI cards de Predial / AR / Limpeza sem recriar gráficos
+        function _atualizarKPIsAbas(lista) {
+            const fil = (cat, st) => lista.filter(d => getCategoriaDemanda(d) === cat && (!st || d.status === st)).length;
+            const e = id => document.getElementById(id);
+            [['predial','PREDIAL'],['ar','AR'],['limpeza','LIMPEZA']].forEach(([pfx,cat]) => {
+                if (e(`dash-${pfx}-total`))     e(`dash-${pfx}-total`).innerText     = fil(cat);
+                if (e(`dash-${pfx}-pendente`))  e(`dash-${pfx}-pendente`).innerText  = fil(cat,'Pendente');
+                if (e(`dash-${pfx}-andamento`)) e(`dash-${pfx}-andamento`).innerText = fil(cat,'Em Andamento');
+                if (e(`dash-${pfx}-concluido`)) e(`dash-${pfx}-concluido`).innerText = fil(cat,'Concluído');
+            });
         }
 
         async function renderizarDashboard() {
@@ -1813,6 +1825,28 @@
             document.getElementById('kpi-total-manutencao').innerText = totalManutencao;
             document.getElementById('kpi-total-crachas').innerText = totalCrachas;
             document.getElementById('kpi-total-limpeza').innerText = counts['LIMPEZA'];
+            // KPIs das abas específicas (Predial / AR / Limpeza)
+            const predialList  = listaDemandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL');
+            const arList       = listaDemandas.filter(d => getCategoriaDemanda(d) === 'AR');
+            const limpezaList  = listaDemandas.filter(d => getCategoriaDemanda(d) === 'LIMPEZA');
+
+            const el = id => document.getElementById(id);
+            // Predial
+            if (el('dash-predial-total'))     el('dash-predial-total').innerText     = predialList.length;
+            if (el('dash-predial-pendente'))  el('dash-predial-pendente').innerText  = predialList.filter(d => d.status === 'Pendente').length;
+            if (el('dash-predial-andamento')) el('dash-predial-andamento').innerText = predialList.filter(d => d.status === 'Em Andamento').length;
+            if (el('dash-predial-concluido')) el('dash-predial-concluido').innerText = predialList.filter(d => d.status === 'Concluído').length;
+            // AR
+            if (el('dash-ar-total'))     el('dash-ar-total').innerText     = arList.length;
+            if (el('dash-ar-pendente'))  el('dash-ar-pendente').innerText  = arList.filter(d => d.status === 'Pendente').length;
+            if (el('dash-ar-andamento')) el('dash-ar-andamento').innerText = arList.filter(d => d.status === 'Em Andamento').length;
+            if (el('dash-ar-concluido')) el('dash-ar-concluido').innerText = arList.filter(d => d.status === 'Concluído').length;
+            // Limpeza
+            if (el('dash-limpeza-total'))     el('dash-limpeza-total').innerText     = limpezaList.length;
+            if (el('dash-limpeza-pendente'))  el('dash-limpeza-pendente').innerText  = limpezaList.filter(d => d.status === 'Pendente').length;
+            if (el('dash-limpeza-andamento')) el('dash-limpeza-andamento').innerText = limpezaList.filter(d => d.status === 'Em Andamento').length;
+            if (el('dash-limpeza-concluido')) el('dash-limpeza-concluido').innerText = limpezaList.filter(d => d.status === 'Concluído').length;
+
             const divisor = filtroMes ? 30 : 365;
             const fluxoDiario = Math.ceil(totalFrota / (totalFrota > 0 ? divisor : 1));
             document.getElementById('kpi-fluxo-garagem').innerHTML = fluxoDiario + ' <small>Veíc/Dia</small>';
@@ -1977,7 +2011,7 @@
                     const activeTab = document.querySelector('.section.active')?.id || '';
                     if (tabela === 'demandas') {
                         const { data } = await sb.from('demandas').select('*').order('id', { ascending: false });
-                        if (data) { demandas = data; _catCache = new WeakMap(); }
+                        if (data) { demandas = data; _catCache = new WeakMap(); _atualizarKPIsAbas(data); }
                         if (['demandas','predial','ar','limpeza','dashboard'].includes(activeTab)) {
                             if (activeTab === 'demandas') window.renderizarApenasDemandas();
                             else if (['predial','ar','limpeza'].includes(activeTab)) window.renderizarAbasEspecificas();
@@ -2152,9 +2186,19 @@
             const dataInput = document.getElementById(`${prefixo}-data`).value;
             const horaInput = document.getElementById(`${prefixo}-hora`).value;
             const novaDemanda = { numero_os, titulo, setor, solicitante, contratada: contratadaFixa.toUpperCase(), prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };
-            const { error } = await sb.from('demandas').insert(novaDemanda);
+            const { data: insertData, error } = await sb.from('demandas').insert(novaDemanda).select().single();
             if(error) alert('Erro: ' + error.message);
-            else { alert('Solicitação Registrada!'); document.getElementById(`form-${prefixo}`).reset(); const brt = DateUtils.getToInput(); document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10); document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16); carregarDados(); }
+            else {
+                const nomeAba = prefixo === 'predial' ? 'Predial' : prefixo === 'ar' ? 'Ar Condicionado' : 'Limpeza';
+                registrarLog('Criação', nomeAba, `Nova O.S. registrada: ${titulo} (${contratadaFixa})`);
+                syncSheets('demandas', 'insert', insertData || novaDemanda);
+                alert('Solicitação Registrada!');
+                document.getElementById(`form-${prefixo}`).reset();
+                const brt = DateUtils.getToInput();
+                document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10);
+                document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16);
+                carregarDados();
+            }
         }
 
         document.getElementById('form-predial').addEventListener('submit', (e) => { e.preventDefault(); salvarDemandaEspecifica('predial', 'MANUTENÇÃO PREDIAL'); });
