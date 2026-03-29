@@ -1493,6 +1493,30 @@
             auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
         });
 
+        // ════════════════════════════════════════════════════════════════
+        // fetchAll — busca TODOS os registros com paginação automática
+        // O Supabase/PostgREST retorna no máximo 1000 rows por request.
+        // Esta função faz múltiplas chamadas com .range() até trazer tudo.
+        // ════════════════════════════════════════════════════════════════
+        async function fetchAll(tabela, orderCol = 'id', ascending = false) {
+            const PAGE = 1000;
+            let allData = [];
+            let from = 0;
+            while (true) {
+                const { data, error } = await sb
+                    .from(tabela)
+                    .select('*')
+                    .order(orderCol, { ascending })
+                    .range(from, from + PAGE - 1);
+                if (error) { console.error(`fetchAll(${tabela}):`, error); break; }
+                if (!data || data.length === 0) break;
+                allData = allData.concat(data);
+                if (data.length < PAGE) break; // última página
+                from += PAGE;
+            }
+            return allData;
+        }
+
         // ================================================================
         // SINCRONIZAÇÃO COM GOOGLE SHEETS
         // Cole aqui a URL gerada ao implantar o Apps Script
@@ -1748,25 +1772,25 @@
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
             const promises = []; const keys = [];
-            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(sb.from('demandas').select('*').order('id', { ascending: false }).limit(10000)); }
-            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(sb.from('visitantes').select('*').order('id', { ascending: false }).limit(10000)); }
-            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(sb.from('frota').select('*').order('id', { ascending: false }).limit(10000)); }
-            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(sb.from('eventos').select('*').order('data', { ascending: false }).limit(10000)); }
-            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(sb.from('crachas').select('*').order('id', { ascending: false }).limit(10000)); }
-            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(10000)); }
-            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50)); }
+            if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(fetchAll('demandas', 'id', false)); }
+            if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(fetchAll('visitantes', 'id', false)); }
+            if (admin || p.veiculos?.ver) { keys.push('frota'); promises.push(fetchAll('frota', 'id', false)); }
+            if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(fetchAll('eventos', 'data', false)); }
+            if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(fetchAll('crachas', 'id', false)); }
+            if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(fetchAll('ocorrencias', 'data_hora', false)); }
+            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50).then(r => r.data || [])); }
             const results = await Promise.all(promises);
             const activeTab = document.querySelector('.section.active')?.id || '';
-            results.forEach((res, index) => {
+            results.forEach((data, index) => {
                 const key = keys[index];
-                if(res.data) {
-                    if(key === 'demandas')    { demandas = res.data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
-                    if(key === 'visitantes')  { visitantes = res.data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes(); }
-                    if(key === 'frota')       { frota = res.data; if(activeTab === 'veiculos') window.renderizarApenasFrota(); }
-                    if(key === 'eventos')     { eventos = res.data; if(activeTab === 'eventos') window.renderizarApenasEventos(); }
-                    if(key === 'crachas')     { crachas = res.data; if(activeTab === 'crachas') window.renderizarApenasCrachas(); }
-                    if(key === 'ocorrencias') { ocorrencias = res.data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias(); }
-                    if(key === 'logs')        { logs = res.data; if(activeTab === 'auditoria') renderizarLogs(); }
+                if(data && data.length !== undefined) {
+                    if(key === 'demandas')    { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
+                    if(key === 'visitantes')  { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes(); }
+                    if(key === 'frota')       { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota(); }
+                    if(key === 'eventos')     { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos(); }
+                    if(key === 'crachas')     { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas(); }
+                    if(key === 'ocorrencias') { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias(); }
+                    if(key === 'logs')        { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
                 }
             });
             // Atualiza TODOS os cards/KPIs sempre, independente da aba ativa
@@ -1903,8 +1927,8 @@
             if (typeof Chart === 'undefined') return;
             ensureChartReady();
             const filtroMes = document.getElementById('dash-filtro-mes').value;
-            const listaDemandas   = demandas.filter(d => !filtroMes || d.data.startsWith(filtroMes));
-            const listaFrota      = frota.filter(f => !filtroMes || f.hora_inicial.startsWith(filtroMes));
+            const listaDemandas   = demandas.filter(d => !filtroMes || (d.data||'').startsWith(filtroMes));
+            const listaFrota      = frota.filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes));
             let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
             listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
             const divisor = filtroMes ? 30 : 365;
@@ -2070,23 +2094,23 @@
                 _rtTimers[tabela] = setTimeout(async () => {
                     const activeTab = document.querySelector('.section.active')?.id || '';
                     if (tabela === 'demandas') {
-                        const { data } = await sb.from('demandas').select('*').order('id', { ascending: false }).limit(10000);
-                        if (data) { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
+                        const data = await fetchAll('demandas', 'id', false);
+                        if (data.length) { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
                     } else if (tabela === 'visitantes') {
-                        const { data } = await sb.from('visitantes').select('*').order('id', { ascending: false }).limit(10000);
-                        if (data) { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes?.(); }
+                        const data = await fetchAll('visitantes', 'id', false);
+                        if (data.length) { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes?.(); }
                     } else if (tabela === 'frota') {
-                        const { data } = await sb.from('frota').select('*').order('id', { ascending: false }).limit(10000);
-                        if (data) { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota?.(); }
+                        const data = await fetchAll('frota', 'id', false);
+                        if (data.length) { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota?.(); }
                     } else if (tabela === 'eventos') {
-                        const { data } = await sb.from('eventos').select('*').order('data', { ascending: false }).limit(10000);
-                        if (data) { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos?.(); }
+                        const data = await fetchAll('eventos', 'data', false);
+                        if (data.length) { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos?.(); }
                     } else if (tabela === 'crachas') {
-                        const { data } = await sb.from('crachas').select('*').order('id', { ascending: false }).limit(10000);
-                        if (data) { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas?.(); }
+                        const data = await fetchAll('crachas', 'id', false);
+                        if (data.length) { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas?.(); }
                     } else if (tabela === 'ocorrencias') {
-                        const { data } = await sb.from('ocorrencias').select('*').order('data_hora', { ascending: false }).limit(10000);
-                        if (data) { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias?.(); }
+                        const data = await fetchAll('ocorrencias', 'data_hora', false);
+                        if (data.length) { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias?.(); }
                     } else if (tabela === 'logs_auditoria') {
                         const { data } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
                         if (data) { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
@@ -3018,7 +3042,7 @@
             let cPend = 0, cAnd = 0, cConc = 0;
             for (let i = 0, len = demandas.length; i < len; i++) {
                 const d = demandas[i];
-                if (filtroMes && !d.data.startsWith(filtroMes)) continue;
+                if (filtroMes && !(d.data||'').startsWith(filtroMes)) continue;
                 if (filtroStatus && d.status !== filtroStatus) continue;
                 if (filtroTexto && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toUpperCase().includes(filtroTexto)) continue;
                 lista.push(d);
@@ -3046,7 +3070,7 @@
                 for (let i = 0, len = demandas.length; i < len; i++) {
                     const d = demandas[i];
                     if (getCategoriaCached(d) !== categoriaAlvo) continue;
-                    if (mes && !d.data.startsWith(mes)) continue;
+                    if (mes && !(d.data||'').startsWith(mes)) continue;
                     if (busca && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante).toUpperCase().includes(busca)) continue;
                     if (status && d.status !== status) continue;
                     listaFinal.push(d);
