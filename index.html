@@ -395,6 +395,20 @@
         .log-acao-exclusao { color: var(--danger); font-weight: 700; }
         .perm-table th, .perm-table td { text-align: center; }
         .perm-table td:first-child { text-align: left; font-weight: 600; }
+        /* FIX: Checkboxes da tabela de permissões sobrescritos pelo estilo global de input */
+        .perm-table input[type="checkbox"] {
+            width: 18px !important;
+            height: 18px !important;
+            min-height: unset !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            display: block !important;
+            cursor: pointer !important;
+            accent-color: var(--accent);
+            -webkit-appearance: checkbox !important;
+            appearance: checkbox !important;
+            box-shadow: none !important;
+        }
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
         .kpi-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; transition: transform 0.2s; position: relative; overflow: hidden; }
         .kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
