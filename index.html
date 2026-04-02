@@ -1016,11 +1016,16 @@
                             </select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="demanda-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="demanda-hora" required></div>
-                            <select id="demanda-status-edit" style="display:none">
+                            <select id="demanda-status-edit" style="display:none" onchange="toggleEncerramento()">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option>
                                 <option value="Concluído">Concluído</option>
                             </select>
+                            <div id="demanda-encerramento-wrap" style="display:none">
+                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <input type="datetime-local" id="demanda-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
+                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            </div>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-demanda">Registrar Demanda</button>
@@ -2320,8 +2325,21 @@
             let error = null;
             if(idEdicao) {
                 const itemAntigo = demandas.find(d => d.id == idEdicao);
-                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) { novaDemanda.data_fim = DateUtils.getNowDatabaseISO(); }
-                else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }
+                const dataFimManual = document.getElementById('demanda-data-fim').value;
+                if (novaDemanda.status === 'Concluído') {
+                    if (dataFimManual) {
+                        // Usuário preencheu horário manual — converter para ISO UTC
+                        novaDemanda.data_fim = DateUtils.toDatabaseISO(dataFimManual);
+                    } else if (!itemAntigo || itemAntigo.status !== 'Concluído') {
+                        // Primeira vez concluindo sem horário manual — usar agora
+                        novaDemanda.data_fim = DateUtils.getNowDatabaseISO();
+                    } else if (itemAntigo && itemAntigo.data_fim) {
+                        // Já estava concluído — manter data_fim existente
+                        novaDemanda.data_fim = itemAntigo.data_fim;
+                    }
+                } else if (itemAntigo && itemAntigo.data_fim) {
+                    novaDemanda.data_fim = itemAntigo.data_fim;
+                }
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
                 if(!error) syncSheets('demandas', 'upsert', novaDemanda);
@@ -2348,6 +2366,17 @@
             const btn = document.getElementById('btn-submit-demanda'); btn.innerText = "Salvar"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-demanda').style.display = "block";
             const selStatus = document.getElementById('demanda-status-edit'); selStatus.style.display = "block"; selStatus.value = d.status;
+            // Encerramento: mostrar se Concluído e preencher com data_fim existente
+            const wrapEnc = document.getElementById('demanda-encerramento-wrap');
+            const inputFim = document.getElementById('demanda-data-fim');
+            if (d.status === 'Concluído') {
+                wrapEnc.style.display = 'block';
+                if (d.data_fim) {
+                    const dtFim = new Date(d.data_fim);
+                    dtFim.setMinutes(dtFim.getMinutes() - dtFim.getTimezoneOffset());
+                    inputFim.value = dtFim.toISOString().slice(0, 16);
+                } else { inputFim.value = ''; }
+            } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
             document.getElementById('demandas').scrollIntoView({behavior: 'smooth'});
         }
 
@@ -2358,6 +2387,15 @@
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação (Geral)';
             const btn = document.getElementById('btn-submit-demanda'); btn.innerText = "Registrar Demanda"; btn.style.background = "linear-gradient(135deg, var(--accent), #6366f1)";
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
+            document.getElementById('demanda-encerramento-wrap').style.display = "none";
+            document.getElementById('demanda-data-fim').value = "";
+        }
+
+        window.toggleEncerramento = function() {
+            const status = document.getElementById('demanda-status-edit').value;
+            const wrap = document.getElementById('demanda-encerramento-wrap');
+            wrap.style.display = (status === 'Concluído') ? 'block' : 'none';
+            if (status !== 'Concluído') document.getElementById('demanda-data-fim').value = "";
         }
 
         /* =====================================================
