@@ -1528,15 +1528,24 @@
             </section>
 
             <!-- Modal do Scanner de Código de Barras -->
-            <div id="scanner-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;align-items:center;justify-content:center;flex-direction:column;padding:1rem;">
-                <div style="background:var(--bg-card);border-radius:var(--radius-md);padding:1.25rem;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                        <h3 style="margin:0;color:var(--text-primary);font-size:1.1rem;"><i class="fas fa-barcode" style="color:var(--accent);margin-right:8px;"></i>Leitor de Nº de Série</h3>
-                        <button type="button" onclick="fecharScanner()" style="background:var(--danger);color:white;border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;">&times;</button>
+            <div id="scanner-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:10000;align-items:center;justify-content:center;flex-direction:column;padding:0.5rem;">
+                <div style="background:var(--bg-card);border-radius:var(--radius-md);padding:0.9rem;max-width:720px;width:100%;height:100%;max-height:96vh;box-shadow:0 20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;flex-shrink:0;">
+                        <h3 style="margin:0;color:var(--text-primary);font-size:1.05rem;"><i class="fas fa-barcode" style="color:var(--accent);margin-right:8px;"></i>Leitor de Nº de Série</h3>
+                        <button type="button" onclick="fecharScanner()" style="background:var(--danger);color:white;border:none;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.1rem;font-weight:700;">&times;</button>
                     </div>
-                    <div id="scanner-reader" style="width:100%;min-height:260px;background:#000;border-radius:var(--radius-sm);overflow:hidden;"></div>
-                    <p id="scanner-status" style="margin-top:0.75rem;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Iniciando câmera...</p>
-                    <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                    <div id="scanner-reader" style="width:100%;flex:1;min-height:0;background:#000;border-radius:var(--radius-sm);overflow:hidden;position:relative;"></div>
+
+                    <!-- Controles de zoom/lanterna (aparecem se o dispositivo suportar) -->
+                    <div id="scanner-controles" style="display:none;gap:10px;align-items:center;margin-top:0.5rem;padding:0.5rem 0.75rem;background:var(--bg-main);border-radius:var(--radius-sm);flex-shrink:0;">
+                        <i class="fas fa-search" style="color:var(--text-muted);font-size:0.85rem;"></i>
+                        <input type="range" id="scanner-zoom" min="1" max="5" step="0.1" value="2" style="flex:1;accent-color:var(--accent);" oninput="ajustarZoomScanner(this.value)">
+                        <span id="scanner-zoom-val" style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:700;min-width:34px;text-align:right;">2.0x</span>
+                        <button type="button" id="btn-scanner-flash" onclick="alternarFlashScanner()" style="background:var(--bg-card);border:1px solid var(--border);width:38px;height:32px;border-radius:6px;cursor:pointer;color:var(--text-primary);display:none;" title="Lanterna"><i class="fas fa-bolt"></i></button>
+                    </div>
+
+                    <p id="scanner-status" style="margin:0.6rem 0 0.4rem 0;text-align:center;color:var(--text-muted);font-size:0.85rem;flex-shrink:0;"><i class="fas fa-spinner fa-spin"></i> Iniciando câmera...</p>
+                    <div style="display:flex;gap:8px;margin-top:0.3rem;flex-shrink:0;">
                         <button type="button" onclick="fecharScanner()" class="btn-cancel" style="flex:1;">Cancelar</button>
                         <button type="button" onclick="alternarCameraScanner()" class="btn-foto" style="flex:1;" title="Trocar câmera"><i class="fas fa-camera-rotate"></i> Trocar Câmera</button>
                     </div>
@@ -3707,13 +3716,31 @@
                 scannerInstance = null;
             }
             scannerInstance = new Html5Qrcode("scanner-reader");
+
+            // ── Cálculo DINÂMICO da janela de leitura ──
+            // Pega o tamanho real do container pra aproveitar a tela inteira
+            const readerEl = document.getElementById('scanner-reader');
+            const rect = readerEl.getBoundingClientRect();
+            const vw = Math.max(rect.width, 320);
+            const vh = Math.max(rect.height, 320);
+            // Janela de leitura: 90% da largura, retangular para códigos 1D
+            const qrboxW = Math.floor(vw * 0.9);
+            const qrboxH = Math.floor(Math.min(vh * 0.55, qrboxW * 0.45));
+
             const config = {
                 fps: 15,
-                qrbox: { width: 280, height: 120 },  // retangular p/ códigos 1D
-                aspectRatio: 1.3,
-                // Suporta tanto QR Code quanto códigos de barras 1D
-                formatsToSupport: undefined  // undefined = todos os formatos
+                qrbox: { width: qrboxW, height: qrboxH },
+                aspectRatio: vw / vh,
+                // Videoconstraints: solicita resolução alta pra captar códigos pequenos
+                videoConstraints: {
+                    deviceId: cameraId,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    advanced: [{ focusMode: "continuous" }]
+                },
+                formatsToSupport: undefined
             };
+
             await scannerInstance.start(
                 cameraId,
                 config,
@@ -3721,7 +3748,7 @@
                     // Sucesso: preenche o campo e fecha
                     document.getElementById('celular-serie').value = decodedText.trim();
                     statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i> Lido: <strong>${decodedText}</strong>`;
-                    // Beep de confirmação (opcional, sem dependência)
+                    // Beep de confirmação
                     try {
                         const ctx = new (window.AudioContext || window.webkitAudioContext)();
                         const osc = ctx.createOscillator();
@@ -3730,12 +3757,80 @@
                         osc.frequency.value = 880; gain.gain.value = 0.1;
                         osc.start(); osc.stop(ctx.currentTime + 0.08);
                     } catch(e) {}
+                    // Vibração tátil (mobile)
+                    try { navigator.vibrate && navigator.vibrate(80); } catch(e) {}
                     setTimeout(() => fecharScanner(), 350);
                 },
                 // Ignora erros de frame sem código (ruído normal)
                 () => {}
             );
-            statusEl.innerHTML = '<i class="fas fa-barcode"></i> Aponte para o código de barras';
+
+            // ── Aplica ZOOM automático da câmera, se suportado ──
+            // Isso "aproxima" o código, facilitando leitura de códigos pequenos
+            try {
+                const videoTrack = scannerInstance.getRunningTrackCameraCapabilities?.();
+                if (videoTrack && videoTrack.zoomFeature && videoTrack.zoomFeature().isSupported()) {
+                    const zoomCap = videoTrack.zoomFeature();
+                    const maxZoom = zoomCap.max();
+                    // Zoom 2x ou o máximo disponível (o que for menor)
+                    const targetZoom = Math.min(2.0, maxZoom);
+                    zoomCap.apply(targetZoom);
+
+                    // Mostra o slider de zoom manual
+                    const controles = document.getElementById('scanner-controles');
+                    const slider = document.getElementById('scanner-zoom');
+                    const valSpan = document.getElementById('scanner-zoom-val');
+                    if (controles && slider) {
+                        controles.style.display = 'flex';
+                        slider.min = zoomCap.min();
+                        slider.max = maxZoom;
+                        slider.step = zoomCap.step?.() || 0.1;
+                        slider.value = targetZoom;
+                        valSpan.innerText = targetZoom.toFixed(1) + 'x';
+                    }
+                }
+                // Detecta suporte a lanterna (torch)
+                if (videoTrack && videoTrack.torchFeature && videoTrack.torchFeature().isSupported()) {
+                    const btnFlash = document.getElementById('btn-scanner-flash');
+                    if (btnFlash) btnFlash.style.display = 'inline-block';
+                    // Mostra o container de controles se estiver escondido
+                    document.getElementById('scanner-controles').style.display = 'flex';
+                }
+            } catch(e) { /* zoom/torch não suportado no dispositivo — ignora */ }
+
+            statusEl.innerHTML = '<i class="fas fa-barcode"></i> Aponte para o código de barras — use o zoom se precisar';
+        }
+
+        // Ajusta zoom manualmente via slider
+        window.ajustarZoomScanner = function(valor) {
+            const val = parseFloat(valor);
+            document.getElementById('scanner-zoom-val').innerText = val.toFixed(1) + 'x';
+            try {
+                if (scannerInstance) {
+                    const caps = scannerInstance.getRunningTrackCameraCapabilities?.();
+                    if (caps && caps.zoomFeature && caps.zoomFeature().isSupported()) {
+                        caps.zoomFeature().apply(val);
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Alterna lanterna (torch) — útil em ambientes escuros
+        let scannerFlashOn = false;
+        window.alternarFlashScanner = async function() {
+            try {
+                if (!scannerInstance) return;
+                const caps = scannerInstance.getRunningTrackCameraCapabilities?.();
+                if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                    scannerFlashOn = !scannerFlashOn;
+                    await caps.torchFeature().apply(scannerFlashOn);
+                    const btn = document.getElementById('btn-scanner-flash');
+                    if (btn) {
+                        btn.style.background = scannerFlashOn ? 'var(--warning)' : 'var(--bg-card)';
+                        btn.style.color = scannerFlashOn ? 'white' : 'var(--text-primary)';
+                    }
+                }
+            } catch(e) { console.warn('Torch err:', e); }
         }
 
         async function alternarCameraScanner() {
@@ -3756,6 +3851,12 @@
         async function fecharScanner() {
             const modal = document.getElementById('scanner-modal');
             if (modal) modal.style.display = 'none';
+            // Reset dos controles
+            scannerFlashOn = false;
+            const btnFlash = document.getElementById('btn-scanner-flash');
+            if (btnFlash) { btnFlash.style.background = 'var(--bg-card)'; btnFlash.style.color = 'var(--text-primary)'; btnFlash.style.display = 'none'; }
+            const controles = document.getElementById('scanner-controles');
+            if (controles) controles.style.display = 'none';
             if (scannerInstance) {
                 try { await scannerInstance.stop(); } catch(e) {}
                 try { scannerInstance.clear(); } catch(e) {}
