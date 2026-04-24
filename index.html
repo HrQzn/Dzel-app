@@ -23,7 +23,23 @@
     <!-- Chart.js + plugin — defer (só usado no Dashboard) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0" defer></script>
-    <!-- SheetJS e jsPDF removidos do <head> — serão carregados sob demanda (lazy-load) -->
+    <!-- SheetJS, jsPDF e html5-qrcode carregados sob demanda (lazy-load) -->
+    <script>
+        // Lazy-load do leitor de código de barras (Celulares) — carrega na primeira vez que abre scanner
+        let _barcodeReady = null;
+        function ensureBarcode() {
+            if (_barcodeReady) return _barcodeReady;
+            _barcodeReady = new Promise((resolve, reject) => {
+                if (window.Html5Qrcode) { resolve(); return; }
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+                s.onload = () => resolve();
+                s.onerror = () => reject(new Error('Falha ao carregar leitor de código de barras'));
+                document.head.appendChild(s);
+            });
+            return _barcodeReady;
+        }
+    </script>
     <style>
         :root {
             --primary: #0f1923;
@@ -945,6 +961,7 @@
             <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> Eventos</button>
             <button id="tab-crachas" class="tab-btn hidden-tab" onclick="switchTab('crachas')"><i class="fas fa-id-card"></i> Crachás</button>
             <button id="tab-ocorrencias" class="tab-btn hidden-tab" onclick="switchTab('ocorrencias')"><i class="fas fa-triangle-exclamation"></i> Ocorrências</button>
+            <button id="tab-celulares" class="tab-btn hidden-tab" onclick="switchTab('celulares')"><i class="fas fa-mobile-screen"></i> Celulares</button>
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> Auditoria</button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
@@ -1016,16 +1033,11 @@
                             </select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="demanda-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="demanda-hora" required></div>
-                            <select id="demanda-status-edit" style="display:none" onchange="toggleEncerramento()">
+                            <select id="demanda-status-edit" style="display:none">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option>
                                 <option value="Concluído">Concluído</option>
                             </select>
-                            <div id="demanda-encerramento-wrap" style="display:none">
-                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
-                                <input type="datetime-local" id="demanda-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
-                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
-                            </div>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-demanda">Registrar Demanda</button>
@@ -1443,6 +1455,94 @@
                 </div>
             </section>
 
+            <!-- ═══════════════════════════════════════════════════════════
+                 MÓDULO CELULARES — Conferência rápida com foto + scanner
+                 ═══════════════════════════════════════════════════════════ -->
+            <section id="celulares" class="section">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h2 style="color:var(--accent)"><i class="fas fa-mobile-screen" style="margin-right:8px;"></i>Conferência de Celulares</h2>
+                        <p>Registro com foto e leitura de código de barras</p>
+                    </div>
+                </div>
+                <div class="dashboard-panel">
+                    <div class="metric-card card-total"><div class="metric-info"><h3>Total Registrados</h3><p id="dash-cel-total">...</p></div><i class="fas fa-mobile-screen metric-icon"></i></div>
+                    <div class="metric-card card-recepcao"><div class="metric-info"><h3>Conferidos Hoje</h3><p id="dash-cel-hoje">...</p></div><i class="fas fa-calendar-check metric-icon"></i></div>
+                    <div class="metric-card card-edit"><div class="metric-info"><h3>Pendentes</h3><p id="dash-cel-pendentes">...</p></div><i class="fas fa-clock metric-icon"></i></div>
+                </div>
+
+                <div class="card" style="border-top:3px solid var(--accent);">
+                    <h2 id="titulo-form-celular"><i class="fas fa-plus-circle" style="color:var(--accent)"></i> Novo Registro de Celular</h2>
+                    <form id="form-celular">
+                        <input type="hidden" id="celular-id-edit" value="">
+
+                        <!-- Foto do aparelho/etiqueta -->
+                        <div class="foto-container">
+                            <video id="cel-webcam-video" autoplay playsinline style="width:100%;max-width:280px;border-radius:var(--radius-md);display:none;border:3px solid var(--accent);"></video>
+                            <canvas id="cel-webcam-canvas" style="display:none;"></canvas>
+                            <img id="cel-preview" class="foto-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M30 15h40c5 0 10 5 10 10v50c0 5-5 10-10 10H30c-5 0-10-5-10-10V25c0-5 5-10 10-10zm20 55c3 0 5 2 5 5s-2 5-5 5-5-2-5-5 2-5 5-5zm-10-50v45h20V20H40z'/%3E%3C/svg%3E">
+                            <div class="cam-controls">
+                                <button type="button" id="btn-cel-iniciar-cam" onclick="iniciarCameraCelular()" class="btn-foto"><i class="fas fa-camera"></i> Abrir Câmera</button>
+                                <button type="button" id="btn-cel-capturar-cam" onclick="capturarFotoCelular()" class="btn-primary" style="display:none;padding:6px 14px;font-size:0.8rem;flex:unset;">Capturar</button>
+                                <label for="cel-foto-input" class="btn-foto"><i class="fas fa-upload"></i> Enviar Arquivo</label>
+                            </div>
+                            <input type="file" id="cel-foto-input" accept="image/*" capture="environment">
+                            <input type="hidden" id="cel-foto-base64">
+                        </div>
+
+                        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
+                            <input type="text" id="celular-modelo" placeholder="Modelo (Ex: Poco X3 Pro 128GB)" required style="grid-column:span 2;">
+                            <input type="text" id="celular-imei" placeholder="IMEI" inputmode="numeric">
+
+                            <!-- Nº Série com botão de scanner acoplado -->
+                            <div style="display:flex;gap:6px;align-items:stretch;">
+                                <input type="text" id="celular-serie" placeholder="Nº de Série" required style="flex:1;min-width:0;">
+                                <button type="button" onclick="abrirScannerSerie()" class="btn-primary" style="flex:0 0 auto;padding:0 14px;font-size:0.85rem;white-space:nowrap;" title="Escanear código de barras do Nº Série">
+                                    <i class="fas fa-barcode"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="btn-container">
+                            <button type="submit" class="btn-primary" id="btn-submit-celular">Salvar Registro</button>
+                            <button type="button" class="btn-cancel" id="btn-cancel-celular" onclick="cancelarEdicaoCelular()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="filter-container">
+                        <div class="filter-group"><label>Buscar (Modelo/IMEI/Série):</label><input type="text" id="filtro-busca-celular" onkeyup="window.renderizarApenasCelulares()" placeholder="Digite para buscar..."></div>
+                        <div class="filter-group"><label>Data de Conferência:</label><input type="date" id="filtro-data-celular" onchange="window.renderizarApenasCelulares()"></div>
+                        <button id="btn-export-celulares" class="btn-excel" onclick="exportarExcel('celulares')"><i class="fas fa-file-excel"></i> Exportar</button>
+                    </div>
+                    <div style="margin-bottom:0.75rem;font-size:0.85rem;color:var(--text-muted);">
+                        <i class="fas fa-info-circle"></i> Total exibido: <strong id="cel-total-exibido">0</strong>
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-celulares">
+                            <thead><tr><th>Nº</th><th>Foto</th><th>Modelo</th><th>IMEI</th><th>Nº Série</th><th>Data</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Modal do Scanner de Código de Barras -->
+            <div id="scanner-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;align-items:center;justify-content:center;flex-direction:column;padding:1rem;">
+                <div style="background:var(--bg-card);border-radius:var(--radius-md);padding:1.25rem;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                        <h3 style="margin:0;color:var(--text-primary);font-size:1.1rem;"><i class="fas fa-barcode" style="color:var(--accent);margin-right:8px;"></i>Leitor de Nº de Série</h3>
+                        <button type="button" onclick="fecharScanner()" style="background:var(--danger);color:white;border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;">&times;</button>
+                    </div>
+                    <div id="scanner-reader" style="width:100%;min-height:260px;background:#000;border-radius:var(--radius-sm);overflow:hidden;"></div>
+                    <p id="scanner-status" style="margin-top:0.75rem;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Iniciando câmera...</p>
+                    <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                        <button type="button" onclick="fecharScanner()" class="btn-cancel" style="flex:1;">Cancelar</button>
+                        <button type="button" onclick="alternarCameraScanner()" class="btn-foto" style="flex:1;" title="Trocar câmera"><i class="fas fa-camera-rotate"></i> Trocar Câmera</button>
+                    </div>
+                </div>
+            </div>
+
             <section id="auditoria" class="section">
                 <div class="page-header"><div class="page-header-left"><h2>Logs de Auditoria</h2><p>Histórico das últimas ações no sistema</p></div></div>
                 <div class="card">
@@ -1484,6 +1584,7 @@
                                         <tr><td>Eventos</td><td><input type="checkbox" id="perm-eventos-ver"></td><td><input type="checkbox" id="perm-eventos-edit"></td><td><input type="checkbox" id="perm-eventos-del"></td><td><input type="checkbox" id="perm-eventos-exp"></td></tr>
                                         <tr><td style="color:var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
                                         <tr><td style="color:var(--ocorrencia)">Ocorrências</td><td><input type="checkbox" id="perm-ocorrencias-ver"></td><td><input type="checkbox" id="perm-ocorrencias-edit"></td><td><input type="checkbox" id="perm-ocorrencias-del"></td><td><input type="checkbox" id="perm-ocorrencias-exp"></td></tr>
+                                        <tr><td style="color:var(--accent)">Celulares</td><td><input type="checkbox" id="perm-celulares-ver"></td><td><input type="checkbox" id="perm-celulares-edit"></td><td><input type="checkbox" id="perm-celulares-del"></td><td><input type="checkbox" id="perm-celulares-exp"></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1644,7 +1745,7 @@
             return `${datePart} ${timePart}`;
         }
 
-        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [];
+        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [], celulares = [];
         let currentUserRole = null, currentUserData = null;
         let streamGeral = null;
         let osPrintAtualId = null;
@@ -1732,7 +1833,7 @@
             carregarDados();
             iniciarRealtime();
 
-            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias'];
+            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias', 'celulares'];
             allTabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden-tab'));
 
             if (userData.isAdmin) {
@@ -1750,6 +1851,7 @@
                 if (userData.perms.eventos?.ver) { document.getElementById('tab-eventos').classList.remove('hidden-tab'); if(!firstTab) firstTab='eventos'; }
                 if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }
                 if (userData.perms.ocorrencias?.ver) { document.getElementById('tab-ocorrencias').classList.remove('hidden-tab'); if(!firstTab) firstTab='ocorrencias'; }
+                if (userData.perms.celulares?.ver) { document.getElementById('tab-celulares').classList.remove('hidden-tab'); if(!firstTab) firstTab='celulares'; }
                 if(userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {
                     document.getElementById('tab-dashboard').classList.remove('hidden-tab');
                     if(!firstTab) firstTab = 'dashboard';
@@ -1797,6 +1899,7 @@
             if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(fetchAll('eventos', 'data', false)); }
             if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(fetchAll('crachas', 'id', false)); }
             if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(fetchAll('ocorrencias', 'data_hora', false)); }
+            if (admin || p.celulares?.ver) { keys.push('celulares'); promises.push(fetchAll('celulares', 'id', false)); }
             if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50).then(r => r.data || [])); }
             const results = await Promise.all(promises);
             const activeTab = document.querySelector('.section.active')?.id || '';
@@ -1809,6 +1912,7 @@
                     if(key === 'eventos')     { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos(); }
                     if(key === 'crachas')     { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas(); }
                     if(key === 'ocorrencias') { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias(); }
+                    if(key === 'celulares')   { celulares = data; if(activeTab === 'celulares') window.renderizarApenasCelulares(); }
                     if(key === 'logs')        { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
                 }
             });
@@ -2028,7 +2132,7 @@
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
             const p = meta.permissoes || {};
-            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias'];
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'celulares'];
             mods.forEach(m => {
                 if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
                 if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
@@ -2055,7 +2159,7 @@
         }
 
         function montarPermissoesJSON() {
-            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias'];
+            const mods = ['demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'celulares'];
             let perms = {};
             mods.forEach(m => {
                 perms[m] = {
@@ -2130,6 +2234,9 @@
                     } else if (tabela === 'ocorrencias') {
                         const data = await fetchAll('ocorrencias', 'data_hora', false);
                         if (data.length) { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias?.(); }
+                    } else if (tabela === 'celulares') {
+                        const data = await fetchAll('celulares', 'id', false);
+                        if (data.length) { celulares = data; if(activeTab === 'celulares') window.renderizarApenasCelulares?.(); }
                     } else if (tabela === 'logs_auditoria') {
                         const { data } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
                         if (data) { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
@@ -2168,6 +2275,7 @@
         window.switchTab = function(tabId) {
             fecharSidebarMobile();
             if (document.getElementById('visitantes').classList.contains('active')) { pararCamera(); }
+            if (document.getElementById('celulares').classList.contains('active')) { pararCameraCelular(); fecharScanner(); }
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
@@ -2184,6 +2292,7 @@
             if(tabId === 'eventos') { window.renderizarApenasEventos(); }
             if(tabId === 'crachas') { window.renderizarApenasCrachas(); }
             if(tabId === 'ocorrencias') { window.renderizarApenasOcorrencias(); document.getElementById('oco-data').value = DateUtils.getToInput(); }
+            if(tabId === 'celulares') { window.renderizarApenasCelulares(); }
             if(tabId === 'auditoria') { renderizarLogs(); }
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
             if(tabId === 'ar') { const brt = DateUtils.getToInput(); document.getElementById('ar-data').value = brt.slice(0, 10); document.getElementById('ar-hora').value = brt.slice(11, 16); }
@@ -2265,6 +2374,26 @@
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; }
             else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
             else if (tipo === 'ocorrencias') { data = ocorrencias; nomeArquivo = "Relatorio_Ocorrencias.xlsx"; }
+            else if (tipo === 'celulares') {
+                // Exporta versão limpa (sem foto base64 que estoura o Excel)
+                data = celulares.map((c, idx) => ({
+                    Nº: idx + 1,
+                    MODELO: c.modelo || '',
+                    IMEI: c.imei || '',
+                    NUMERO_SERIE: c.numero_serie || '',
+                    FOTO: c.foto ? '(Imagem Salva)' : '',
+                    DATA_CONFERENCIA: c.data_conferencia ? new Date(c.data_conferencia).toLocaleString('pt-BR') : '',
+                    USUARIO: c.usuario || ''
+                }));
+                nomeArquivo = "Relatorio_Celulares.xlsx";
+                if(data.length === 0) return alert("Não há dados para exportar.");
+                const ws2 = XLSX.utils.json_to_sheet(data);
+                const wb2 = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb2, ws2, "Celulares");
+                XLSX.writeFile(wb2, nomeArquivo);
+                registrarLog('Exportação', tipo, 'Gerou relatório Excel');
+                return;
+            }
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
                 data = data.map(d => ({ ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data, HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim }));
@@ -2325,21 +2454,8 @@
             let error = null;
             if(idEdicao) {
                 const itemAntigo = demandas.find(d => d.id == idEdicao);
-                const dataFimManual = document.getElementById('demanda-data-fim').value;
-                if (novaDemanda.status === 'Concluído') {
-                    if (dataFimManual) {
-                        // Usuário preencheu horário manual — converter para ISO UTC
-                        novaDemanda.data_fim = DateUtils.toDatabaseISO(dataFimManual);
-                    } else if (!itemAntigo || itemAntigo.status !== 'Concluído') {
-                        // Primeira vez concluindo sem horário manual — usar agora
-                        novaDemanda.data_fim = DateUtils.getNowDatabaseISO();
-                    } else if (itemAntigo && itemAntigo.data_fim) {
-                        // Já estava concluído — manter data_fim existente
-                        novaDemanda.data_fim = itemAntigo.data_fim;
-                    }
-                } else if (itemAntigo && itemAntigo.data_fim) {
-                    novaDemanda.data_fim = itemAntigo.data_fim;
-                }
+                if(novaDemanda.status === 'Concluído' && (!itemAntigo || itemAntigo.status !== 'Concluído')) { novaDemanda.data_fim = DateUtils.getNowDatabaseISO(); }
+                else if (itemAntigo && itemAntigo.data_fim) { novaDemanda.data_fim = itemAntigo.data_fim; }
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
                 if(!error) syncSheets('demandas', 'upsert', novaDemanda);
@@ -2366,17 +2482,6 @@
             const btn = document.getElementById('btn-submit-demanda'); btn.innerText = "Salvar"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-demanda').style.display = "block";
             const selStatus = document.getElementById('demanda-status-edit'); selStatus.style.display = "block"; selStatus.value = d.status;
-            // Encerramento: mostrar se Concluído e preencher com data_fim existente
-            const wrapEnc = document.getElementById('demanda-encerramento-wrap');
-            const inputFim = document.getElementById('demanda-data-fim');
-            if (d.status === 'Concluído') {
-                wrapEnc.style.display = 'block';
-                if (d.data_fim) {
-                    const dtFim = new Date(d.data_fim);
-                    dtFim.setMinutes(dtFim.getMinutes() - dtFim.getTimezoneOffset());
-                    inputFim.value = dtFim.toISOString().slice(0, 16);
-                } else { inputFim.value = ''; }
-            } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
             document.getElementById('demandas').scrollIntoView({behavior: 'smooth'});
         }
 
@@ -2387,15 +2492,6 @@
             document.getElementById('titulo-form-demanda').innerHTML = '<i class="fas fa-plus-circle"></i> Nova Solicitação (Geral)';
             const btn = document.getElementById('btn-submit-demanda'); btn.innerText = "Registrar Demanda"; btn.style.background = "linear-gradient(135deg, var(--accent), #6366f1)";
             document.getElementById('btn-cancel-demanda').style.display = "none"; document.getElementById('demanda-status-edit').style.display = "none";
-            document.getElementById('demanda-encerramento-wrap').style.display = "none";
-            document.getElementById('demanda-data-fim').value = "";
-        }
-
-        window.toggleEncerramento = function() {
-            const status = document.getElementById('demanda-status-edit').value;
-            const wrap = document.getElementById('demanda-encerramento-wrap');
-            wrap.style.display = (status === 'Concluído') ? 'block' : 'none';
-            if (status !== 'Concluído') document.getElementById('demanda-data-fim').value = "";
         }
 
         /* =====================================================
@@ -3499,7 +3595,348 @@
             }
         }
 
-        // Upload de foto
+        // ════════════════════════════════════════════════════════════════
+        // MÓDULO CELULARES — Conferência com foto + scanner de código de barras
+        // ════════════════════════════════════════════════════════════════
+        let streamCelular = null;      // Stream da câmera de foto do aparelho
+        let scannerInstance = null;    // Instância Html5Qrcode (leitor)
+        let scannerCameraIdx = 0;      // Índice da câmera atual (para alternar)
+        let scannerCameras = [];       // Lista de câmeras disponíveis
+
+        // ── Câmera para tirar FOTO do aparelho ──
+        async function iniciarCameraCelular() {
+            const video = document.getElementById('cel-webcam-video');
+            const imgPreview = document.getElementById('cel-preview');
+            const btnCapturar = document.getElementById('btn-cel-capturar-cam');
+            const btnIniciar = document.getElementById('btn-cel-iniciar-cam');
+            try {
+                // Prefere câmera traseira para foto do aparelho
+                streamCelular = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
+                video.srcObject = streamCelular;
+                video.style.display = "block";
+                imgPreview.style.display = "none";
+                btnCapturar.style.display = "inline-block";
+                btnIniciar.style.display = "none";
+            } catch (err) {
+                alert("Erro ao acessar câmera: " + err.message);
+            }
+        }
+
+        function capturarFotoCelular() {
+            const video = document.getElementById('cel-webcam-video');
+            const canvas = document.getElementById('cel-webcam-canvas');
+            const imgPreview = document.getElementById('cel-preview');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            // Sem mirror na traseira (diferente da câmera de visitantes que usa frontal)
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            document.getElementById('cel-foto-base64').value = dataUrl;
+            imgPreview.src = dataUrl;
+            pararCameraCelular();
+        }
+
+        function pararCameraCelular() {
+            const video = document.getElementById('cel-webcam-video');
+            const imgPreview = document.getElementById('cel-preview');
+            const btnCapturar = document.getElementById('btn-cel-capturar-cam');
+            const btnIniciar = document.getElementById('btn-cel-iniciar-cam');
+            if (streamCelular) { streamCelular.getTracks().forEach(t => t.stop()); streamCelular = null; }
+            if (video) {
+                video.style.display = "none";
+                video.srcObject = null;
+            }
+            if (imgPreview) imgPreview.style.display = "block";
+            if (btnCapturar) btnCapturar.style.display = "none";
+            if (btnIniciar) btnIniciar.style.display = "inline-block";
+        }
+
+        // Upload de arquivo de imagem
+        document.getElementById('cel-foto-input').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                // Redimensiona se imagem for grande (reduz tamanho no Supabase)
+                const img = new Image();
+                img.onload = function() {
+                    const maxW = 800;
+                    const scale = Math.min(1, maxW / img.width);
+                    const cv = document.createElement('canvas');
+                    cv.width = img.width * scale;
+                    cv.height = img.height * scale;
+                    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+                    const resized = cv.toDataURL('image/jpeg', 0.65);
+                    document.getElementById('cel-foto-base64').value = resized;
+                    document.getElementById('cel-preview').src = resized;
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ── SCANNER DE CÓDIGO DE BARRAS (Nº de Série) ──
+        async function abrirScannerSerie() {
+            const modal = document.getElementById('scanner-modal');
+            const statusEl = document.getElementById('scanner-status');
+            modal.style.display = 'flex';
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando leitor...';
+            try {
+                await ensureBarcode();
+                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando câmera...';
+                // Lista câmeras disponíveis
+                scannerCameras = await Html5Qrcode.getCameras();
+                if (!scannerCameras || scannerCameras.length === 0) {
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> Nenhuma câmera encontrada';
+                    return;
+                }
+                // Prefere câmera traseira (procura 'back' no nome)
+                scannerCameraIdx = scannerCameras.findIndex(c => /back|traseira|rear|environment/i.test(c.label));
+                if (scannerCameraIdx < 0) scannerCameraIdx = scannerCameras.length - 1;
+                await iniciarScanner(scannerCameras[scannerCameraIdx].id);
+            } catch (err) {
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> ${err.message || 'Erro ao iniciar scanner'}`;
+            }
+        }
+
+        async function iniciarScanner(cameraId) {
+            const statusEl = document.getElementById('scanner-status');
+            // Se já havia instância, para antes
+            if (scannerInstance) {
+                try { await scannerInstance.stop(); } catch(e) {}
+                try { scannerInstance.clear(); } catch(e) {}
+                scannerInstance = null;
+            }
+            scannerInstance = new Html5Qrcode("scanner-reader");
+            const config = {
+                fps: 15,
+                qrbox: { width: 280, height: 120 },  // retangular p/ códigos 1D
+                aspectRatio: 1.3,
+                // Suporta tanto QR Code quanto códigos de barras 1D
+                formatsToSupport: undefined  // undefined = todos os formatos
+            };
+            await scannerInstance.start(
+                cameraId,
+                config,
+                (decodedText) => {
+                    // Sucesso: preenche o campo e fecha
+                    document.getElementById('celular-serie').value = decodedText.trim();
+                    statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i> Lido: <strong>${decodedText}</strong>`;
+                    // Beep de confirmação (opcional, sem dependência)
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain); gain.connect(ctx.destination);
+                        osc.frequency.value = 880; gain.gain.value = 0.1;
+                        osc.start(); osc.stop(ctx.currentTime + 0.08);
+                    } catch(e) {}
+                    setTimeout(() => fecharScanner(), 350);
+                },
+                // Ignora erros de frame sem código (ruído normal)
+                () => {}
+            );
+            statusEl.innerHTML = '<i class="fas fa-barcode"></i> Aponte para o código de barras';
+        }
+
+        async function alternarCameraScanner() {
+            if (scannerCameras.length < 2) {
+                alert('Apenas uma câmera disponível');
+                return;
+            }
+            scannerCameraIdx = (scannerCameraIdx + 1) % scannerCameras.length;
+            const statusEl = document.getElementById('scanner-status');
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trocando câmera...';
+            try {
+                await iniciarScanner(scannerCameras[scannerCameraIdx].id);
+            } catch (err) {
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> ${err.message}`;
+            }
+        }
+
+        async function fecharScanner() {
+            const modal = document.getElementById('scanner-modal');
+            if (modal) modal.style.display = 'none';
+            if (scannerInstance) {
+                try { await scannerInstance.stop(); } catch(e) {}
+                try { scannerInstance.clear(); } catch(e) {}
+                scannerInstance = null;
+            }
+        }
+
+        // Expõe globalmente
+        window.iniciarCameraCelular = iniciarCameraCelular;
+        window.capturarFotoCelular = capturarFotoCelular;
+        window.pararCameraCelular = pararCameraCelular;
+        window.abrirScannerSerie = abrirScannerSerie;
+        window.alternarCameraScanner = alternarCameraScanner;
+        window.fecharScanner = fecharScanner;
+
+        // ── CRUD CELULARES ──
+        const formCelular = document.getElementById('form-celular');
+        formCelular.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idEdicao = document.getElementById('celular-id-edit').value;
+            const id = idEdicao ? Number(idEdicao) : Date.now();
+            const fotoValor = document.getElementById('cel-foto-base64').value || null;
+            const novoCelular = {
+                id,
+                modelo: document.getElementById('celular-modelo').value.toUpperCase().trim(),
+                imei: document.getElementById('celular-imei').value.trim(),
+                numero_serie: document.getElementById('celular-serie').value.trim(),
+                foto: fotoValor,
+                data_conferencia: idEdicao
+                    ? (celulares.find(c => c.id == idEdicao)?.data_conferencia || DateUtils.getNowDatabaseISO())
+                    : DateUtils.getNowDatabaseISO(),
+                usuario: currentUserData?.nome || ''
+            };
+            // Validação básica
+            if (!novoCelular.modelo || !novoCelular.numero_serie) {
+                alert('Modelo e Nº de Série são obrigatórios.');
+                return;
+            }
+            const btn = document.getElementById('btn-submit-celular');
+            const textoOriginal = btn.innerText;
+            btn.disabled = true; btn.innerText = 'Salvando...';
+
+            if (idEdicao) registrarLog('Edição', 'Celulares', `Editou registro: ${novoCelular.modelo} / SN ${novoCelular.numero_serie}`);
+            else registrarLog('Criação', 'Celulares', `Registrou: ${novoCelular.modelo} / SN ${novoCelular.numero_serie}`);
+
+            const { error } = await sb.from('celulares').upsert(novoCelular);
+            btn.disabled = false; btn.innerText = textoOriginal;
+            if (error) {
+                alert('Erro ao salvar: ' + error.message);
+            } else {
+                syncSheets('celulares', 'upsert', novoCelular);
+                cancelarEdicaoCelular();
+                carregarDados();
+            }
+        });
+
+        window.editarCelular = function(id) {
+            const c = celulares.find(item => item.id == id); if (!c) return;
+            document.getElementById('celular-id-edit').value = c.id;
+            document.getElementById('celular-modelo').value = c.modelo || '';
+            document.getElementById('celular-imei').value = c.imei || '';
+            document.getElementById('celular-serie').value = c.numero_serie || '';
+            if (c.foto) {
+                document.getElementById('cel-foto-base64').value = c.foto;
+                document.getElementById('cel-preview').src = c.foto;
+            }
+            document.getElementById('titulo-form-celular').innerHTML = '<i class="fas fa-edit"></i> Editando Celular';
+            const btn = document.getElementById('btn-submit-celular');
+            btn.innerText = "Salvar Alterações";
+            btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
+            document.getElementById('btn-cancel-celular').style.display = "block";
+            document.getElementById('celulares').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.cancelarEdicaoCelular = function() {
+            document.getElementById('celular-id-edit').value = "";
+            formCelular.reset();
+            document.getElementById('cel-foto-base64').value = "";
+            document.getElementById('cel-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M30 15h40c5 0 10 5 10 10v50c0 5-5 10-10 10H30c-5 0-10-5-10-10V25c0-5 5-10 10-10zm20 55c3 0 5 2 5 5s-2 5-5 5-5-2-5-5 2-5 5-5zm-10-50v45h20V20H40z'/%3E%3C/svg%3E";
+            document.getElementById('titulo-form-celular').innerHTML = '<i class="fas fa-plus-circle" style="color:var(--accent)"></i> Novo Registro de Celular';
+            const btn = document.getElementById('btn-submit-celular');
+            btn.innerText = "Salvar Registro";
+            btn.style.background = "";
+            document.getElementById('btn-cancel-celular').style.display = "none";
+            pararCameraCelular();
+            // Foco no modelo para próxima leitura
+            setTimeout(() => document.getElementById('celular-modelo').focus(), 100);
+        }
+
+        window.deletarCelular = async function(id) {
+            if (!confirm('Excluir este registro de celular?')) return;
+            const item = celulares.find(c => c.id == id);
+            await sb.from('celulares').delete().eq('id', id);
+            syncSheets('celulares', 'delete', { id });
+            registrarLog('Exclusão', 'Celulares', `Removeu: ${item ? (item.modelo + ' / SN ' + item.numero_serie) : id}`);
+            if (document.getElementById('celular-id-edit').value == id) cancelarEdicaoCelular();
+            carregarDados();
+        }
+
+        window.renderizarApenasCelulares = function() {
+            const busca = (document.getElementById('filtro-busca-celular')?.value || '').toUpperCase();
+            const dataFiltro = document.getElementById('filtro-data-celular')?.value || '';
+
+            const lista = celulares.filter(c => {
+                const termo = ((c.modelo||'') + ' ' + (c.imei||'') + ' ' + (c.numero_serie||'')).toUpperCase();
+                const bateTexto = !busca || termo.includes(busca);
+                let bateData = true;
+                if (dataFiltro && c.data_conferencia) {
+                    const d = new Date(c.data_conferencia);
+                    const iso = d.toISOString().slice(0,10);
+                    // Tenta data local também (BRT) para evitar confusão de fuso
+                    const localISO = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+                    bateData = (iso === dataFiltro || localISO === dataFiltro);
+                }
+                return bateTexto && bateData;
+            });
+
+            // KPIs
+            const hojeLocal = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-'); // YYYY-MM-DD local
+            const conferidosHoje = celulares.filter(c => {
+                if (!c.data_conferencia) return false;
+                const d = new Date(c.data_conferencia);
+                const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+                return iso === hojeLocal;
+            }).length;
+            const e = id => document.getElementById(id);
+            if (e('dash-cel-total')) e('dash-cel-total').innerText = celulares.length;
+            if (e('dash-cel-hoje')) e('dash-cel-hoje').innerText = conferidosHoje;
+            if (e('dash-cel-pendentes')) e('dash-cel-pendentes').innerText = celulares.filter(c => !c.foto || !c.imei).length;
+            if (e('cel-total-exibido')) e('cel-total-exibido').innerText = lista.length;
+
+            const btnExport = document.getElementById('btn-export-celulares');
+            if (btnExport) btnExport.style.display = pode('celulares', 'exportar') ? 'inline-flex' : 'none';
+
+            const tbody = document.querySelector('#tabela-celulares tbody');
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum celular registrado.</td></tr>';
+                return;
+            }
+
+            // Ordena do mais recente pro mais antigo
+            const listaOrdenada = [...lista].sort((a,b) => {
+                const da = a.data_conferencia ? new Date(a.data_conferencia).getTime() : 0;
+                const db = b.data_conferencia ? new Date(b.data_conferencia).getTime() : 0;
+                return db - da;
+            });
+
+            tbody.innerHTML = listaOrdenada.map((c, idx) => {
+                const dataFmt = c.data_conferencia
+                    ? new Date(c.data_conferencia).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+                    : '-';
+                const foto = c.foto
+                    ? `<img src="${c.foto}" style="width:46px;height:46px;border-radius:6px;object-fit:cover;cursor:pointer;border:1px solid var(--border);" onclick="abrirFotoCelular('${c.id}')" title="Clique para ampliar">`
+                    : '<span style="color:var(--text-muted);font-size:0.75rem;"><i class="fas fa-image"></i> Sem foto</span>';
+                let buttons = '';
+                if (pode('celulares', 'editar')) buttons += `<button onclick="editarCelular(${c.id})" class="action-btn btn-edit" title="Editar"><i class="fas fa-pen"></i></button>`;
+                if (pode('celulares', 'excluir')) buttons += `<button onclick="deletarCelular(${c.id})" class="action-btn btn-delete" title="Excluir"><i class="fas fa-trash"></i></button>`;
+                return `<tr>
+                    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);">${listaOrdenada.length - idx}</td>
+                    <td>${foto}</td>
+                    <td><strong>${c.modelo || '-'}</strong></td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">${c.imei || '-'}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:700;">${c.numero_serie || '-'}</td>
+                    <td style="font-size:0.8rem;">${dataFmt}</td>
+                    <td>${buttons || '<span style="color:var(--text-muted);font-size:0.75rem;">-</span>'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Ampliar foto em modal simples
+        window.abrirFotoCelular = function(id) {
+            const c = celulares.find(i => i.id == id);
+            if (!c || !c.foto) return;
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10001;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:1rem;';
+            overlay.onclick = () => overlay.remove();
+            overlay.innerHTML = `<img src="${c.foto}" style="max-width:95%;max-height:95vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">`;
+            document.body.appendChild(overlay);
+        }
+
+        // Upload de foto (padrão visitantes — mantém original)
         document.getElementById('vis-foto-input').addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
