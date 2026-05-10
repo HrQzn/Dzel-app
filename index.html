@@ -693,8 +693,15 @@
                 display: flex !important; flex-direction: column; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; margin: 0; padding: 0; background: white; 
             }
             body.printing-dashboard #app-content { display: block !important; width: 100%; }
+            body.printing-dashboard main { display: block !important; padding: 0 !important; width: 100% !important; }
             body.printing-dashboard .section { display: none !important; }
             body.printing-dashboard .section.active { display: block !important; width: 100% !important; }
+            /* Esconde o grupo de filtro/botoes do header durante a impressao */
+            body.printing-dashboard .page-header > div:last-child { display: none !important; }
+            /* Garante que canvas dos graficos nao estoure pagina */
+            body.printing-dashboard canvas { max-height: 280px !important; }
+            body.printing-dashboard .chart-card { padding: 8px !important; }
+            body.printing-dashboard .kpi-card { padding: 10px !important; }
         }
 
         /* ======== OS PRINT STYLES ======== */
@@ -963,8 +970,11 @@
                             <label style="font-size:0.72rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Filtrar Período:</label>
                             <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;height:38px;font-size:0.85rem;">
                         </div>
-                        <button onclick="imprimirDashboard()" class="btn-primary" style="padding:0 16px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:var(--secondary);">
-                            <i class="fas fa-print"></i>
+                        <button onclick="imprimirDashboard()" title="Imprimir (PC)" class="btn-primary" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:var(--secondary);">
+                            <i class="fas fa-print"></i><span class="hide-mobile" style="margin-left:6px;">Imprimir</span>
+                        </button>
+                        <button onclick="gerarPDFDashboard()" title="Baixar PDF" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:linear-gradient(135deg,#dc2626,#991b1b);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fas fa-file-pdf"></i><span class="hide-mobile">PDF</span>
                         </button>
                     </div>
                 </div>
@@ -3140,6 +3150,317 @@
             setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
         }
 
+        // ════════════════════════════════════════════════════════════════
+        // PDF DASHBOARD — Relatório Consolidado em PDF formatado (jsPDF puro)
+        // Layout institucional preto/branco no padrão da R.O.
+        // ════════════════════════════════════════════════════════════════
+        window.gerarPDFDashboard = async function() {
+            try {
+                if (typeof showToast === 'function') showToast('Gerando PDF...', 'info');
+                await ensureJsPDF();
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+                const PW = pdf.internal.pageSize.getWidth();   // 210
+                const PH = pdf.internal.pageSize.getHeight();  // 297
+                const M = 12;
+
+                // Sanitiza string para helvetica (sem acentos / unicode)
+                const s = (v) => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
+
+                // ─── DADOS / FILTRO ───────────────────────────────────────
+                const filtroMes = (document.getElementById('dash-filtro-mes') || {}).value || '';
+                let periodoLabel = 'Todos os Periodos';
+                if (filtroMes) {
+                    const [y, m] = filtroMes.split('-');
+                    const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    periodoLabel = meses[parseInt(m,10)-1] + ' / ' + y;
+                }
+
+                const listaDemandas   = (demandas   || []).filter(d => !filtroMes || (d.data||'').startsWith(filtroMes));
+                const listaFrota      = (frota      || []).filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes));
+                const listaVisitantes = (visitantes || []).filter(v => !filtroMes || (v.entrada||'').startsWith(filtroMes));
+                const listaEventos    = (eventos    || []).filter(e => !filtroMes || (e.data||'').startsWith(filtroMes));
+                const listaCrachas    = (crachas    || []).filter(c => !filtroMes || (c.data_solicitacao||'').startsWith(filtroMes));
+
+                let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
+                listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
+
+                const totalManutencao = counts['PREDIAL'] + counts['AR'];
+                const totalGeral = listaFrota.length + listaVisitantes.length + listaDemandas.length + listaEventos.length + listaCrachas.length;
+                const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
+
+                const dPend = listaDemandas.filter(d => d.status === 'Pendente').length;
+                const dAnd  = listaDemandas.filter(d => d.status === 'Em Andamento').length;
+                const dConc = listaDemandas.filter(d => d.status === 'Concluído').length;
+
+                // ═══════════════════════════════════════════════════════════
+                // LAYOUT COMPACTO — TUDO EM 1 PÁGINA A4
+                // Espaço total disponível: ~265mm (após margens + footer)
+                // ═══════════════════════════════════════════════════════════
+
+                // ─── CABEÇALHO (24mm) ────────────────────────────────────
+                const brasao = await getBrasaoDataURL();
+                const brasaoW = 18;  // mm
+                const brasaoH = 22;
+                const headerH = 24;
+
+                if (brasao) {
+                    try {
+                        pdf.addImage(brasao, 'PNG', M, M, brasaoW, brasaoH);
+                    } catch(e) { console.warn('addImage brasao falhou:', e); }
+                } else {
+                    pdf.setDrawColor(80); pdf.setLineWidth(0.4);
+                    pdf.rect(M, M, brasaoW, brasaoH);
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(80);
+                    pdf.text('SP', M + brasaoW/2, M + brasaoH/2 + 2, { align:'center' });
+                    pdf.setTextColor(0);
+                }
+
+                // Texto institucional centralizado entre brasao e margem direita
+                const centerX = M + brasaoW + ((PW - M) - (M + brasaoW)) / 2;
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(0);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', centerX, M+6, { align:'center' });
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(9.5);
+                pdf.text('SECRETARIA DE EDUCACAO', centerX, M+12, { align:'center' });
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(9.5);
+                pdf.text('DIVISAO DE ZELADORIA - DZEL', centerX, M+18, { align:'center' });
+
+                // Linha divisoria
+                pdf.setLineWidth(0.5); pdf.setDrawColor(0);
+                pdf.line(M, M + headerH, PW-M, M + headerH);
+
+                // Titulo
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(13);
+                pdf.text('RELATORIO CONSOLIDADO', PW/2, M + headerH + 7, { align:'center' });
+                pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5);
+                pdf.text('Periodo: ' + s(periodoLabel), PW/2, M + headerH + 12, { align:'center' });
+
+                let y = M + headerH + 17;  // y inicial: ~53mm
+
+                // ─── KPIs PRINCIPAIS — 4 cards (22mm) ────────────────────
+                const kpis = [
+                    { label: 'TOTAL ATENDIMENTOS', value: totalGeral.toLocaleString('pt-BR'), sub: 'Soma de todos os setores' },
+                    { label: 'EVENTOS REALIZADOS', value: String(listaEventos.length), sub: publicoEventos.toLocaleString('pt-BR') + ' Participantes' },
+                    { label: 'CHAMADOS MANUTENCAO', value: String(totalManutencao), sub: 'Predial + Ar Cond.' },
+                    { label: 'CRACHAS EMITIDOS', value: String(listaCrachas.length), sub: 'Solicitacoes atendidas' }
+                ];
+                const cardW = (PW - 2*M - 6) / 4;
+                const cardH = 22;
+                kpis.forEach((kpi, i) => {
+                    const x = M + i * (cardW + 2);
+                    pdf.setDrawColor(0); pdf.setLineWidth(0.4);
+                    pdf.setFillColor(248, 250, 252); pdf.rect(x, y, cardW, cardH, 'F');
+                    pdf.rect(x, y, cardW, cardH);
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(7);
+                    pdf.text(s(kpi.label), x+2.5, y+4.5);
+                    pdf.setFontSize(17);
+                    pdf.text(kpi.value, x+2.5, y+13.5);
+                    pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(80);
+                    pdf.text(s(kpi.sub), x+2.5, y+18.5);
+                    pdf.setTextColor(0);
+                });
+                y += cardH + 6;
+
+                // ─── VOLUME POR SETOR ────────────────────────────────────
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(11);
+                pdf.text('VOLUME DE ATENDIMENTO POR SETOR', M, y);
+                y += 4;
+
+                const setores = [
+                    { nome: 'Manutencao Predial', valor: counts['PREDIAL'] },
+                    { nome: 'Ar Condicionado',    valor: counts['AR'] },
+                    { nome: 'Limpeza / Copa',     valor: counts['LIMPEZA'] },
+                    { nome: 'Crachas',            valor: listaCrachas.length },
+                    { nome: 'Ramais',             valor: counts['RAMAL'] },
+                    { nome: 'Garagem',            valor: listaFrota.length },
+                    { nome: 'Recepcao',           valor: listaVisitantes.length },
+                    { nome: 'Eventos',            valor: listaEventos.length }
+                ].sort((a,b) => b.valor - a.valor);
+
+                const maxVal = Math.max(...setores.map(x => x.valor), 1);
+
+                pdf.setFillColor(30, 41, 59); pdf.rect(M, y, PW-2*M, 7, 'F');
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(255);
+                pdf.text('SETOR', M+3, y+5);
+                pdf.text('VOLUME', M + (PW-2*M)*0.45, y+5);
+                pdf.text('TOTAL', PW-M-12, y+5, { align:'right' });
+                pdf.setTextColor(0);
+                y += 7;
+
+                const rowH = 7;
+                const tableStartY = y;
+                setores.forEach((it, i) => {
+                    if (i % 2 === 0) {
+                        pdf.setFillColor(245, 248, 252);
+                        pdf.rect(M, y, PW-2*M, rowH, 'F');
+                    }
+                    pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(0);
+                    pdf.text(s(it.nome), M+3, y+4.8);
+                    const barX = M + (PW-2*M)*0.45;
+                    const barMaxW = (PW-2*M)*0.40;
+                    const barW = (it.valor / maxVal) * barMaxW;
+                    pdf.setFillColor(220, 230, 245);
+                    pdf.rect(barX, y+1.8, barMaxW, 3.2, 'F');
+                    pdf.setFillColor(59, 130, 246);
+                    pdf.rect(barX, y+1.8, Math.max(barW, 0.3), 3.2, 'F');
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+                    pdf.text(String(it.valor), PW-M-3, y+4.8, { align:'right' });
+                    y += rowH;
+                });
+                pdf.setDrawColor(180); pdf.setLineWidth(0.3);
+                pdf.rect(M, tableStartY-7, PW-2*M, setores.length*rowH + 7);
+                y += 6;
+
+                // ─── DEMANDAS POR STATUS — 4 caixas (18mm) ───────────────
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(0);
+                pdf.text('DEMANDAS POR STATUS', M, y);
+                y += 4;
+
+                const statusBoxes = [
+                    { lbl: 'PENDENTE',     val: dPend, fill: [254, 243, 199], stroke: [180, 140, 30] },
+                    { lbl: 'EM ANDAMENTO', val: dAnd,  fill: [219, 234, 254], stroke: [40, 100, 200] },
+                    { lbl: 'CONCLUIDO',    val: dConc, fill: [220, 252, 231], stroke: [30, 130, 80] },
+                    { lbl: 'TOTAL',        val: listaDemandas.length, fill: [241, 245, 249], stroke: [80, 90, 110] }
+                ];
+                const stCardW = (PW - 2*M - 6) / 4;
+                const stCardH = 18;
+                statusBoxes.forEach((sb, i) => {
+                    const x = M + i * (stCardW + 2);
+                    pdf.setFillColor(...sb.fill);
+                    pdf.rect(x, y, stCardW, stCardH, 'F');
+                    pdf.setDrawColor(...sb.stroke); pdf.setLineWidth(0.4);
+                    pdf.rect(x, y, stCardW, stCardH);
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.setTextColor(40);
+                    pdf.text(s(sb.lbl), x+3, y+5);
+                    pdf.setFontSize(15); pdf.setTextColor(0);
+                    pdf.text(String(sb.val), x+3, y+14);
+                });
+                y += stCardH + 7;
+
+                // ─── DETALHAMENTO POR CATEGORIA TECNICA ──────────────────
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(0);
+                pdf.text('DETALHAMENTO POR CATEGORIA TECNICA', M, y);
+                y += 4;
+
+                const cats = [
+                    { nome: 'PREDIAL', list: listaDemandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL') },
+                    { nome: 'AR CONDICIONADO', list: listaDemandas.filter(d => getCategoriaDemanda(d) === 'AR') },
+                    { nome: 'LIMPEZA', list: listaDemandas.filter(d => getCategoriaDemanda(d) === 'LIMPEZA') }
+                ];
+
+                pdf.setFillColor(30, 41, 59); pdf.rect(M, y, PW-2*M, 7, 'F');
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(255);
+                pdf.text('CATEGORIA',   M+3,                       y+5);
+                pdf.text('TOTAL',       M + (PW-2*M)*0.35,         y+5);
+                pdf.text('PENDENTE',    M + (PW-2*M)*0.50,         y+5);
+                pdf.text('ANDAMENTO',   M + (PW-2*M)*0.68,         y+5);
+                pdf.text('CONCLUIDO',   M + (PW-2*M)*0.86,         y+5);
+                pdf.setTextColor(0);
+                y += 7;
+
+                const catStart = y;
+                cats.forEach((c, i) => {
+                    if (i % 2 === 0) {
+                        pdf.setFillColor(245, 248, 252);
+                        pdf.rect(M, y, PW-2*M, rowH, 'F');
+                    }
+                    const p = c.list.filter(d => d.status === 'Pendente').length;
+                    const a = c.list.filter(d => d.status === 'Em Andamento').length;
+                    const cc = c.list.filter(d => d.status === 'Concluído').length;
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(0);
+                    pdf.text(s(c.nome),       M+3,                       y+4.8);
+                    pdf.setFont('helvetica','normal');
+                    pdf.text(String(c.list.length), M + (PW-2*M)*0.35,   y+4.8);
+                    pdf.text(String(p),        M + (PW-2*M)*0.50,        y+4.8);
+                    pdf.text(String(a),        M + (PW-2*M)*0.68,        y+4.8);
+                    pdf.text(String(cc),       M + (PW-2*M)*0.86,        y+4.8);
+                    y += rowH;
+                });
+                pdf.setDrawColor(180); pdf.setLineWidth(0.3);
+                pdf.rect(M, catStart-7, PW-2*M, cats.length*rowH + 7);
+                y += 6;
+
+                // ─── INDICADORES OPERACIONAIS — 8 mini-cards (18mm) ──────
+                pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(0);
+                pdf.text('INDICADORES OPERACIONAIS', M, y);
+                y += 4;
+
+                const fluxoMedio = Math.ceil(listaFrota.length / (filtroMes ? 30 : (listaFrota.length > 0 ? 365 : 1)));
+                const ind = [
+                    { lbl: 'SEGURANCA ELETRONICA', val: '161', sub: 'Cameras (CFTV) - Monitoramento 24h' },
+                    { lbl: 'FLUXO MEDIO GARAGEM',  val: String(fluxoMedio), sub: 'Veiculos por dia' },
+                    { lbl: 'GARAGEM - SERVIDORES', val: String(listaFrota.filter(f => f.tipo === 'servidor').length), sub: 'Acessos no periodo' },
+                    { lbl: 'GARAGEM - VISITANTES', val: String(listaFrota.filter(f => f.tipo === 'visitante').length), sub: 'Acessos no periodo' },
+                    { lbl: 'VISITANTES RECEBIDOS', val: String(listaVisitantes.length), sub: 'Total no periodo' },
+                    { lbl: 'EVENTOS - INTERNOS',   val: String(listaEventos.filter(e => e.tipo === 'Interno').length), sub: 'Realizados' },
+                    { lbl: 'EVENTOS - EXTERNOS',   val: String(listaEventos.filter(e => e.tipo === 'Externo').length), sub: 'Realizados' },
+                    { lbl: 'PUBLICO TOTAL',        val: publicoEventos.toLocaleString('pt-BR'), sub: 'Participantes em eventos' }
+                ];
+
+                const indCardW = (PW - 2*M - 6) / 4;
+                const indCardH = 18;
+                ind.forEach((it, i) => {
+                    const col = i % 4;
+                    const row = Math.floor(i / 4);
+                    const x = M + col * (indCardW + 2);
+                    const yy = y + row * (indCardH + 2);
+                    pdf.setDrawColor(0); pdf.setLineWidth(0.3);
+                    pdf.setFillColor(252, 252, 252); pdf.rect(x, yy, indCardW, indCardH, 'F');
+                    pdf.rect(x, yy, indCardW, indCardH);
+                    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(60);
+                    pdf.text(s(it.lbl), x+2, yy+4);
+                    pdf.setFontSize(13); pdf.setTextColor(0);
+                    pdf.text(s(it.val), x+2, yy+11);
+                    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5); pdf.setTextColor(110);
+                    pdf.text(s(it.sub), x+2, yy+15.5);
+                    pdf.setTextColor(0);
+                });
+                y += Math.ceil(ind.length / 4) * (indCardH + 2);
+
+                // y final previsto: ~265mm. Footer em PH-12 = 285mm. Folga: 20mm. ✓
+
+                // ─── RODAPÉ EM TODAS AS PÁGINAS ──────────────────────────
+                const dataAtual = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                let usuario = 'Sistema';
+                try {
+                    const u = JSON.parse(sessionStorage.getItem('dzel_user') || '{}');
+                    usuario = u.nome || u.email || 'Sistema';
+                } catch(e) {}
+
+                const totalPages = pdf.internal.getNumberOfPages();
+                for (let p = 1; p <= totalPages; p++) {
+                    pdf.setPage(p);
+                    pdf.setLineWidth(0.3); pdf.setDrawColor(180);
+                    pdf.line(M, PH-12, PW-M, PH-12);
+                    pdf.setFont('helvetica','italic'); pdf.setFontSize(7); pdf.setTextColor(120);
+                    pdf.text('Documento gerado em ' + dataAtual + ' por ' + s(usuario), M, PH-7);
+                    pdf.text('DZEL - Divisao de Zeladoria | COGESPA', PW/2, PH-7, { align:'center' });
+                    pdf.text('Pag. ' + p + ' / ' + totalPages, PW-M, PH-7, { align:'right' });
+                    pdf.setTextColor(0);
+                }
+
+                // ─── SALVAR / ABRIR ───────────────────────────────────────
+                const filename = 'Relatorio_DZEL_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.pdf';
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    const blob = pdf.output('blob');
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = filename; a.target = '_blank';
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 60000);
+                } else {
+                    pdf.save(filename);
+                }
+                if (typeof showToast === 'function') showToast('PDF gerado com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro gerar PDF dashboard:', err);
+                if (typeof showToast === 'function') showToast('Erro ao gerar PDF: ' + err.message, 'error');
+                else alert('Erro ao gerar PDF: ' + err.message);
+            }
+        }
+
         function criarLinhaTabela(d) {
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
@@ -4282,9 +4603,7 @@
                 const map = {};
                 const headersNorm = headers.map(h => ({ original: h, norm: normalizar(h) }));
                 for (const [campo, def] of Object.entries(CAMPOS)) {
-                    // Match exato pelo nome do campo
                     let achou = headersNorm.find(h => h.norm === normalizar(campo));
-                    // Match por alias
                     if (!achou) {
                         for (const alias of def.aliases) {
                             const aliasNorm = normalizar(alias);
@@ -4292,7 +4611,6 @@
                             if (achou) break;
                         }
                     }
-                    // Match parcial (contém)
                     if (!achou) {
                         for (const alias of def.aliases) {
                             const aliasNorm = normalizar(alias);
@@ -4309,7 +4627,6 @@
             function parseDataHora(valor) {
                 if (valor === null || valor === undefined || valor === '') return null;
                 let dt;
-                // Número serial Excel
                 if (typeof valor === 'number') {
                     const epoch = new Date(Date.UTC(1899, 11, 30));
                     const ms = valor * 86400 * 1000;
@@ -4318,7 +4635,6 @@
                     dt = valor;
                 } else {
                     const s = String(valor).trim();
-                    // Tenta formato DD/MM/YYYY HH:MM ou DD/MM/YY HH:MM
                     let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
                     if (m) {
                         let ano = parseInt(m[3]); if (ano < 100) ano += 2000;
@@ -4328,7 +4644,6 @@
                         const mm = m[5] ? parseInt(m[5]) : 0;
                         dt = new Date(ano, mes, dia, hh, mm);
                     } else {
-                        // Tenta YYYY-MM-DD
                         m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?/);
                         if (m) {
                             dt = new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]),
@@ -4379,7 +4694,7 @@
                     if (!solicitante) erros.push('Solicitante vazio');
                     if (!dtIni) erros.push('Data inválida');
                     return {
-                        _linha: idx+2, // +2 pois cabeçalho é linha 1 e arrays são 0-indexed
+                        _linha: idx+2,
                         _erros: erros,
                         numero_os: String(get('numero_os')||'').trim().toUpperCase(),
                         titulo: titulo.toUpperCase(),
@@ -4393,7 +4708,6 @@
                         data_fim: dtFim ? dtFim.iso : null
                     };
                 });
-                // Pré-seleciona apenas linhas válidas
                 selecionadas = new Set(preview.filter(p => p._erros.length === 0).map(p => p._linha));
             }
 
@@ -4413,7 +4727,6 @@
                     const el = document.getElementById('import-step-'+e);
                     if (el) el.style.display = e === etapa ? 'block' : 'none';
                 });
-                // Botões
                 const btnNext = document.getElementById('btn-import-next');
                 const btnBack = document.getElementById('btn-import-back');
                 const btnCancel = document.getElementById('btn-import-cancel');
@@ -4442,10 +4755,8 @@
 
             function carregarSheet(nomeSheet) {
                 const ws = workbook.Sheets[nomeSheet];
-                // Lê tudo como array de arrays para detectar a linha de cabeçalho mesmo com células vazias
                 const matriz = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false });
                 if (!matriz.length) { alert('A planilha está vazia.'); return; }
-                // Detecta a linha de cabeçalho — primeira linha não vazia com mais de 2 strings
                 let idxHeader = 0;
                 for (let i = 0; i < Math.min(matriz.length, 10); i++) {
                     const txts = matriz[i].filter(c => typeof c === 'string' && c.trim().length > 0);
@@ -4532,7 +4843,6 @@
                         </thead>
                         <tbody>${tbody}</tbody>
                     </table></div>`;
-                // Eventos de checkbox
                 document.querySelectorAll('#import-preview-table input[type="checkbox"][data-linha]').forEach(chk => {
                     chk.addEventListener('change', e => {
                         const linha = parseInt(e.target.dataset.linha);
@@ -4586,8 +4896,7 @@
                             erros.push(`Lote ${i/LOTE+1}: ${error.message}`);
                         } else {
                             inseridos += data.length;
-                            // Sync com Google Sheets (não bloqueia)
-                            data.forEach(d => syncSheets('demandas', 'insert', d));
+                            data.forEach(d => { try { syncSheets('demandas', 'insert', d); } catch(e) {} });
                         }
                     } catch (e) {
                         falhas += lote.length;
@@ -4596,7 +4905,7 @@
                     barra.value = Math.min(i + LOTE, total);
                     txt.textContent = `${barra.value} de ${total} processados…`;
                 }
-                await registrarLog('Importação', 'Demandas', `Importou ${inseridos} demanda(s) via planilha`);
+                try { await registrarLog('Importação', 'Demandas', `Importou ${inseridos} demanda(s) via planilha`); } catch(e) {}
                 document.getElementById('import-done-summary').innerHTML = `
                     <div style="text-align:center;padding:20px 0">
                         <i class="fas fa-${falhas===0?'check-circle':'exclamation-triangle'}" style="font-size:3rem;color:var(--${falhas===0?'success':'warning'});"></i>
@@ -4605,7 +4914,6 @@
                         ${falhas?`<p style="color:var(--danger)"><strong>${falhas}</strong> falha(s)</p><pre style="text-align:left;background:#fef2f2;padding:10px;border-radius:6px;font-size:0.75rem;max-height:120px;overflow:auto">${erros.join('\n')}</pre>`:''}
                     </div>`;
                 irParaEtapa('done');
-                // Recarrega lista
                 if (typeof carregarDados === 'function') carregarDados();
             }
 
@@ -4628,7 +4936,6 @@
                         const mapStep = document.getElementById('import-step-mapping').style.display !== 'none';
                         const prev = document.getElementById('import-step-preview').style.display !== 'none';
                         if (upload) {
-                            // Já processado no change do file — apenas avança
                             if (workbook) {
                                 if (workbook.SheetNames.length > 1) irParaEtapa('sheet');
                                 else { carregarSheet(workbook.SheetNames[0]); }
@@ -4657,7 +4964,7 @@
 
         window.abrirModalImport = () => ImportDemanda.abrir();
         window.fecharModalImport = () => ImportDemanda.fechar();
-        // Inicializa quando o DOM estiver pronto (script já está no fim do body)
+        // Inicializa quando o DOM estiver pronto
         ImportDemanda.init();
     </script>
 </body>
