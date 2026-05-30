@@ -1466,7 +1466,7 @@
                             </select>
                             <div><label style="font-size:0.8rem">Data / Hora</label><input type="datetime-local" id="oco-data" required></div>
                             <input type="text" id="oco-responsavel" placeholder="Responsável pelo Registro" required>
-                            <textarea id="oco-descricao" rows="3" placeholder="Descreva a ocorrência com detalhes..." required style="grid-column:1/-1; height:80px; resize:vertical;"></textarea>
+                            <textarea id="oco-descricao" rows="3" placeholder="Descreva a ocorrência com detalhes... (o texto fica exatamente como você digitar)" required style="grid-column:1/-1; height:80px; resize:vertical; text-transform:none;"></textarea>
                             <select id="oco-status-edit" style="display:none">
                                 <option value="Aberta">Aberta</option>
                                 <option value="Em Tratativa">Em Tratativa</option>
@@ -4437,7 +4437,7 @@
                 gravidade:   document.getElementById('oco-gravidade').value,
                 data_hora:   DateUtils.toDatabaseISO(document.getElementById('oco-data').value),
                 responsavel: document.getElementById('oco-responsavel').value.toUpperCase(),
-                descricao:   document.getElementById('oco-descricao').value.trim().toUpperCase(),
+                descricao:   document.getElementById('oco-descricao').value.trim(),
                 status:      statusN,
                 data_encerramento: null
             };
@@ -4576,9 +4576,11 @@
             const numero   = o.numero || String(o.id);
             const descricao = o.descricao || '';
 
-            const descSentence = descricao.toLowerCase()
-                .replace(/(^|[.!?]\s+)([a-z])/g, (_,a,b) => a+b.toUpperCase())
-                .replace(/^[a-z]/, c => c.toUpperCase());
+            // Texto LITERAL — exatamente como digitado. Sem capitalizacao automatica.
+            // O <div> usa white-space:pre-wrap (ver CSS .desc-box) para preservar
+            // quebras de linha e topicos. Apenas escapamos HTML por seguranca.
+            const descSentence = descricao
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
             // Linha extra de encerramento
             let encRow = '';
@@ -4676,7 +4678,11 @@
     padding: 8mm 6mm 6mm 6mm;
     font-size: 10.5pt;
     line-height: 6.2mm;
-    text-align: justify;
+    /* Texto literal: alinhado a esquerda + preserva quebras/topicos do usuario */
+    text-align: left;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* ═══ RODAPÉ ═══ */
@@ -4692,7 +4698,11 @@
     border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px;
     font-weight: 700; cursor: pointer; z-index: 9999; font-family: inherit;
   }
-  @media print { #btn-fechar { display: none !important; } }
+  @media print {
+    #btn-fechar { display: none !important; }
+    /* desc-box mantem flex:1 + ro-page min-height para PREENCHER a folha.
+       Para textos muito longos (multi-pagina), use o botao "Baixar PDF". */
+  }
 </style>
 </head>
 <body>
@@ -4812,14 +4822,6 @@
             // ── Sanitize ─────────────────────────────────────────────────────
             const s = v => String(v||'').normalize('NFD')
                 .replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'');
-
-            // Sentence case — primeira letra de cada frase maiúscula
-            const sentCase = str => {
-                if (!str) return '';
-                return str.toLowerCase()
-                    .replace(/(^|[.!?]\s+)([a-z])/g, (_,a,b) => a+b.toUpperCase())
-                    .replace(/^[a-z]/, c => c.toUpperCase());
-            };
 
             // Borda compartilhada entre células vizinhas (linha vertical fina)
             const vln = (x, y1, y2) => {
@@ -4966,33 +4968,24 @@
             // ════════════════════════════════════════════════════════════════
             Y = secHeader('2 - Descricao', Y);
 
-            const descTxt   = s(sentCase(o.descricao||''));
+            // Texto LITERAL — preserva exatamente o que foi digitado (maiusculas,
+            // quebras de linha, topicos). Sem sentCase, sem justificacao.
+            const descRaw = s(o.descricao || '');
 
             // Line-height: 391/240 × 10.5pt × 0.3528mm/pt = 6.04mm → 6.2mm
             pdf.setFontSize(10.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
             const bTxtW     = PW - 12;      // 5.9mm + 5.8mm = ~6mm cada lado
-            const descLines = pdf.splitTextToSize(descTxt, bTxtW);
+            // Quebra respeitando os ENTERs do usuario: cada paragrafo e processado
+            // separadamente, depois quebrado pela largura. Linhas vazias viram espaco.
+            const descLines = [];
+            (descRaw.length ? descRaw.split('\n') : ['']).forEach(par => {
+                if (par.trim() === '') { descLines.push(''); return; }
+                pdf.splitTextToSize(par, bTxtW).forEach(l => descLines.push(l));
+            });
             const lnH       = 6.2;
             const padTop    = 8;
             const padBot    = 6;
             const txtX      = OX + 6;
-
-            // Justificação manual (jc=both no DOCX)
-            function justLine(linha, py, ehUltima) {
-                const larg = pdf.getTextWidth(linha);
-                if (ehUltima || larg/bTxtW < 0.55 || !linha.trim()) {
-                    pdf.text(linha, txtX, py); return;
-                }
-                const pals = linha.split(' ').filter(p=>p.length>0);
-                if (pals.length<=1) { pdf.text(linha, txtX, py); return; }
-                const largPals = pals.reduce((sum,p)=>sum+pdf.getTextWidth(p),0);
-                const gap = (bTxtW-largPals)/(pals.length-1);
-                let cx = txtX;
-                pals.forEach((p,pi)=>{
-                    pdf.text(p,cx,py);
-                    if(pi<pals.length-1) cx+=pdf.getTextWidth(p)+gap;
-                });
-            }
 
             let restantes = [...descLines];
             while (restantes.length > 0) {
@@ -5010,9 +5003,9 @@
 
                 pdf.setFontSize(10.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...K);
                 lote.forEach((linha,i) => {
-                    const py       = Y + padTop + i*lnH;
-                    const ehUltima = (i===lote.length-1) && restantes.length===0;
-                    justLine(linha, py, ehUltima);
+                    const py = Y + padTop + i*lnH;
+                    // Alinhado a esquerda — preserva indentacao de topicos/listas
+                    if (linha) pdf.text(linha, txtX, py);
                 });
                 Y += boxH;
 
