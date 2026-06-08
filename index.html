@@ -741,6 +741,68 @@
         .os-sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
         .os-sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
         .os-footer-print { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
+
+        /* ======== SKELETON LOADERS (feedback de carregamento) ======== */
+        .skeleton-row td { padding: 0.9rem 1rem; }
+        .skeleton-row:hover td { background: transparent; }
+        .skeleton-bar {
+            height: 14px; border-radius: 6px; width: 100%;
+            background: linear-gradient(90deg, #eef2f7 25%, #dfe6ef 37%, #eef2f7 63%);
+            background-size: 400% 100%;
+            animation: skeleton-shimmer 1.4s ease infinite;
+        }
+        @keyframes skeleton-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+        /* ======== ESTADO VAZIO ======== */
+        .tabela-vazia {
+            text-align: center; color: var(--text-muted);
+            padding: 2.75rem 1rem !important; font-size: 0.9rem; font-weight: 500;
+        }
+
+        /* ======== PAGINAÇÃO ======== */
+        .pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; padding-top: 0.25rem;
+        }
+        .pagination:empty { display: none; }
+        .pagination-info { font-size: 0.8rem; color: var(--text-muted); }
+        .pagination-info strong { color: var(--text-secondary); font-weight: 700; }
+        .pagination-controls { display: flex; align-items: center; gap: 5px; }
+        .pagination-page {
+            font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);
+            padding: 0 0.6rem; font-family: 'JetBrains Mono', monospace;
+            min-width: 60px; text-align: center;
+        }
+        .pg-btn {
+            width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary);
+            border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem;
+            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+            -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+        }
+        .pg-btn:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 10px var(--accent-glow); }
+        .pg-btn:active:not(:disabled) { transform: translateY(0); }
+        .pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ======== POLIMENTO VISUAL & ACESSIBILIDADE ======== */
+        html { scroll-behavior: smooth; }
+        a:focus-visible, button:focus-visible, input:focus-visible,
+        select:focus-visible, textarea:focus-visible, .tab-btn:focus-visible {
+            outline: 2px solid var(--accent-light); outline-offset: 2px;
+        }
+        td { transition: background-color 0.12s ease; }
+        .action-btn:active { transform: translateY(0) scale(0.96); }
+        /* Respeita preferência de movimento reduzido */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+        }
+        /* Paginação no mobile — centraliza e amplia a área de toque */
+        @media (max-width: 768px) {
+            .pagination { justify-content: center; }
+            .pagination-info { width: 100%; text-align: center; order: 2; }
+            .pagination-controls { order: 1; }
+            .pg-btn { width: 38px; height: 38px; }
+        }
     </style>
 </head>
 <body>
@@ -1746,6 +1808,109 @@
             let t; return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
         }
 
+        // ════════════════════════════════════════════════════════════════
+        // PAGINAÇÃO CLIENT-SIDE (50/pág) + SKELETON LOADERS
+        // Renderiza apenas a "fatia" visível de cada tabela em vez de injetar
+        // milhares de <tr> de uma vez (fim dos travamentos com muitos registros).
+        // Filtros e contadores continuam operando sobre a lista completa —
+        // apenas o DOM é paginado.
+        // ════════════════════════════════════════════════════════════════
+        const PAGE_SIZE = 50;
+        const _pgState     = {};   // tableId -> página atual
+        const _pgFilterKey = {};   // tableId -> assinatura dos filtros (reseta página ao mudar)
+        const _pgRerender  = {};   // tableId -> função que refaz a renderização
+        const _TABELA_COLSPAN = {
+            'tabela-demandas': 6, 'tabela-predial': 6, 'tabela-ar': 6, 'tabela-limpeza': 6,
+            'tabela-visitantes': 6, 'tabela-veiculos': 8, 'tabela-eventos': 6,
+            'tabela-crachas': 6, 'tabela-ocorrencias': 7
+        };
+
+        // opts: { tableId, items, rowFn, colspan, emptyMsg, filterKey, rerender }
+        function renderPaginated(opts) {
+            const { tableId, items, rowFn, colspan, emptyMsg, filterKey, rerender } = opts;
+            _pgRerender[tableId] = rerender;
+            // Mudou o filtro/busca → volta à 1ª página.
+            // Mudou só o conjunto de dados (CRUD/realtime) → mantém a página.
+            if (_pgFilterKey[tableId] !== filterKey) {
+                _pgFilterKey[tableId] = filterKey;
+                _pgState[tableId]     = 1;
+            }
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            if (!tbody) return;
+            const total      = items.length;
+            const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            let   page       = _pgState[tableId] || 1;
+            if (page > totalPages) { page = totalPages; _pgState[tableId] = page; }
+            if (total === 0) {
+                tbody.innerHTML = `<tr><td colspan="${colspan}" class="tabela-vazia">${emptyMsg}</td></tr>`;
+                _renderPager(tableId, 1, 1, 0, 0, 0);
+                return;
+            }
+            const start = (page - 1) * PAGE_SIZE;
+            const end   = Math.min(start + PAGE_SIZE, total);
+            let html = '';
+            for (let i = start; i < end; i++) html += rowFn(items[i]);
+            tbody.innerHTML = html;
+            _renderPager(tableId, page, totalPages, total, start, end);
+        }
+
+        // Controles de navegação — criados dinamicamente após a .table-container
+        function _pagerEl(tableId) {
+            let el = document.getElementById('pager-' + tableId);
+            if (!el) {
+                const table = document.getElementById(tableId);
+                if (!table) return null;
+                const container = table.closest('.table-container') || table.parentNode;
+                el = document.createElement('div');
+                el.id        = 'pager-' + tableId;
+                el.className = 'pagination no-print';
+                container.parentNode.insertBefore(el, container.nextSibling);
+            }
+            return el;
+        }
+        function _renderPager(tableId, page, totalPages, total, start, end) {
+            const el = _pagerEl(tableId);
+            if (!el) return;
+            if (total <= PAGE_SIZE) { el.innerHTML = ''; return; }
+            el.innerHTML = `
+                <span class="pagination-info">Exibindo <strong>${start + 1}–${end}</strong> de <strong>${total}</strong></span>
+                <div class="pagination-controls">
+                    <button class="pg-btn" ${page <= 1 ? 'disabled' : ''} onclick="window.pgIr('${tableId}',1)" title="Primeira página"><i class="fas fa-angles-left"></i></button>
+                    <button class="pg-btn" ${page <= 1 ? 'disabled' : ''} onclick="window.pgDelta('${tableId}',-1)" title="Anterior"><i class="fas fa-angle-left"></i></button>
+                    <span class="pagination-page">${page} / ${totalPages}</span>
+                    <button class="pg-btn" ${page >= totalPages ? 'disabled' : ''} onclick="window.pgDelta('${tableId}',1)" title="Próxima"><i class="fas fa-angle-right"></i></button>
+                    <button class="pg-btn" ${page >= totalPages ? 'disabled' : ''} onclick="window.pgIr('${tableId}',${totalPages})" title="Última página"><i class="fas fa-angles-right"></i></button>
+                </div>`;
+        }
+        window.pgIr = function(tableId, page) {
+            _pgState[tableId] = page;
+            if (_pgRerender[tableId]) _pgRerender[tableId]();
+            _scrollTopoTabela(tableId);
+        };
+        window.pgDelta = function(tableId, delta) {
+            _pgState[tableId] = (_pgState[tableId] || 1) + delta;
+            if (_pgRerender[tableId]) _pgRerender[tableId]();
+            _scrollTopoTabela(tableId);
+        };
+        function _scrollTopoTabela(tableId) {
+            const t = document.getElementById(tableId);
+            if (!t) return;
+            const c = t.closest('.table-container');
+            if (c) c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Skeleton loader — feedback visual durante o 1º carregamento
+        let _skeletonMostrado = false;
+        function mostrarSkeleton(tableId, colspan, linhas = 8) {
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            if (!tbody) return;
+            let html = '';
+            for (let i = 0; i < linhas; i++) {
+                html += `<tr class="skeleton-row"><td colspan="${colspan}"><div class="skeleton-bar"></div></td></tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+
         const DateUtils = {
             getNowBRT: () => {
                 const now = new Date();
@@ -1931,6 +2096,11 @@
         async function carregarDados() {
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
+            // Skeleton apenas no 1º carregamento (não nos reloads de CRUD/realtime)
+            if (!_skeletonMostrado) {
+                _skeletonMostrado = true;
+                for (const id in _TABELA_COLSPAN) mostrarSkeleton(id, _TABELA_COLSPAN[id]);
+            }
             const promises = []; const keys = [];
             if (admin || p.demandas?.ver || p.predial?.ver || p.limpeza?.ver || p.ar?.ver) { keys.push('demandas'); promises.push(fetchAll('demandas', 'id', false)); }
             if (admin || p.visitantes?.ver) { keys.push('visitantes'); promises.push(fetchAll('visitantes', 'id', false)); }
@@ -3976,9 +4146,7 @@
             document.getElementById('dash-demanda-pendente').innerText = cPend;
             document.getElementById('dash-demanda-andamento').innerText = cAnd;
             document.getElementById('dash-demanda-concluido').innerText = cConc;
-            const tbody = document.querySelector('#tabela-demandas tbody');
-            if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma demanda encontrada.</td></tr>'; }
-            else { tbody.innerHTML = lista.map(d => criarLinhaTabela(d)).join(''); }
+            renderPaginated({ tableId: 'tabela-demandas', items: lista, rowFn: criarLinhaTabela, colspan: 6, emptyMsg: 'Nenhuma demanda encontrada.', filterKey: filtroMes + '|' + filtroStatus + '|' + filtroTexto, rerender: window.renderizarApenasDemandas });
         }
 
         window.renderizarAbasEspecificas = function() {
@@ -4007,9 +4175,7 @@
                 document.getElementById(`dash-${prefixo}-concluido`).innerText = cConc;
                 // Só reconstrói a tabela DOM se a aba estiver visível (performance)
                 if (activeTab === prefixo || !activeTab) {
-                    const tbody = document.querySelector(`#tabela-${prefixo} tbody`);
-                    if(listaFinal.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum registro.</td></tr>'; }
-                    else { tbody.innerHTML = listaFinal.map(d => criarLinhaTabelaSimples(d, prefixo)).join(''); }
+                    renderPaginated({ tableId: `tabela-${prefixo}`, items: listaFinal, rowFn: (d) => criarLinhaTabelaSimples(d, prefixo), colspan: 6, emptyMsg: 'Nenhum registro.', filterKey: mes + '|' + busca + '|' + status, rerender: window.renderizarAbasEspecificas });
                 }
             }
             // Sempre atualiza os cards das 3 abas (mantém KPIs sincronizados)
@@ -4101,9 +4267,12 @@
             const btnExport = document.getElementById('btn-export-visitantes');
             if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum visitante encontrado.</td></tr>'; }
-            else {
-                tbody.innerHTML = lista.map(v => {
+            renderPaginated({
+                tableId: 'tabela-visitantes', items: lista, colspan: 6,
+                emptyMsg: 'Nenhum visitante encontrado.',
+                filterKey: mes + '|' + termo,
+                rerender: window.renderizarApenasVisitantes,
+                rowFn: (v) => {
                     const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
                     const dataEnt = formatarDataHoraReal(v.entrada);
                     const dataSai = v.saida ? formatarDataHoraReal(v.saida) : '-';
@@ -4113,8 +4282,8 @@
                     if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
                     const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
                     return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small style="color:var(--text-muted)">${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small style="color:var(--text-muted)">${v.doc}</small></td><td>${v.responsavel}<br><small style="color:var(--text-muted)">${v.finalidade}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
-                }).join('');
-            }
+                }
+            });
         }
 
         window.baixaVisitante = async function(id) {
@@ -4186,9 +4355,12 @@
             const tbody = document.querySelector('#tabela-veiculos tbody');
             const btnExport = document.getElementById('btn-export-veiculos');
             if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum veículo encontrado.</td></tr>'; }
-            else {
-                tbody.innerHTML = lista.map(f => {
+            renderPaginated({
+                tableId: 'tabela-veiculos', items: lista, colspan: 8,
+                emptyMsg: 'Nenhum veículo encontrado.',
+                filterKey: mes + '|' + busca,
+                rerender: window.renderizarApenasFrota,
+                rowFn: (f) => {
                     const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';
                     const icon = f.tipo === 'servidor' ? '<span style="color:var(--servidor);font-size:0.75rem;font-weight:700;"><i class="fas fa-id-badge"></i> Servidor</span>' : '<span style="color:var(--visitante);font-size:0.75rem;font-weight:700;"><i class="fas fa-user-tag"></i> Visitante</span>';
                     const dIn = formatarDataHoraReal(f.hora_inicial);
@@ -4207,8 +4379,8 @@
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
                     return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
-                }).join('');
-            }
+                }
+            });
         }
 
         window.baixaVeiculo = function(id) {
@@ -4294,9 +4466,12 @@
             const tbody = document.querySelector('#tabela-eventos tbody');
             const btnExport = document.getElementById('btn-export-eventos');
             if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum evento encontrado.</td></tr>'; }
-            else {
-                tbody.innerHTML = lista.map(ev => {
+            renderPaginated({
+                tableId: 'tabela-eventos', items: lista, colspan: 6,
+                emptyMsg: 'Nenhum evento encontrado.',
+                filterKey: mes + '|' + busca,
+                rerender: window.renderizarApenasEventos,
+                rowFn: (ev) => {
                     const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
                     const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" style="color:#92400e;margin-left:6px;" title="Coffee Break"></i>' : '';
                     const obsText = ev.obs ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;margin-top:3px;border-top:1px dashed var(--border);padding-top:3px">${ev.obs}</div>` : '';
@@ -4304,8 +4479,8 @@
                     if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
                     return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${ev.tipo}</span></td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${ev.publico}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
-                }).join('');
-            }
+                }
+            });
         }
 
         // ---- CRACHÁS ----
@@ -4360,17 +4535,20 @@
             const tbody = document.querySelector('#tabela-crachas tbody');
             const btnExport = document.getElementById('btn-export-crachas');
             if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhum crachá encontrado.</td></tr>'; }
-            else {
-                tbody.innerHTML = lista.map(c => {
+            renderPaginated({
+                tableId: 'tabela-crachas', items: lista, colspan: 6,
+                emptyMsg: 'Nenhum crachá encontrado.',
+                filterKey: busca + '|' + statusFiltro,
+                rerender: window.renderizarApenasCrachas,
+                rowFn: (c) => {
                     let badgeClass = c.status === 'Solicitado' ? 'bg-cracha-solicitado' : c.status === 'Confeccionado' ? 'bg-cracha-confeccionado' : 'bg-cracha-entregue';
                     const dataEnt = c.data_entrega ? `<br><small style="color:var(--success);font-weight:600;"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : '';
                     let buttons = '';
                     if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
                     return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small style="color:var(--text-muted)">DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small style="color:var(--text-muted)">${c.cargo || '-'}</small></td><td>Sala: <strong>${c.sala || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
-                }).join('');
-            }
+                }
+            });
         }
 
         // Upload de foto
@@ -4518,13 +4696,14 @@
             document.getElementById('dash-oco-tratativa').innerText = lista.filter(o => o.status === 'Em Tratativa').length;
             document.getElementById('dash-oco-encerradas').innerText= lista.filter(o => o.status === 'Encerrada').length;
 
-            const tbody = document.querySelector('#tabela-ocorrencias tbody');
-            if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Nenhuma ocorrência encontrada.</td></tr>'; return; }
-
             const gravClass = { 'Baixa':'bg-concluido', 'Média':'bg-andamento', 'Alta':'bg-pendente', 'Crítica':'bg-critica' };
             const statClass = { 'Aberta':'bg-aberta', 'Em Tratativa':'bg-tratativa', 'Encerrada':'bg-encerrada' };
-
-            tbody.innerHTML = lista.map(o => {
+            renderPaginated({
+                tableId: 'tabela-ocorrencias', items: lista, colspan: 7,
+                emptyMsg: 'Nenhuma ocorrência encontrada.',
+                filterKey: mes + '|' + termo + '|' + stat,
+                rerender: window.renderizarApenasOcorrencias,
+                rowFn: (o) => {
                 const dataFmt = formatarDataHoraReal(o.data_hora);
                 const tempo   = o.status === 'Encerrada' && o.data_encerramento
                     ? `<span class="time-badge"><i class="fas fa-flag-checkered"></i> ${calcularTempoOco(o.data_hora, o.data_encerramento)}</span>`
@@ -4545,7 +4724,8 @@
                     <td>${tempo}</td>
                     <td style="min-width:170px">${btnWA}${btnPrint}${btnPDF}${btnEdit}${btnDel}</td>
                 </tr>`;
-            }).join('');
+                }
+            });
         };
 
         function calcularTempoOco(dataISOInicio, dataISOFim) {
