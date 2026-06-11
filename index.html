@@ -878,6 +878,28 @@
         </div>
     </div>
 
+    <div id="modal-concluir-demanda" class="modal-overlay no-print" onclick="if(event.target===this)fecharModalConcluir()">
+        <div class="modal-box" style="max-width:420px;">
+            <h3 style="color:var(--text-primary); margin-bottom:0.25rem;">
+                <i class="fas fa-check-circle" style="color:var(--success);"></i> Concluir Demanda
+            </h3>
+            <p id="concluir-info-demanda" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.25rem;"></p>
+            <input type="hidden" id="concluir-demanda-id">
+            <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">
+                <i class="fas fa-clock"></i> Data e Hora do Encerramento
+            </label>
+            <input type="datetime-local" id="concluir-hora" style="margin-bottom:1.25rem; font-size:16px;">
+            <button onclick="confirmarConclusaoDemanda()"
+                style="width:100%; background:linear-gradient(135deg,var(--success),#047857); color:white; border:none; padding:0.85rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; min-height:48px;">
+                <i class="fas fa-check-circle"></i> Confirmar Conclusão
+            </button>
+            <button onclick="fecharModalConcluir()"
+                style="width:100%; background:#f1f5f9; color:var(--text-secondary); border:1px solid var(--border); padding:0.65rem; border-radius:8px; cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.875rem; min-height:44px;">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
     <!-- Área de impressão (desktop fallback) -->
     <div id="area-impressao">
         <div class="os-container">
@@ -1220,7 +1242,12 @@
                             <select id="predial-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="predial-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="predial-hora" required></div>
-                            <select id="predial-status-edit" style="display:none"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <select id="predial-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('predial')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <div id="predial-encerramento-wrap" style="display:none">
+                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <input type="datetime-local" id="predial-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
+                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            </div>
                         </div>
                         <button type="submit" id="btn-submit-predial" class="btn-primary" style="background:linear-gradient(135deg,var(--predial),#dc2626);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Manutenção</button>
                         <button type="button" id="btn-cancel-predial" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('predial')">Cancelar Edição</button>
@@ -1262,7 +1289,12 @@
                             <select id="ar-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="ar-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="ar-hora" required></div>
-                            <select id="ar-status-edit" style="display:none"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <select id="ar-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('ar')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <div id="ar-encerramento-wrap" style="display:none">
+                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <input type="datetime-local" id="ar-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
+                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            </div>
                         </div>
                         <button type="submit" id="btn-submit-ar" class="btn-primary" style="background:linear-gradient(135deg,var(--ar),#1d4ed8);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Ar Condicionado</button>
                         <button type="button" id="btn-cancel-ar" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('ar')">Cancelar Edição</button>
@@ -1304,7 +1336,12 @@
                             <select id="limpeza-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
                             <div><label style="font-size:0.8rem">Data</label><input type="date" id="limpeza-data" required></div>
                             <div><label style="font-size:0.8rem">Horário</label><input type="time" id="limpeza-hora" required></div>
-                            <select id="limpeza-status-edit" style="display:none"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <select id="limpeza-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('limpeza')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
+                            <div id="limpeza-encerramento-wrap" style="display:none">
+                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <input type="datetime-local" id="limpeza-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
+                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            </div>
                         </div>
                         <button type="submit" id="btn-submit-limpeza" class="btn-primary" style="background:linear-gradient(135deg,var(--limpeza),#059669);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Limpeza</button>
                         <button type="button" id="btn-cancel-limpeza" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('limpeza')">Cancelar Edição</button>
@@ -2997,9 +3034,15 @@
                     upd.data_inicio_atendimento = DateUtils.getNowDatabaseISO();
                 }
                 if (novoStatus === 'Concluído') {
-                    upd.data_fim = (itemAntigo && itemAntigo.status === 'Concluído' && itemAntigo.data_fim)
-                        ? itemAntigo.data_fim
-                        : DateUtils.getNowDatabaseISO();
+                    const dataFimManual = document.getElementById(`${prefixo}-data-fim`).value;
+                    if (dataFimManual) {
+                        // Usuário escolheu o horário do encerramento — converter para ISO UTC
+                        upd.data_fim = DateUtils.toDatabaseISO(dataFimManual);
+                    } else if (itemAntigo && itemAntigo.status === 'Concluído' && itemAntigo.data_fim) {
+                        upd.data_fim = itemAntigo.data_fim;
+                    } else {
+                        upd.data_fim = DateUtils.getNowDatabaseISO();
+                    }
                 }
                 const { error } = await sb.from('demandas').update(upd).eq('id', idEdicao);
                 if (error) { alert('Erro: ' + error.message); return; }
@@ -3043,6 +3086,17 @@
             document.getElementById(`${prefixo}-hora`).value = d.hora || '00:00';
             const sel = document.getElementById(`${prefixo}-status-edit`);
             sel.style.display = 'block'; sel.value = d.status;
+            // Encerramento: mostrar se Concluído e preencher com data_fim existente
+            const wrapEnc = document.getElementById(`${prefixo}-encerramento-wrap`);
+            const inputFim = document.getElementById(`${prefixo}-data-fim`);
+            if (d.status === 'Concluído') {
+                wrapEnc.style.display = 'block';
+                if (d.data_fim) {
+                    const dtFim = new Date(d.data_fim);
+                    dtFim.setMinutes(dtFim.getMinutes() - dtFim.getTimezoneOffset());
+                    inputFim.value = dtFim.toISOString().slice(0, 16);
+                } else { inputFim.value = ''; }
+            } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
             const tit = document.getElementById(`titulo-form-${prefixo}`);
             if (tit) { if (!tit.dataset.original) tit.dataset.original = tit.innerHTML; tit.innerHTML = '<i class="fas fa-edit"></i> Editando O.S. ' + d.id; }
             const btn = document.getElementById(`btn-submit-${prefixo}`);
@@ -3055,6 +3109,39 @@
             document.getElementById(prefixo).scrollIntoView({ behavior: 'smooth' });
         }
 
+        // Mostra/esconde o campo de hora de encerramento conforme o status escolhido
+        window.toggleEncerramentoEspecifico = function(prefixo) {
+            const sel  = document.getElementById(`${prefixo}-status-edit`);
+            const wrap = document.getElementById(`${prefixo}-encerramento-wrap`);
+            if (wrap) wrap.style.display = (sel.value === 'Concluído' && sel.style.display !== 'none') ? 'block' : 'none';
+        }
+
+        // ── Modal "Concluir Demanda" (abas técnicas) — data/hora editável ──
+        function abrirModalConcluir(id) {
+            const d = demandas.find(i => i.id == id); if (!d) return;
+            document.getElementById('concluir-demanda-id').value = id;
+            document.getElementById('concluir-info-demanda').innerHTML =
+                `<strong>${d.titulo}</strong>${d.numero_os ? ' — O.S. ' + d.numero_os : ''}<br><small style="color:var(--text-muted)">Aberta em: ${formatarData(d.data)} ${d.hora || ''}</small>`;
+            document.getElementById('concluir-hora').value = DateUtils.getToInput();
+            document.getElementById('modal-concluir-demanda').style.display = 'flex';
+        }
+        window.fecharModalConcluir = function() {
+            document.getElementById('modal-concluir-demanda').style.display = 'none';
+        }
+        window.confirmarConclusaoDemanda = async function() {
+            const id = document.getElementById('concluir-demanda-id').value;
+            const horaLocal = document.getElementById('concluir-hora').value;
+            if (!horaLocal) { alert('Informe a data e hora do encerramento.'); return; }
+            const item = demandas.find(d => d.id == id); if (!item) return;
+            const upd = { status: 'Concluído', data_fim: DateUtils.toDatabaseISO(horaLocal) };
+            const { error } = await sb.from('demandas').update(upd).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            registrarLog('Edição', 'Demandas', `Concluiu demanda ID: ${id}`);
+            syncSheets('demandas', 'upsert', { ...item, ...upd });
+            fecharModalConcluir();
+            carregarDados();
+        }
+
         window.cancelarEdicaoDemandaEspecifica = function(prefixo) {
             document.getElementById(`${prefixo}-id-edit`).value = '';
             document.getElementById(`form-${prefixo}`).reset();
@@ -3062,6 +3149,8 @@
             document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10);
             document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16);
             document.getElementById(`${prefixo}-status-edit`).style.display = 'none';
+            const wrapEnc = document.getElementById(`${prefixo}-encerramento-wrap`);
+            if (wrapEnc) { wrapEnc.style.display = 'none'; document.getElementById(`${prefixo}-data-fim`).value = ''; }
             const tit = document.getElementById(`titulo-form-${prefixo}`);
             if (tit && tit.dataset.original) tit.innerHTML = tit.dataset.original;
             const btn = document.getElementById(`btn-submit-${prefixo}`);
@@ -4291,7 +4380,7 @@
             let badgeClass = d.status === 'Pendente' ? 'bg-pendente' : (d.status === 'Em Andamento' ? 'bg-andamento' : 'bg-concluido');
             let tempoStr = calcularTempoDecorrido(d.data, d.hora, d.data_fim);
             let tempoDisplay = (d.status === 'Concluído') ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>` : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
-            let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id})" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
+            let btnAvancar = (d.status !== 'Concluído' && pode(prefixo, 'editar')) ? `<button onclick="avancarStatus(${d.id}, '${prefixo}')" class="action-btn btn-check"><i class="fas fa-arrow-right"></i></button>` : '';
             let btnWA2   = `<button onclick="enviarWhatsAppDemanda(${d.id})" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print"><i class="fas fa-print"></i></button>`;
             let btnEdit  = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id}, '${prefixo}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
@@ -4362,8 +4451,13 @@
             renderizarAba('limpeza', 'LIMPEZA');
         }
 
-        window.avancarStatus = async function(id) {
+        window.avancarStatus = async function(id, origem) {
             const item = demandas.find(d => d.id == id); if(!item) return;
+            // Nas abas técnicas, concluir abre modal para escolher data/hora do encerramento
+            if (item.status === 'Em Andamento' && (origem === 'predial' || origem === 'ar' || origem === 'limpeza')) {
+                abrirModalConcluir(id);
+                return;
+            }
             let novoStatus = item.status, novaDataFim = item.data_fim, novaDataInicio = item.data_inicio_atendimento;
             if(item.status === 'Pendente') {
                 novoStatus = 'Em Andamento';
