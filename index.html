@@ -856,6 +856,28 @@
         </div>
     </div>
 
+    <div id="modal-saida-visitante" class="modal-overlay no-print" onclick="if(event.target===this)fecharModalSaidaVisitante()">
+        <div class="modal-box" style="max-width:420px;">
+            <h3 style="color:var(--text-primary); margin-bottom:0.25rem;">
+                <i class="fas fa-sign-out-alt" style="color:var(--danger);"></i> Registrar Saída
+            </h3>
+            <p id="saida-info-visitante" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.25rem;"></p>
+            <input type="hidden" id="saida-visitante-id">
+            <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">
+                <i class="fas fa-clock"></i> Horário de Saída
+            </label>
+            <input type="datetime-local" id="saida-vis-hora" style="margin-bottom:1.25rem; font-size:16px;">
+            <button onclick="confirmarSaidaVisitante()"
+                style="width:100%; background:linear-gradient(135deg,var(--danger),#991b1b); color:white; border:none; padding:0.85rem 1rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; min-height:48px;">
+                <i class="fas fa-check-circle"></i> Confirmar Saída
+            </button>
+            <button onclick="fecharModalSaidaVisitante()"
+                style="width:100%; background:#f1f5f9; color:var(--text-secondary); border:1px solid var(--border); padding:0.65rem; border-radius:8px; cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.875rem; min-height:44px;">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
     <!-- Área de impressão (desktop fallback) -->
     <div id="area-impressao">
         <div class="os-container">
@@ -1159,6 +1181,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-demanda" onchange="window.renderizarApenasDemandas()"></div>
                         <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
@@ -1203,6 +1226,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-predial" onchange="window.renderizarAbasEspecificas()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-predial" onchange="window.renderizarAbasEspecificas()">
@@ -1241,6 +1265,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-ar" onchange="window.renderizarAbasEspecificas()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-ar" onchange="window.renderizarAbasEspecificas()">
@@ -1279,6 +1304,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-limpeza" onchange="window.renderizarAbasEspecificas()">
@@ -1332,6 +1358,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-vis" onchange="window.renderizarApenasVisitantes()"></div>
                         <div class="filter-group"><label>Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
                         <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
@@ -1378,6 +1405,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-frota" onchange="window.renderizarApenasFrota()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
                         <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
@@ -1427,6 +1455,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-evento" onchange="window.renderizarApenasEventos()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
                         <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
@@ -1546,6 +1575,7 @@
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-oco" onchange="window.renderizarApenasOcorrencias()"></div>
+                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-oco" onchange="window.renderizarApenasOcorrencias()"></div>
                         <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-oco" onkeyup="window.renderizarApenasOcorrencias()" placeholder="Local, descrição..."></div>
                         <div class="filter-group"><label>Status:</label>
                             <select id="filtro-status-oco" onchange="window.renderizarApenasOcorrencias()">
@@ -1948,6 +1978,17 @@
             const datePart = parts[0].split('/').slice(0, 2).join('/');
             const timePart = parts[1] || '';
             return `${datePart} ${timePart}`;
+        }
+
+        // Dia local (BRT) em YYYY-MM-DD — usado pelo filtro "Dia" nos campos
+        // de timestamp (visitantes.entrada, frota.hora_inicial, ocorrencias.data_hora).
+        // Datas puras (YYYY-MM-DD) passam direto, sem conversão de fuso.
+        function diaLocalISO(valor) {
+            if (!valor) return '';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+            const d = new Date(valor);
+            if (isNaN(d.getTime())) return String(valor).slice(0, 10);
+            return d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
         }
 
         let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [];
@@ -4128,6 +4169,7 @@
 
         window.renderizarApenasDemandas = function() {
             const filtroMes = document.getElementById('filtro-mes-demanda').value;
+            const filtroDia = document.getElementById('filtro-dia-demanda').value;
             const filtroStatus = document.getElementById('filtro-status-demanda').value;
             const filtroTexto = document.getElementById('filtro-texto-demanda').value.toUpperCase();
             const lista = [];
@@ -4135,6 +4177,7 @@
             for (let i = 0, len = demandas.length; i < len; i++) {
                 const d = demandas[i];
                 if (filtroMes && !(d.data||'').startsWith(filtroMes)) continue;
+                if (filtroDia && (d.data||'') !== filtroDia) continue;
                 if (filtroStatus && d.status !== filtroStatus) continue;
                 if (filtroTexto && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada||'')).toUpperCase().includes(filtroTexto)) continue;
                 lista.push(d);
@@ -4146,13 +4189,14 @@
             document.getElementById('dash-demanda-pendente').innerText = cPend;
             document.getElementById('dash-demanda-andamento').innerText = cAnd;
             document.getElementById('dash-demanda-concluido').innerText = cConc;
-            renderPaginated({ tableId: 'tabela-demandas', items: lista, rowFn: criarLinhaTabela, colspan: 6, emptyMsg: 'Nenhuma demanda encontrada.', filterKey: filtroMes + '|' + filtroStatus + '|' + filtroTexto, rerender: window.renderizarApenasDemandas });
+            renderPaginated({ tableId: 'tabela-demandas', items: lista, rowFn: criarLinhaTabela, colspan: 6, emptyMsg: 'Nenhuma demanda encontrada.', filterKey: filtroMes + '|' + filtroDia + '|' + filtroStatus + '|' + filtroTexto, rerender: window.renderizarApenasDemandas });
         }
 
         window.renderizarAbasEspecificas = function() {
             const activeTab = document.querySelector('.section.active')?.id || '';
             function renderizarAba(prefixo, categoriaAlvo) {
                 const mes = document.getElementById(`filtro-mes-${prefixo}`).value;
+                const dia = document.getElementById(`filtro-dia-${prefixo}`).value;
                 const busca = document.getElementById(`filtro-busca-${prefixo}`).value.toUpperCase();
                 const status = document.getElementById(`filtro-status-${prefixo}`).value;
                 const listaFinal = [];
@@ -4161,6 +4205,7 @@
                     const d = demandas[i];
                     if (getCategoriaCached(d) !== categoriaAlvo) continue;
                     if (mes && !(d.data||'').startsWith(mes)) continue;
+                    if (dia && (d.data||'') !== dia) continue;
                     if (busca && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante).toUpperCase().includes(busca)) continue;
                     if (status && d.status !== status) continue;
                     listaFinal.push(d);
@@ -4175,7 +4220,7 @@
                 document.getElementById(`dash-${prefixo}-concluido`).innerText = cConc;
                 // Só reconstrói a tabela DOM se a aba estiver visível (performance)
                 if (activeTab === prefixo || !activeTab) {
-                    renderPaginated({ tableId: `tabela-${prefixo}`, items: listaFinal, rowFn: (d) => criarLinhaTabelaSimples(d, prefixo), colspan: 6, emptyMsg: 'Nenhum registro.', filterKey: mes + '|' + busca + '|' + status, rerender: window.renderizarAbasEspecificas });
+                    renderPaginated({ tableId: `tabela-${prefixo}`, items: listaFinal, rowFn: (d) => criarLinhaTabelaSimples(d, prefixo), colspan: 6, emptyMsg: 'Nenhum registro.', filterKey: mes + '|' + dia + '|' + busca + '|' + status, rerender: window.renderizarAbasEspecificas });
                 }
             }
             // Sempre atualiza os cards das 3 abas (mantém KPIs sincronizados)
@@ -4259,8 +4304,9 @@
 
         window.renderizarApenasVisitantes = function() {
             const mes = document.getElementById('filtro-mes-vis').value;
+            const dia = document.getElementById('filtro-dia-vis').value;
             const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();
-            const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateTermo; });
+            const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateDia = !dia || diaLocalISO(v.entrada) === dia; const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateDia && bateTermo; });
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
             const tbody = document.querySelector('#tabela-visitantes tbody');
@@ -4270,7 +4316,7 @@
             renderPaginated({
                 tableId: 'tabela-visitantes', items: lista, colspan: 6,
                 emptyMsg: 'Nenhum visitante encontrado.',
-                filterKey: mes + '|' + termo,
+                filterKey: mes + '|' + dia + '|' + termo,
                 rerender: window.renderizarApenasVisitantes,
                 rowFn: (v) => {
                     const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
@@ -4286,8 +4332,31 @@
             });
         }
 
-        window.baixaVisitante = async function(id) {
-            if(confirm('Confirmar saída do visitante?')) { const upd = { status: 'Saiu', saida: DateUtils.getNowDatabaseISO() }; await sb.from('visitantes').update(upd).eq('id', id); const item = visitantes.find(v=>v.id==id); syncSheets('visitantes','upsert',{...item,...upd}); carregarDados(); }
+        window.baixaVisitante = function(id) {
+            const v = visitantes.find(i => i.id == id); if (!v) return;
+            document.getElementById('saida-visitante-id').value = id;
+            document.getElementById('saida-info-visitante').innerHTML = `<strong>${v.nome}</strong>${v.empresa ? ' — ' + v.empresa : ''} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(v.entrada)}</small>`;
+            document.getElementById('saida-vis-hora').value = DateUtils.getToInput();
+            document.getElementById('modal-saida-visitante').style.display = 'flex';
+        }
+
+        window.fecharModalSaidaVisitante = function() {
+            document.getElementById('modal-saida-visitante').style.display = 'none';
+        }
+
+        window.confirmarSaidaVisitante = async function() {
+            const id = document.getElementById('saida-visitante-id').value;
+            const horaLocal = document.getElementById('saida-vis-hora').value;
+            if (!horaLocal) { alert('Informe o horário de saída.'); return; }
+            const upd = { status: 'Saiu', saida: DateUtils.toDatabaseISO(horaLocal) };
+            await sb.from('visitantes').update(upd).eq('id', id);
+            const item = visitantes.find(v => v.id == id);
+            if (item) {
+                registrarLog('Saída', 'Visitantes', `Saída: ${item.nome}`);
+                syncSheets('visitantes', 'upsert', { ...item, ...upd });
+            }
+            fecharModalSaidaVisitante();
+            carregarDados();
         }
 
         // ---- VEÍCULOS ----
@@ -4346,8 +4415,9 @@
 
         window.renderizarApenasFrota = function() {
             const mes = document.getElementById('filtro-mes-frota').value;
+            const dia = document.getElementById('filtro-dia-frota').value;
             const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();
-            const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bTexto; });
+            const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bDia = !dia || diaLocalISO(f.hora_inicial) === dia; const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bDia && bTexto; });
             document.getElementById('dash-frota-total').innerText = lista.length;
             document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;
             document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;
@@ -4358,7 +4428,7 @@
             renderPaginated({
                 tableId: 'tabela-veiculos', items: lista, colspan: 8,
                 emptyMsg: 'Nenhum veículo encontrado.',
-                filterKey: mes + '|' + busca,
+                filterKey: mes + '|' + dia + '|' + busca,
                 rerender: window.renderizarApenasFrota,
                 rowFn: (f) => {
                     const badge = f.status === 'Aberto' ? '<span class="badge bg-estacionado">ESTACIONADO</span>' : '<span class="badge bg-saiu">FINALIZADO</span>';
@@ -4457,8 +4527,9 @@
 
         window.renderizarApenasEventos = function() {
             const mes = document.getElementById('filtro-mes-evento').value;
+            const dia = document.getElementById('filtro-dia-evento').value;
             const busca = document.getElementById('filtro-busca-evento').value.toUpperCase();
-            const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bTexto; });
+            const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bDia = !dia || (ev.data||'') === dia; const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bDia && bTexto; });
             document.getElementById('dash-eventos-qtd').innerText = lista.length;
             document.getElementById('dash-eventos-interno').innerText = lista.filter(e => e.tipo === 'Interno').length;
             document.getElementById('dash-eventos-externo').innerText = lista.filter(e => e.tipo === 'Externo').length;
@@ -4469,7 +4540,7 @@
             renderPaginated({
                 tableId: 'tabela-eventos', items: lista, colspan: 6,
                 emptyMsg: 'Nenhum evento encontrado.',
-                filterKey: mes + '|' + busca,
+                filterKey: mes + '|' + dia + '|' + busca,
                 rerender: window.renderizarApenasEventos,
                 rowFn: (ev) => {
                     const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
@@ -4683,13 +4754,15 @@
 
         window.renderizarApenasOcorrencias = function() {
             const mes   = document.getElementById('filtro-mes-oco').value;
+            const dia   = document.getElementById('filtro-dia-oco').value;
             const termo = document.getElementById('filtro-busca-oco').value.toUpperCase();
             const stat  = document.getElementById('filtro-status-oco').value;
             const lista = ocorrencias.filter(o => {
                 const bM = !mes  || (o.data_hora || '').startsWith(mes);
+                const bD = !dia  || diaLocalISO(o.data_hora) === dia;
                 const bS = !stat || o.status === stat;
                 const bT = !termo || (o.unidade+o.local+o.categoria+o.descricao+o.responsavel+(o.numero||'')).toUpperCase().includes(termo);
-                return bM && bS && bT;
+                return bM && bD && bS && bT;
             });
             document.getElementById('dash-oco-total').innerText     = lista.length;
             document.getElementById('dash-oco-abertas').innerText   = lista.filter(o => o.status === 'Aberta').length;
@@ -4701,7 +4774,7 @@
             renderPaginated({
                 tableId: 'tabela-ocorrencias', items: lista, colspan: 7,
                 emptyMsg: 'Nenhuma ocorrência encontrada.',
-                filterKey: mes + '|' + termo + '|' + stat,
+                filterKey: mes + '|' + dia + '|' + termo + '|' + stat,
                 rerender: window.renderizarApenasOcorrencias,
                 rowFn: (o) => {
                 const dataFmt = formatarDataHoraReal(o.data_hora);
