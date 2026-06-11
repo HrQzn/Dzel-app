@@ -132,50 +132,95 @@
             }
         }
 
-        /* ======== LOGIN ======== */
+        /* ======== LOGIN (tema escuro premium) ======== */
         #login-overlay {
             position: fixed; inset: 0;
-            background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 50%, #0f2942 100%);
+            background: #0a0d14;
             z-index: 9999; display: flex; justify-content: center; align-items: center;
             padding: 20px;
         }
+        /* grade sutil ao fundo, com fade nas bordas */
         #login-overlay::before {
             content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse at 30% 60%, rgba(59,130,246,0.15) 0%, transparent 60%),
-                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.1) 0%, transparent 50%);
+            background-image:
+                linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+            background-size: 46px 46px;
+            -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 35%, transparent 100%);
+                    mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 35%, transparent 100%);
+        }
+        /* brilho dourado quente (canto superior direito) */
+        #login-overlay::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 50% 45% at 82% 16%, rgba(212,175,122,0.16) 0%, transparent 60%),
+                radial-gradient(ellipse 42% 42% at 14% 88%, rgba(80,110,160,0.10) 0%, transparent 60%);
         }
         .login-box {
-            background: rgba(255,255,255,0.04); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1);
-            padding: 2.5rem; border-radius: var(--radius-xl); width: 100%; max-width: 400px;
-            text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.4); position: relative; z-index: 1;
+            background: linear-gradient(180deg, rgba(26,30,40,0.92), rgba(17,20,28,0.95));
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 2.5rem 2.25rem; border-radius: 22px; width: 100%; max-width: 410px;
+            text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.55); position: relative; z-index: 1;
             animation: slideUp 0.5s ease;
         }
         .login-logo {
-            width: 60px; height: 60px; background: linear-gradient(135deg, var(--accent), #6366f1);
-            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.5rem; font-size: 1.5rem; color: white; box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+            width: 64px; height: 64px;
+            background: linear-gradient(150deg, rgba(212,175,122,0.20), rgba(212,175,122,0.04));
+            border: 1px solid rgba(212,175,122,0.35);
+            border-radius: 18px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem; font-size: 1.5rem; color: #e3c08d;
+            box-shadow: 0 8px 24px rgba(212,175,122,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
         }
-        .login-box h2 { color: white; font-size: 1.4rem; font-weight: 700; margin-bottom: 0.4rem; }
-        .login-box p { color: rgba(255,255,255,0.5); font-size: 0.875rem; margin-bottom: 1.5rem; }
+        .login-box h2 {
+            color: #f4f6fa; font-size: 1.7rem; font-weight: 700; margin-bottom: 0.5rem;
+            font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.2px;
+        }
+        .login-box > p { color: rgba(255,255,255,0.45); font-size: 0.875rem; margin-bottom: 1.75rem; }
+        .login-field { position: relative; margin-bottom: 0.9rem; }
+        .login-field .login-ic {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: rgba(255,255,255,0.35); font-size: 0.9rem; pointer-events: none;
+        }
         .login-box input {
-            width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-            color: white; padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem;
-            font-size: 0.95rem; transition: all 0.2s;
+            width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; padding: 0.9rem 1rem 0.9rem 2.6rem; border-radius: 12px; margin: 0;
+            font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-        .login-box input::placeholder { color: rgba(255,255,255,0.35); }
-        .login-box input:focus { outline: none; border-color: var(--accent); background: rgba(59,130,246,0.1); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        #login-pass { padding-right: 2.9rem; }
+        .login-box input::placeholder { color: rgba(255,255,255,0.32); }
+        .login-box input:focus {
+            outline: none; border-color: rgba(212,175,122,0.6);
+            background: rgba(212,175,122,0.06); box-shadow: 0 0 0 3px rgba(212,175,122,0.14);
+        }
+        .login-eye {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer;
+            padding: 8px; font-size: 0.95rem; line-height: 1; border-radius: 8px; transition: color 0.2s;
+        }
+        .login-eye:hover { color: #e3c08d; }
+        .login-forgot-row { text-align: right; margin: -0.15rem 0 1.3rem; }
+        .login-forgot {
+            background: none; border: none; cursor: pointer; padding: 0;
+            color: rgba(255,255,255,0.45); font-size: 0.8rem; font-family: inherit; transition: color 0.2s;
+        }
+        .login-forgot:hover { color: #e3c08d; }
         .login-btn {
-            width: 100%; background: linear-gradient(135deg, var(--accent), #6366f1);
-            color: white; border: none; padding: 0.9rem; border-radius: var(--radius-sm);
-            font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;
-            margin-top: 0.25rem; letter-spacing: 0.3px;
+            width: 100%; background: linear-gradient(135deg, #e7caa0 0%, #d4af7a 52%, #c79a5b 100%);
+            color: #2a1f0c; border: none; padding: 0.95rem; border-radius: 12px;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer; letter-spacing: 0.2px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
         }
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
-        .login-error { color: #fca5a5; font-size: 0.85rem; margin-top: 10px; display: none; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(212,175,122,0.3); filter: brightness(1.04); }
+        .login-btn:active { transform: translateY(0); }
+        .login-error { color: #fca5a5; font-size: 0.85rem; margin-top: 12px; display: none; }
         @media (max-width: 600px) {
-            .login-box { padding: 1.75rem 1.25rem; }
-            .login-box input { font-size: 16px; padding: 0.9rem 1rem; min-height: 48px; }
-            .login-btn { min-height: 48px; font-size: 1rem; }
+            .login-box { padding: 1.9rem 1.4rem; }
+            .login-box h2 { font-size: 1.5rem; }
+            .login-box input { font-size: 16px; padding: 0.95rem 1rem 0.95rem 2.6rem; min-height: 50px; }
+            #login-pass { padding-right: 2.9rem; }
+            .login-btn { min-height: 50px; font-size: 1rem; }
         }
 
         /* ======== APP LAYOUT — DESKTOP ======== */
@@ -1006,11 +1051,21 @@
     <div id="login-overlay">
         <div class="login-box">
             <div class="login-logo"><i class="fas fa-building"></i></div>
-            <h2>Acesso Restrito</h2>
+            <h2>Bem-vindo de volta</h2>
             <p>Divisão de Zeladoria — COGESPA</p>
-            <input type="text" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email">
-            <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)" autocomplete="current-password">
-            <button onclick="fazerLogin()" class="login-btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <div class="login-field">
+                <i class="fas fa-envelope login-ic"></i>
+                <input type="text" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email">
+            </div>
+            <div class="login-field">
+                <i class="fas fa-lock login-ic"></i>
+                <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)" autocomplete="current-password">
+                <button type="button" class="login-eye" onclick="toggleLoginPass()" title="Mostrar/ocultar senha" aria-label="Mostrar ou ocultar senha"><i class="fas fa-eye" id="login-eye-icon"></i></button>
+            </div>
+            <div class="login-forgot-row">
+                <button type="button" class="login-forgot" onclick="esqueceuSenha()">Esqueceu a senha?</button>
+            </div>
+            <button onclick="fazerLogin()" class="login-btn">Entrar na conta <i class="fas fa-arrow-right"></i></button>
             <p id="login-error" class="login-error"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos!</p>
         </div>
     </div>
@@ -2108,6 +2163,17 @@
         });
 
         window.checkEnter = function(e) { if(e.key === 'Enter') window.fazerLogin(); }
+        window.toggleLoginPass = function() {
+            const inp = document.getElementById('login-pass');
+            const ic  = document.getElementById('login-eye-icon');
+            const mostrar = inp.type === 'password';
+            inp.type = mostrar ? 'text' : 'password';
+            ic.classList.toggle('fa-eye', !mostrar);
+            ic.classList.toggle('fa-eye-slash', mostrar);
+        }
+        window.esqueceuSenha = function() {
+            alert('Para redefinir sua senha, contate o administrador do sistema (Divisão de Zeladoria — COGESPA).');
+        }
         window.fazerLogin = async function() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-pass').value;
