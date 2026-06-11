@@ -3743,7 +3743,7 @@
   @page { size: A4 portrait; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; color: #000; background: #fff; }
-  .os-container { border: 2px solid #000; display: flex; flex-direction: column; min-height: 270mm; width: 100%; }
+  .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 279mm; width: 100%; }
   .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
   .row:last-child { border-bottom: none; }
   .row.thick { border-bottom: 2px solid #000; }
@@ -5154,7 +5154,7 @@
   /* Container = 190mm (PW do PDF) */
   .ro-page {
     width: 190mm;
-    min-height: 280mm;
+    height: 281mm;          /* altura definida — garante que .desc-box (flex:1) preencha a folha A4 na impressão */
     display: flex;
     flex-direction: column;
   }
