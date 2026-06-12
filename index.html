@@ -3515,6 +3515,10 @@
 
                 // ── Nº OS: centralizado na célula direita, abaixo do logo ─
                 const osNum = d.numero_os ? d.numero_os : d.id;
+            // [X] marcado fica verde-negrito, como no DOCX de referência
+            const ck = (m, txt) => m === '[X]'
+                ? `<span class="ck-on">[X] ${txt}</span>`
+                : `[ ] ${txt}`;
                 if (!logoSrc) {
                     // Sem logo: mostra "ORDEM DE SERVICO" acima do número
                     pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
@@ -3740,42 +3744,33 @@
 <base href="${baseHref}">
 <title>O.S. ${osNum}</title>
 <style>
-  @page { size: A4 portrait; margin: 8mm; }
+  /* Réplica fiel do DOCX OS_4859: tabela 200mm, 7 colunas, alturas exatas */
+  @page { size: A4 portrait; margin: 8.1mm 5mm 4.9mm 5mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; color: #000; background: #fff; }
-  html, body { height: 100%; }
-  /* Esqueleto em tabela: célula .os-fill-cell (height:100%) preenche a folha A4
-     de forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
-  /* calc(100% - 8mm): deixa espaço p/ o rodapé "Documento gerado" (fora da
-     moldura) não transbordar para uma 2ª página. */
-  .os-container { border: 2px solid #000; width: 100%; border-collapse: collapse; }
-  .os-container > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
-  .os-fill-cell { height: 100%; }
-  .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
-  .row:last-child { border-bottom: none; }
-  .row.thick { border-bottom: 2px solid #000; }
-  .row.expand { height: 87.6mm; align-items: stretch; }
-  .cell { padding: 6px 8px; display: flex; flex-direction: column; }
-  .logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
-  .logo-box img { max-height: 70px; width: auto; }
-  .hdr-c { text-align: center; border-right: 1px solid #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; flex: 0 0 60%; max-width: 60%; }
-  .hdr-c h3 { margin: 0; font-size: 14px; }
-  .hdr-c h4 { margin: 4px 0; font-size: 12px; }
-  .hdr-c p  { margin: 0; font-size: 11px; font-weight: bold; }
-  .hdr-r { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; }
-  .os-num { color: #c0392b; font-size: 16px; font-weight: bold; margin: 0; }
-  .sec { background: #E5E5E5; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
-  .sec.top { border-top: 1px solid #000; }
-  .lbl { font-size: 10px; font-weight: bold; color: #505050; margin-bottom: 4px; }
-  .val { font-size: 12px; text-transform: uppercase; }
-  .val.big { font-size: 13px; font-weight: bold; padding-top: 5px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
-  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
-  .sigs { min-height: 90px; align-items: flex-end; padding: 20px 0 15px; }
-  .sig { flex: 1; text-align: center; padding: 0 15px; }
-  .sig-line { border-top: 1px solid #000; font-size: 11px; font-weight: bold; padding-top: 6px; margin-top: 50px; }
-  .sig-line span { font-size: 10px; font-weight: normal; color: #555; display: block; margin-top: 2px; }
-  .footer { text-align: center; font-size: 10px; font-style: italic; margin-top: 6px; color: #555; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
+  table.os { width: 200mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
+  table.os td { border: 0.5pt solid #000; vertical-align: top; padding: 1mm 2mm; }
+  td.sec { background: #E5E5E5; text-align: center; font-weight: bold; font-size: 8pt; vertical-align: middle; padding: 0.6mm 2mm; }
+  .lbl { display: block; font-size: 7pt; font-weight: bold; color: #505050; margin-bottom: 1mm; }
+  .val { font-size: 9pt; text-transform: uppercase; }
+  .val.big { font-size: 10pt; font-weight: bold; }
+  td.hdr-brasao { text-align: center; vertical-align: middle; }
+  td.hdr-brasao img { height: 17mm; width: auto; }
+  td.hdr-centro { text-align: center; vertical-align: middle; }
+  .h-gov { font-size: 10pt; font-weight: bold; }
+  .h-sec { font-size: 9pt; font-weight: bold; }
+  .h-coord { font-size: 7pt; margin-top: 0.5mm; }
+  td.hdr-num { text-align: center; vertical-align: middle; }
+  td.hdr-num img { max-width: 44mm; }
+  .os-num { color: #C0392B; font-size: 13pt; font-weight: bold; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
+  .ck-on { color: #007800; font-weight: bold; }
+  .fill-lines { font-size: 8pt; font-weight: bold; color: #505050; margin-top: 1.6mm; }
+  td.sig { vertical-align: bottom; text-align: center; padding-bottom: 2.5mm; }
+  .sig-line { border-top: 0.75pt solid #000; width: 82%; margin: 0 auto; padding-top: 1.2mm; font-size: 8pt; font-weight: bold; }
+  .sig-line span { display: block; font-size: 7pt; font-weight: normal; color: #505050; margin-top: 0.5mm; }
+  .footer { text-align: center; font-size: 7.5pt; font-style: italic; margin-top: 2.5mm; color: #555; }
   /* Botão fechar — visível na tela, oculto na impressão */
   #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
     padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999; }
@@ -3783,120 +3778,73 @@
 </style>
 </head>
 <body>
-<button id="btn-fechar" onclick="window.close()">✕ Fechar</button>
+<button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
-<table class="os-container"><tr><td class="os-top-cell">
-  <div class="row thick">
-    <div class="logo-box"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></div>
-    <div class="hdr-c">
-      <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
-      <h4>SECRETARIA DA EDUCAÇÃO</h4>
-      <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
-    </div>
-    <div class="hdr-r">
-      ${topTextHTML}
-      ${logoHTML}
-      <h3 class="os-num">${osLabel}${osNum}</h3>
-    </div>
-  </div>
-
-  <div class="sec">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
-  <div class="row">
-    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
-      <div class="lbl">DATA E HORA DE ABERTURA</div>
-      <div class="val">${dataBr}, ${d.hora || '--:--'}</div>
-    </div>
-    <div class="cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-      <div class="lbl">SOLICITANTE / CONTATO</div>
-      <div class="val">${(d.solicitante||'').toUpperCase()}</div>
-    </div>
-    <div class="cell" style="flex:0 0 25%;max-width:25%;">
-      <div class="lbl">PRIORIDADE NO SISTEMA</div>
-      <div class="val">${(d.prioridade||'').toUpperCase()}</div>
-    </div>
-  </div>
-  <div class="row thick">
-    <div class="cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
-      <div class="lbl">UNIDADE / SETOR DE ORIGEM</div>
-      <div class="val">${(d.setor||'').toUpperCase()}</div>
-    </div>
-    <div class="cell" style="flex:0 0 25%;max-width:25%;">
-      <div class="lbl">STATUS ATUAL</div>
-      <div class="val">${(d.status||'').toUpperCase()}</div>
-    </div>
-  </div>
-
-  <div class="sec">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
-  <div class="row thick" style="min-height:80px;">
-    <div class="cell" style="flex:1;">
-      <div class="val big">${(d.titulo||'').toUpperCase()}</div>
-    </div>
-  </div>
-
-  <div class="sec">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
-  <div class="row">
-    <div class="cell" style="flex:1;">
-      <div class="lbl">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
+<table class="os">
+  <colgroup><col style="width:30mm"><col style="width:20mm"><col style="width:16.7mm"><col style="width:33.3mm"><col style="width:33.3mm"><col style="width:16.7mm"><col style="width:50mm"></colgroup>
+  <tr style="height:21.6mm;">
+    <td class="hdr-brasao"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></td>
+    <td class="hdr-centro" colspan="5">
+      <div class="h-gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
+      <div class="h-sec">SECRETARIA DA EDUCA\u00C7\u00C3O</div>
+      <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVIS\u00C3O DE ZELADORIA</div>
+    </td>
+    <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${osNum}</div></td>
+  </tr>
+  <tr style="height:4.6mm;"><td class="sec" colspan="7">1. IDENTIFICA\u00C7\u00C3O DA SOLICITA\u00C7\u00C3O</td></tr>
+  <tr style="height:10.6mm;">
+    <td colspan="2"><span class="lbl">DATA E HORA DE ABERTURA</span><span class="val">${dataBr}  ${d.hora || '--:--'}</span></td>
+    <td colspan="4"><span class="lbl">SOLICITANTE / CONTATO</span><span class="val">${(d.solicitante||'').toUpperCase()}</span></td>
+    <td><span class="lbl">PRIORIDADE NO SISTEMA</span><span class="val">${(d.prioridade||'').toUpperCase()}</span></td>
+  </tr>
+  <tr style="height:10.5mm;">
+    <td colspan="6"><span class="lbl">UNIDADE / SETOR DE ORIGEM</span><span class="val">${(d.setor||'').toUpperCase()}</span></td>
+    <td><span class="lbl">STATUS ATUAL</span><span class="val">${(d.status||'').toUpperCase()}</span></td>
+  </tr>
+  <tr style="height:4.6mm;"><td class="sec" colspan="7">2. DESCRI\u00C7\u00C3O DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</td></tr>
+  <tr style="height:15.8mm;"><td colspan="7"><span class="val big">${(d.titulo||'').toUpperCase()}</span></td></tr>
+  <tr style="height:4.6mm;"><td class="sec" colspan="7">3. PARECER T\u00C9CNICO E EXECU\u00C7\u00C3O (PREENCHIMENTO PELA EQUIPE)</td></tr>
+  <tr style="height:29.6mm;">
+    <td colspan="7">
+      <span class="lbl">EQUIPE RESPONS\u00C1VEL / CONTRATADA ATRIBU\u00CDDA</span>
       <div class="grid3">
-        <div>${chks.limpeza} LIMPEZA PREDIAL</div>
-        <div>${chks.ar} AR CONDICIONADO</div>
-        <div>${chks.manut} MANUTENÇÃO PREDIAL</div>
-        <div>${chks.elevador} MANUT. DE ELEVADORES</div>
-        <div>${chks.ti} SUPORTE TI</div>
-        <div>${chks.telefonia} TELEFONIA</div>
-        <div>${chks.extintores} MANUT. E RECARGA EXTINTORES</div>
-        <div>☐ OUTROS: ______________________</div>
+        <div>${ck(chks.limpeza,'LIMPEZA PREDIAL')}</div>
+        <div>${ck(chks.ar,'AR CONDICIONADO')}</div>
+        <div>${ck(chks.manut,'MANUTEN\u00C7\u00C3O PREDIAL')}</div>
+        <div>${ck(chks.elevador,'MANUT. DE ELEVADORES')}</div>
+        <div>${ck(chks.ti,'SUPORTE TI')}</div>
+        <div>${ck(chks.telefonia,'TELEFONIA')}</div>
+        <div>${ck(chks.extintores,'MANUT. E RECARGA EXTINTORES')}</div>
+        <div style="grid-column:span 2;">[ ] OUTROS: __________________________________</div>
       </div>
-    </div>
-  </div>
-  <div class="row thick">
-    <div class="cell" style="flex:1;">
-      <div class="lbl">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
+    </td>
+  </tr>
+  <tr style="height:34.2mm;">
+    <td colspan="7">
+      <span class="lbl">LOCAL DE ATUA\u00C7\u00C3O / PR\u00C9DIO VINCULADO</span>
       <div class="grid4">
-        <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
-        <div>☐ CASA VERDE</div><div>☐ SÃO DOMINGOS</div><div>☐ CAJAMAR</div><div>☐ TENENTE PENA</div>
-        <div>☐ CENTRO OESTE</div><div>☐ CAPE</div>
-        <div style="grid-column:span 2;">☐ OUTRO: ___________________________</div>
+        <div>[ ] SEDE</div><div>[ ] AROUCHE</div><div>[ ] EFAPE</div><div>[ ] ARM\u00CANIA</div>
+        <div>[ ] CASA VERDE</div><div>[ ] S\u00C3O DOMINGOS</div><div>[ ] CAJAMAR</div><div>[ ] TENENTE PENA</div>
+        <div>[ ] CENTRO OESTE</div><div>[ ] CAPE</div>
+        <div style="grid-column:span 2;">[ ] OUTRO: ______________________________________</div>
       </div>
-    </div>
-  </div>
-
-  </td></tr>
-  <tr><td class="os-fill-cell">
-  <div class="row expand">
-    <div class="cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-      <div class="lbl">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
-      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(descricao||'').toUpperCase()}</div>
-    </div>
-    <div class="cell" style="flex:0 0 50%;max-width:50%;">
-      <div class="lbl">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
-      <div style="font-size:12px;white-space:pre-wrap;margin-top:5px;">${(materiais||'').toUpperCase()}</div>
-    </div>
-  </div>
-
-  </td></tr>
-  <tr><td class="os-bot-cell">
-  <div class="sec top">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
-  <div class="row">
-    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;align-items:center;">
-      <div class="lbl" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
-      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
-    </div>
-    <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;align-items:center;">
-      <div class="lbl" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
-      <div style="margin-top:15px;font-size:12px;">___/___/20___ ÀS ___:___</div>
-    </div>
-    <div class="cell" style="flex:0 0 50%;max-width:50%;">
-      <div class="lbl">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
-    </div>
-  </div>
-
-  <div class="row sigs">
-    <div class="sig"><div class="sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
-    <div class="sig"><div class="sig-line">FISCAL<span>Carimbo e Assinatura</span></div></div>
-    <div class="sig"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
-  </div>
-  </td></tr>
+    </td>
+  </tr>
+  <tr style="height:87.6mm;">
+    <td colspan="4"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(descricao||'').toUpperCase()}</div></td>
+    <td colspan="3"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(materiais||'').toUpperCase()}</div></td>
+  </tr>
+  <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
+  <tr style="height:13.6mm;">
+    <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
+    <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
+    <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>
+  </tr>
+  <tr style="height:27.4mm;">
+    <td class="sig" colspan="3"><div class="sig-line">T\u00C9CNICO EXECUTOR<span>Nome leg\u00EDvel / Matr\u00EDcula / Empresa</span></div></td>
+    <td class="sig" colspan="2"><div class="sig-line">FISCAL<span>Carimbo e Assinatura</span></div></td>
+    <td class="sig" colspan="2"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do servi\u00E7o</span></div></td>
+  </tr>
 </table>
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
@@ -5150,6 +5098,10 @@
               </tr>`;
             }
 
+            // Altura da caixa de descrição (do DOCX): 163,5mm com a linha de
+            // encerramento; sem ela, compensa os 11,7mm da linha ausente.
+            const descMM = encRow ? 163.5 : 175.2;
+
             return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -5158,126 +5110,55 @@
 <base href="${baseHref}">
 <title>R.O. ${numero}</title>
 <style>
-  /* Página A4 — mesmas margens do PDF: OX=10mm, top=9mm */
-  @page { size: A4 portrait; margin: 9mm 10mm 5mm 10mm; }
+  /* Réplica fiel do DOCX RO_11_2026: tabela 190mm, alturas exatas */
+  @page { size: A4 portrait; margin: 8.1mm 7.5mm 4.9mm 7.5mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Helvetica, Arial, sans-serif; color: #000; background: #fff; }
+  .wrap { width: 190mm; margin: 0 auto; }
 
-  /* Container = 190mm (PW do PDF) */
-  /* Esqueleto em tabela: a célula .rp-fill (height:100%) preenche a folha de
-     forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
-  html, body { height: 100%; }
-  .ro-page { width: 190mm; height: 100%; border-collapse: collapse; }
-  .ro-page > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
-  /* Célula de descrição = preenche a folha; a BORDA fica na própria célula
-     (height:100% num <div> dentro de <td> não resolve na impressão). */
-  .ro-page > tbody > tr > td.rp-fill {
-    height: 100%;
-    border: 0.3mm solid #BFBFBF; border-top: none;
-    padding: 8mm 6mm 6mm 6mm;
-    font-size: 10pt; line-height: 5.6mm;
-    text-align: left; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
-  }
-
-  /* ═══ TABELA PRINCIPAL ═══ */
-  table.ro { width: 190mm; border-collapse: collapse; }
+  table.ro { width: 190mm; border-collapse: collapse; table-layout: fixed; }
   table.ro td { border: 0.25mm solid #BFBFBF; }
 
-  /* ── Cabeçalho: 32mm, brasão ESQUERDA, texto CENTRO ── */
-  td.hdr {
-    height: 32mm; padding: 0; position: relative;
-  }
-  .hdr-brasao {
-    position: absolute; left: 4mm; top: 50%;
-    transform: translateY(-50%);
-    width: 19mm; height: 21mm; object-fit: contain;
-  }
-  .hdr-textos {
-    text-align: center; width: 100%;
-    padding: 3mm 0;
-  }
+  /* Cabeçalho 31.6mm — brasão esquerda, texto centro */
+  td.hdr { height: 31.6mm; padding: 0; position: relative; }
+  .hdr-brasao { position: absolute; left: 4mm; top: 50%; transform: translateY(-50%); width: 19mm; height: 21mm; object-fit: contain; }
+  .hdr-textos { text-align: center; width: 100%; padding: 3mm 0; }
   .hdr-textos .gov   { font-size: 16pt; font-weight: bold; line-height: 1.2; }
-  .hdr-textos .coord { font-size: 10pt; color: #555555; margin: 1px 0; }
+  .hdr-textos .coord { font-size: 10pt; color: #545454; margin: 1px 0; }
   .hdr-textos .dzel  { font-size: 9pt; font-weight: bold; }
-  .hdr-textos .sep   {
-    border: none; border-top: 0.3mm solid #BFBFBF;
-    margin: 3px auto; width: 90mm;
-  }
+  .hdr-textos .sep   { border: none; border-top: 0.3mm solid #BFBFBF; margin: 3px auto; width: 90mm; }
   .hdr-textos .titulo { font-size: 9pt; font-weight: bold; letter-spacing: 0.5px; }
 
-  /* ── Barra de seção: 7.5mm, #F2F2F2, 8pt bold #1E1E1E ── */
-  td.sec {
-    height: 7.5mm; background: #F2F2F2; vertical-align: middle;
-    padding: 0 3mm; font-size: 8pt; font-weight: bold; color: #1E1E1E;
-  }
+  td.sec { height: 7.2mm; background: #F2F2F2; vertical-align: middle; padding: 0 3mm; font-size: 8pt; font-weight: bold; color: #1E1E1E; }
 
-  /* ── Linhas de dados: 12mm altura, 95mm cada coluna ── */
-  td.cell {
-    height: 12mm; width: 95mm; vertical-align: top;
-    padding: 1.5mm 3mm;
-  }
-  td.cell .lbl {
-    display: block; font-size: 7pt; color: #636363;
-    font-weight: normal; margin-bottom: 0.5mm;
-  }
-  td.cell .val {
-    display: block; font-size: 9pt; font-weight: bold;
-    text-transform: uppercase; color: #000;
-  }
+  td.cell { height: 11.7mm; width: 95mm; vertical-align: top; padding: 1.5mm 3mm; }
+  td.cell .lbl { display: block; font-size: 7pt; color: #626262; font-weight: normal; margin-bottom: 0.5mm; }
+  td.cell .val { display: block; font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; }
 
-  /* ═══ SEÇÃO 2 — DESCRIÇÃO ═══ */
-  /* Barra "2 - Descrição" fora da tabela, mesmo estilo */
-  .sec-bar {
-    width: 190mm; height: 7.5mm; background: #F2F2F2;
-    border: 0.25mm solid #BFBFBF;
-    display: flex; align-items: center;
-    padding: 0 3mm; margin-top: 4mm;
-    font-size: 8pt; font-weight: bold; color: #1E1E1E;
-  }
+  .sec-bar { width: 190mm; height: 7.2mm; background: #F2F2F2; border: 0.25mm solid #BFBFBF;
+    display: flex; align-items: center; padding: 0 3mm; margin-top: 3mm;
+    font-size: 8pt; font-weight: bold; color: #1E1E1E; }
 
-  /* Caixa de descrição: preenche resto da página */
-  .desc-box {
-    width: 190mm; height: 100%;
-    border: 0.3mm solid #BFBFBF; border-top: none;
-    /* Padding: top=8mm, left=6mm, right=6mm, bottom=6mm (do PDF: bTxtW=PW-12, txtX=OX+6, padTop=8) */
-    padding: 8mm 6mm 6mm 6mm;
-    font-size: 10.5pt;
-    line-height: 6.2mm;
-    /* Texto literal: alinhado a esquerda + preserva quebras/topicos do usuario */
-    text-align: left;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
+  /* Caixa de descrição — altura fixa do DOCX (163.5mm c/ encerramento) */
+  .desc-box { width: 190mm; border: 0.3mm solid #BFBFBF; border-top: none;
+    padding: 8mm 6mm 6mm 6mm; font-size: 10pt; line-height: 5.6mm;
+    text-align: left; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
 
-  /* ═══ RODAPÉ ═══ */
-  .footer {
-    width: 190mm; text-align: center;
-    font-size: 7.5pt; font-style: italic; color: #AAAAAA;
-    margin-top: 6mm;
-  }
+  .footer { text-align: center; font-size: 7.5pt; font-style: italic; color: #8a8a8a; margin-top: 2.5mm; }
 
   /* Botão fechar (só tela) */
-  #btn-fechar {
-    position: fixed; top: 10px; right: 10px; background: #ef4444; color: white;
+  #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white;
     border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px;
-    font-weight: 700; cursor: pointer; z-index: 9999; font-family: inherit;
-  }
-  @media print {
-    #btn-fechar { display: none !important; }
-    /* desc-box mantem flex:1 + ro-page min-height para PREENCHER a folha.
-       Para textos muito longos (multi-pagina), use o botao "Baixar PDF". */
-  }
+    font-weight: 700; cursor: pointer; z-index: 9999; font-family: inherit; }
+  @media print { #btn-fechar { display: none !important; } }
 </style>
 </head>
 <body>
 <button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
-<table class="ro-page"><tr><td class="rp-top">
+<div class="wrap">
 
-  <!-- ═══ TABELA DE DADOS ═══ -->
   <table class="ro">
-    <!-- Cabeçalho 32mm — brasão esquerda, texto centro -->
     <tr>
       <td class="hdr" colspan="2">
         <img class="hdr-brasao" src="brasao.jpg" alt="SP" onerror="this.style.display='none'">
@@ -5291,10 +5172,8 @@
       </td>
     </tr>
 
-    <!-- Seção 1 -->
     <tr><td class="sec" colspan="2">1 - Dados do Registro</td></tr>
 
-    <!-- Dados — mesma ordem e larguras do PDF -->
     <tr>
       <td class="cell" style="width:95mm"><span class="lbl">N\u00BA do Registro</span><span class="val">${numero}</span></td>
       <td class="cell" style="width:95mm"><span class="lbl">Status</span><span class="val">${o.status || '-'}</span></td>
@@ -5314,19 +5193,13 @@
     ${encRow}
   </table>
 
-  <!-- Seção 2 — gap 4mm acima (margin-top no .sec-bar) -->
   <div class="sec-bar">2 - Descri\u00E7\u00E3o</div>
 
-  <!-- Caixa descrição — flex:1 preenche o restante -->
-  </td></tr>
-  <tr><td class="rp-fill">${descSentence}</td></tr>
-  <tr><td class="rp-foot">
+  <div class="desc-box" style="height:${descMM}mm;">${descSentence}</div>
 
-  <!-- Rodapé DENTRO do container flex para que desc-box desconte seu espaço -->
   <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
-  </td></tr>
-</table>
+</div>
 
 <script>
   window.addEventListener('load', function() {
