@@ -3515,10 +3515,6 @@
 
                 // ── Nº OS: centralizado na célula direita, abaixo do logo ─
                 const osNum = d.numero_os ? d.numero_os : d.id;
-            // [X] marcado fica verde-negrito, como no DOCX de referência
-            const ck = (m, txt) => m === '[X]'
-                ? `<span class="ck-on">[X] ${txt}</span>`
-                : `[ ] ${txt}`;
                 if (!logoSrc) {
                     // Sem logo: mostra "ORDEM DE SERVICO" acima do número
                     pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
@@ -3735,6 +3731,10 @@
             const topTextHTML = logoInfo ? '' : '<p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:5px;">ORDEM DE SERVIÇO</p>';
             const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
+            // [X] marcado fica verde-negrito, como no DOCX de referência
+            const ck = (m, txt) => m === '[X]'
+                ? `<span class="ck-on">[X] ${txt}</span>`
+                : `[ ] ${txt}`;
 
             return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -3745,9 +3745,13 @@
 <title>O.S. ${osNum}</title>
 <style>
   /* Réplica fiel do DOCX OS_4859: tabela 200mm, 7 colunas, alturas exatas */
-  @page { size: A4 portrait; margin: 8.1mm 5mm 4.9mm 5mm; }
+  /* margin:0 + folha A4 exata com margens via padding (.sheet):
+     impede o Chrome de reduzir/escalar a impressão. */
+  @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { margin: 0; width: 210mm; }
   body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
+  .sheet { width: 210mm; min-height: 296mm; margin: 0 auto; padding: 8.1mm 5mm 4.9mm 5mm; }
   table.os { width: 200mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
   table.os td { border: 0.5pt solid #000; vertical-align: top; padding: 1mm 2mm; }
   td.sec { background: #E5E5E5; text-align: center; font-weight: bold; font-size: 8pt; vertical-align: middle; padding: 0.6mm 2mm; }
@@ -3780,6 +3784,7 @@
 <body>
 <button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
+<div class="sheet">
 <table class="os">
   <colgroup><col style="width:30mm"><col style="width:20mm"><col style="width:16.7mm"><col style="width:33.3mm"><col style="width:33.3mm"><col style="width:16.7mm"><col style="width:50mm"></colgroup>
   <tr style="height:21.6mm;">
@@ -3847,6 +3852,7 @@
   </tr>
 </table>
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
+</div>
 
 <script>
   // Espera imagens carregarem antes de imprimir para evitar página em branco
@@ -5111,10 +5117,13 @@
 <title>R.O. ${numero}</title>
 <style>
   /* Réplica fiel do DOCX RO_11_2026: tabela 190mm, alturas exatas */
-  @page { size: A4 portrait; margin: 8.1mm 7.5mm 4.9mm 7.5mm; }
+  /* margin:0 + folha A4 exata (210x297mm) com margens via padding:
+     impede o Chrome de reduzir/escalar a impressão. */
+  @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { margin: 0; width: 210mm; }
   body { font-family: Helvetica, Arial, sans-serif; color: #000; background: #fff; }
-  .wrap { width: 190mm; margin: 0 auto; }
+  .wrap { width: 210mm; min-height: 296mm; margin: 0 auto; padding: 8.1mm 10mm 4.9mm 10mm; }
 
   table.ro { width: 190mm; border-collapse: collapse; table-layout: fixed; }
   table.ro td { border: 0.25mm solid #BFBFBF; }
