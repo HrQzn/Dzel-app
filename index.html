@@ -3748,13 +3748,13 @@
      de forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
   /* calc(100% - 8mm): deixa espaço p/ o rodapé "Documento gerado" (fora da
      moldura) não transbordar para uma 2ª página. */
-  .os-container { border: 2px solid #000; height: calc(100% - 8mm); width: 100%; border-collapse: collapse; }
+  .os-container { border: 2px solid #000; width: 100%; border-collapse: collapse; }
   .os-container > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
   .os-fill-cell { height: 100%; }
   .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
   .row:last-child { border-bottom: none; }
   .row.thick { border-bottom: 2px solid #000; }
-  .row.expand { height: 100%; align-items: stretch; }
+  .row.expand { height: 87.6mm; align-items: stretch; }
   .cell { padding: 6px 8px; display: flex; flex-direction: column; }
   .logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
   .logo-box img { max-height: 70px; width: auto; }
@@ -3764,9 +3764,9 @@
   .hdr-c p  { margin: 0; font-size: 11px; font-weight: bold; }
   .hdr-r { text-align: center; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 0 25%; max-width: 25%; }
   .os-num { color: #c0392b; font-size: 16px; font-weight: bold; margin: 0; }
-  .sec { background: #f0f0f0; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
+  .sec { background: #E5E5E5; border-bottom: 2px solid #000; text-align: center; font-size: 11px; font-weight: bold; padding: 5px; }
   .sec.top { border-top: 1px solid #000; }
-  .lbl { font-size: 10px; font-weight: bold; color: #333; margin-bottom: 4px; }
+  .lbl { font-size: 10px; font-weight: bold; color: #505050; margin-bottom: 4px; }
   .val { font-size: 12px; text-transform: uppercase; }
   .val.big { font-size: 13px; font-weight: bold; padding-top: 5px; }
   .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; font-size: 11px; margin-top: 5px; }
@@ -5175,7 +5175,7 @@
     height: 100%;
     border: 0.3mm solid #BFBFBF; border-top: none;
     padding: 8mm 6mm 6mm 6mm;
-    font-size: 10.5pt; line-height: 6.2mm;
+    font-size: 10pt; line-height: 5.6mm;
     text-align: left; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
   }
 
