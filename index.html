@@ -3743,9 +3743,12 @@
   @page { size: A4 portrait; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; color: #000; background: #fff; }
+  html, body { height: 100%; }
   /* Esqueleto em tabela: célula .os-fill-cell (height:100%) preenche a folha A4
      de forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
-  .os-container { border: 2px solid #000; height: 279mm; width: 100%; border-collapse: collapse; }
+  /* calc(100% - 8mm): deixa espaço p/ o rodapé "Documento gerado" (fora da
+     moldura) não transbordar para uma 2ª página. */
+  .os-container { border: 2px solid #000; height: calc(100% - 8mm); width: 100%; border-collapse: collapse; }
   .os-container > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
   .os-fill-cell { height: 100%; }
   .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
@@ -5163,9 +5166,18 @@
   /* Container = 190mm (PW do PDF) */
   /* Esqueleto em tabela: a célula .rp-fill (height:100%) preenche a folha de
      forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
-  .ro-page { width: 190mm; height: 281mm; border-collapse: collapse; }
+  html, body { height: 100%; }
+  .ro-page { width: 190mm; height: 100%; border-collapse: collapse; }
   .ro-page > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
-  .rp-fill { height: 100%; }
+  /* Célula de descrição = preenche a folha; a BORDA fica na própria célula
+     (height:100% num <div> dentro de <td> não resolve na impressão). */
+  .ro-page > tbody > tr > td.rp-fill {
+    height: 100%;
+    border: 0.3mm solid #BFBFBF; border-top: none;
+    padding: 8mm 6mm 6mm 6mm;
+    font-size: 10.5pt; line-height: 6.2mm;
+    text-align: left; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+  }
 
   /* ═══ TABELA PRINCIPAL ═══ */
   table.ro { width: 190mm; border-collapse: collapse; }
@@ -5307,9 +5319,7 @@
 
   <!-- Caixa descrição — flex:1 preenche o restante -->
   </td></tr>
-  <tr><td class="rp-fill">
-  <div class="desc-box">${descSentence}</div>
-  </td></tr>
+  <tr><td class="rp-fill">${descSentence}</td></tr>
   <tr><td class="rp-foot">
 
   <!-- Rodapé DENTRO do container flex para que desc-box desconte seu espaço -->
