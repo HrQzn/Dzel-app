@@ -132,10 +132,10 @@
             }
         }
 
-        /* ======== LOGIN (tema escuro premium) ======== */
+        /* ======== LOGIN (tema escuro — azul institucional) ======== */
         #login-overlay {
             position: fixed; inset: 0;
-            background: #0a0d14;
+            background: #0a1018;
             z-index: 9999; display: flex; justify-content: center; align-items: center;
             padding: 20px;
         }
@@ -149,15 +149,15 @@
             -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 35%, transparent 100%);
                     mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 35%, transparent 100%);
         }
-        /* brilho dourado quente (canto superior direito) */
+        /* brilho azul (combina com o accent do painel) */
         #login-overlay::after {
             content: ''; position: absolute; inset: 0; pointer-events: none;
             background:
-                radial-gradient(ellipse 50% 45% at 82% 16%, rgba(212,175,122,0.16) 0%, transparent 60%),
-                radial-gradient(ellipse 42% 42% at 14% 88%, rgba(80,110,160,0.10) 0%, transparent 60%);
+                radial-gradient(ellipse 50% 45% at 82% 16%, rgba(59,130,246,0.20) 0%, transparent 60%),
+                radial-gradient(ellipse 42% 42% at 14% 88%, rgba(99,102,241,0.12) 0%, transparent 60%);
         }
         .login-box {
-            background: linear-gradient(180deg, rgba(26,30,40,0.92), rgba(17,20,28,0.95));
+            background: linear-gradient(180deg, rgba(20,28,42,0.92), rgba(13,18,28,0.95));
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.08);
             padding: 2.5rem 2.25rem; border-radius: 22px; width: 100%; max-width: 410px;
@@ -166,11 +166,11 @@
         }
         .login-logo {
             width: 64px; height: 64px;
-            background: linear-gradient(150deg, rgba(212,175,122,0.20), rgba(212,175,122,0.04));
-            border: 1px solid rgba(212,175,122,0.35);
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            border: 1px solid rgba(96,165,250,0.45);
             border-radius: 18px; display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.5rem; font-size: 1.5rem; color: #e3c08d;
-            box-shadow: 0 8px 24px rgba(212,175,122,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+            margin: 0 auto 1.5rem; font-size: 1.5rem; color: #fff;
+            box-shadow: 0 8px 24px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
         }
         .login-box h2 {
             color: #f4f6fa; font-size: 1.7rem; font-weight: 700; margin-bottom: 0.5rem;
@@ -190,29 +190,29 @@
         #login-pass { padding-right: 2.9rem; }
         .login-box input::placeholder { color: rgba(255,255,255,0.32); }
         .login-box input:focus {
-            outline: none; border-color: rgba(212,175,122,0.6);
-            background: rgba(212,175,122,0.06); box-shadow: 0 0 0 3px rgba(212,175,122,0.14);
+            outline: none; border-color: var(--accent-light);
+            background: rgba(59,130,246,0.08); box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
         }
         .login-eye {
             position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
             background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer;
             padding: 8px; font-size: 0.95rem; line-height: 1; border-radius: 8px; transition: color 0.2s;
         }
-        .login-eye:hover { color: #e3c08d; }
+        .login-eye:hover { color: var(--accent-light); }
         .login-forgot-row { text-align: right; margin: -0.15rem 0 1.3rem; }
         .login-forgot {
             background: none; border: none; cursor: pointer; padding: 0;
             color: rgba(255,255,255,0.45); font-size: 0.8rem; font-family: inherit; transition: color 0.2s;
         }
-        .login-forgot:hover { color: #e3c08d; }
+        .login-forgot:hover { color: var(--accent-light); }
         .login-btn {
-            width: 100%; background: linear-gradient(135deg, #e7caa0 0%, #d4af7a 52%, #c79a5b 100%);
-            color: #2a1f0c; border: none; padding: 0.95rem; border-radius: 12px;
+            width: 100%; background: linear-gradient(135deg, var(--accent), #6366f1);
+            color: #fff; border: none; padding: 0.95rem; border-radius: 12px;
             font-weight: 700; font-size: 0.95rem; cursor: pointer; letter-spacing: 0.2px;
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
         }
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(212,175,122,0.3); filter: brightness(1.04); }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(59,130,246,0.4); filter: brightness(1.05); }
         .login-btn:active { transform: translateY(0); }
         .login-error { color: #fca5a5; font-size: 0.85rem; margin-top: 12px; display: none; }
         @media (max-width: 600px) {
@@ -3743,11 +3743,15 @@
   @page { size: A4 portrait; margin: 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; color: #000; background: #fff; }
-  .os-container { border: 2px solid #000; display: flex; flex-direction: column; height: 279mm; width: 100%; }
+  /* Esqueleto em tabela: célula .os-fill-cell (height:100%) preenche a folha A4
+     de forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
+  .os-container { border: 2px solid #000; height: 279mm; width: 100%; border-collapse: collapse; }
+  .os-container > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
+  .os-fill-cell { height: 100%; }
   .row { display: flex; width: 100%; border-bottom: 1px solid #000; }
   .row:last-child { border-bottom: none; }
   .row.thick { border-bottom: 2px solid #000; }
-  .row.expand { flex-grow: 1; align-items: stretch; }
+  .row.expand { height: 100%; align-items: stretch; }
   .cell { padding: 6px 8px; display: flex; flex-direction: column; }
   .logo-box { display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; padding: 10px; flex: 0 0 15%; max-width: 15%; }
   .logo-box img { max-height: 70px; width: auto; }
@@ -3778,7 +3782,7 @@
 <body>
 <button id="btn-fechar" onclick="window.close()">✕ Fechar</button>
 
-<div class="os-container">
+<table class="os-container"><tr><td class="os-top-cell">
   <div class="row thick">
     <div class="logo-box"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></div>
     <div class="hdr-c">
@@ -3854,6 +3858,8 @@
     </div>
   </div>
 
+  </td></tr>
+  <tr><td class="os-fill-cell">
   <div class="row expand">
     <div class="cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
       <div class="lbl">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
@@ -3865,6 +3871,8 @@
     </div>
   </div>
 
+  </td></tr>
+  <tr><td class="os-bot-cell">
   <div class="sec top">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
   <div class="row">
     <div class="cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;align-items:center;">
@@ -3885,7 +3893,8 @@
     <div class="sig"><div class="sig-line">FISCAL<span>Carimbo e Assinatura</span></div></div>
     <div class="sig"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
   </div>
-</div>
+  </td></tr>
+</table>
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
 <script>
@@ -5152,12 +5161,11 @@
   body { font-family: Helvetica, Arial, sans-serif; color: #000; background: #fff; }
 
   /* Container = 190mm (PW do PDF) */
-  .ro-page {
-    width: 190mm;
-    height: 281mm;          /* altura definida — garante que .desc-box (flex:1) preencha a folha A4 na impressão */
-    display: flex;
-    flex-direction: column;
-  }
+  /* Esqueleto em tabela: a célula .rp-fill (height:100%) preenche a folha de
+     forma CONFIÁVEL na impressão — flexbox não estica no print do Chrome. */
+  .ro-page { width: 190mm; height: 281mm; border-collapse: collapse; }
+  .ro-page > tbody > tr > td { padding: 0; vertical-align: top; border: none; }
+  .rp-fill { height: 100%; }
 
   /* ═══ TABELA PRINCIPAL ═══ */
   table.ro { width: 190mm; border-collapse: collapse; }
@@ -5217,7 +5225,7 @@
 
   /* Caixa de descrição: preenche resto da página */
   .desc-box {
-    width: 190mm; flex: 1;
+    width: 190mm; height: 100%;
     border: 0.3mm solid #BFBFBF; border-top: none;
     /* Padding: top=8mm, left=6mm, right=6mm, bottom=6mm (do PDF: bTxtW=PW-12, txtX=OX+6, padTop=8) */
     padding: 8mm 6mm 6mm 6mm;
@@ -5253,7 +5261,7 @@
 <body>
 <button id="btn-fechar" onclick="window.close()">\u2715 Fechar</button>
 
-<div class="ro-page">
+<table class="ro-page"><tr><td class="rp-top">
 
   <!-- ═══ TABELA DE DADOS ═══ -->
   <table class="ro">
@@ -5298,12 +5306,17 @@
   <div class="sec-bar">2 - Descri\u00E7\u00E3o</div>
 
   <!-- Caixa descrição — flex:1 preenche o restante -->
+  </td></tr>
+  <tr><td class="rp-fill">
   <div class="desc-box">${descSentence}</div>
+  </td></tr>
+  <tr><td class="rp-foot">
 
   <!-- Rodapé DENTRO do container flex para que desc-box desconte seu espaço -->
   <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
-</div>
+  </td></tr>
+</table>
 
 <script>
   window.addEventListener('load', function() {
