@@ -3771,9 +3771,14 @@
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
   .ck-on { color: #007800; font-weight: bold; }
   .fill-lines { font-size: 8pt; font-weight: bold; color: #505050; margin-top: 1.6mm; }
-  td.sig { vertical-align: bottom; text-align: center; padding-bottom: 2.5mm; }
-  .sig-line { border-top: 0.75pt solid #000; width: 82%; margin: 0 auto; padding-top: 1.2mm; font-size: 8pt; font-weight: bold; }
-  .sig-line span { display: block; font-size: 7pt; font-weight: normal; color: #505050; margin-top: 0.5mm; }
+  /* Assinaturas: flex com 3 colunas iguais, linhas no mesmo nível,
+     texto centralizado — alinhamento idêntico em tela, impressão e PDF. */
+  .sig-row { display: flex; width: 100%; height: 27.4mm; }
+  .sig-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; padding: 0 5mm 2.5mm; }
+  .sig-col + .sig-col { border-left: 0.5pt solid #000; }
+  .sig-line { width: 88%; border-top: 0.75pt solid #000; margin-bottom: 1.2mm; }
+  .sig-name { font-size: 8pt; font-weight: bold; white-space: nowrap; }
+  .sig-sub { font-size: 7pt; color: #505050; margin-top: 0.5mm; white-space: nowrap; }
   .footer { text-align: center; font-size: 7.5pt; font-style: italic; margin-top: 2.5mm; color: #555; }
   /* Botão fechar — visível na tela, oculto na impressão */
   #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
@@ -3846,9 +3851,13 @@
     <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>
   </tr>
   <tr style="height:27.4mm;">
-    <td class="sig" colspan="3"><div class="sig-line">T\u00C9CNICO EXECUTOR<span>Nome leg\u00EDvel / Matr\u00EDcula / Empresa</span></div></td>
-    <td class="sig" colspan="2"><div class="sig-line">FISCAL<span>Carimbo e Assinatura</span></div></td>
-    <td class="sig" colspan="2"><div class="sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do servi\u00E7o</span></div></td>
+    <td colspan="7" style="padding:0;">
+      <div class="sig-row">
+        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">T\u00C9CNICO EXECUTOR</div><div class="sig-sub">Nome leg\u00EDvel / Matr\u00EDcula / Empresa</div></div>
+        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">FISCAL</div><div class="sig-sub">Carimbo e Assinatura</div></div>
+        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">SOLICITANTE / RECEBEDOR</div><div class="sig-sub">Atesto a conformidade do servi\u00E7o</div></div>
+      </div>
+    </td>
   </tr>
 </table>
 <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
