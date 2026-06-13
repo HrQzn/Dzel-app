@@ -3745,14 +3745,14 @@
 <title>O.S. ${osNum}</title>
 <style>
   /* Réplica fiel do DOCX OS_4859: tabela 200mm, 7 colunas, alturas exatas */
-  /* margin:0 + folha A4 exata com margens via padding (.sheet):
-     impede o Chrome de reduzir/escalar a impressão. */
-  @page { size: A4 portrait; margin: 0; }
+  /* A4 margem 10mm: o conteúdo (190mm) cabe folgado na área imprimível de
+     QUALQUER destino (inclui Microsoft Print to PDF), sem o Chrome escalar. */
+  @page { size: A4 portrait; margin: 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { margin: 0; width: 210mm; }
+  html, body { margin: 0; }
   body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
-  .sheet { width: 210mm; min-height: 296mm; margin: 0 auto; padding: 8.1mm 5mm 4.9mm 5mm; }
-  table.os { width: 200mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
+  .sheet { width: 190mm; margin: 0 auto; }
+  table.os { width: 190mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
   table.os td { border: 0.5pt solid #000; vertical-align: top; padding: 1mm 2mm; }
   td.sec { background: #E5E5E5; text-align: center; font-weight: bold; font-size: 8pt; vertical-align: middle; padding: 0.6mm 2mm; }
   .lbl { display: block; font-size: 7pt; font-weight: bold; color: #505050; margin-bottom: 1mm; }
@@ -3773,7 +3773,7 @@
   .fill-lines { font-size: 8pt; font-weight: bold; color: #505050; margin-top: 1.6mm; }
   /* Assinaturas: flex com 3 colunas iguais, linhas no mesmo nível,
      texto centralizado — alinhamento idêntico em tela, impressão e PDF. */
-  .sig-row { display: flex; width: 100%; height: 27.4mm; }
+  .sig-row { display: flex; width: 100%; height: 30.7mm; }
   .sig-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; padding: 0 5mm 2.5mm; }
   .sig-col + .sig-col { border-left: 0.5pt solid #000; }
   .sig-line { width: 88%; border-top: 0.75pt solid #000; margin-bottom: 1.2mm; }
@@ -3791,8 +3791,8 @@
 
 <div class="sheet">
 <table class="os">
-  <colgroup><col style="width:30mm"><col style="width:20mm"><col style="width:16.7mm"><col style="width:33.3mm"><col style="width:33.3mm"><col style="width:16.7mm"><col style="width:50mm"></colgroup>
-  <tr style="height:21.6mm;">
+  <colgroup><col style="width:15%"><col style="width:10%"><col style="width:8.35%"><col style="width:16.65%"><col style="width:16.65%"><col style="width:8.35%"><col style="width:25%"></colgroup>
+  <tr style="height:26.6mm;">
     <td class="hdr-brasao"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></td>
     <td class="hdr-centro" colspan="5">
       <div class="h-gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
@@ -3814,7 +3814,7 @@
   <tr style="height:4.6mm;"><td class="sec" colspan="7">2. DESCRI\u00C7\u00C3O DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</td></tr>
   <tr style="height:15.8mm;"><td colspan="7"><span class="val big">${(d.titulo||'').toUpperCase()}</span></td></tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">3. PARECER T\u00C9CNICO E EXECU\u00C7\u00C3O (PREENCHIMENTO PELA EQUIPE)</td></tr>
-  <tr style="height:29.6mm;">
+  <tr style="height:24.7mm;">
     <td colspan="7">
       <span class="lbl">EQUIPE RESPONS\u00C1VEL / CONTRATADA ATRIBU\u00CDDA</span>
       <div class="grid3">
@@ -3829,7 +3829,7 @@
       </div>
     </td>
   </tr>
-  <tr style="height:34.2mm;">
+  <tr style="height:29.6mm;">
     <td colspan="7">
       <span class="lbl">LOCAL DE ATUA\u00C7\u00C3O / PR\u00C9DIO VINCULADO</span>
       <div class="grid4">
@@ -3840,17 +3840,17 @@
       </div>
     </td>
   </tr>
-  <tr style="height:87.6mm;">
+  <tr style="height:75.1mm;">
     <td colspan="4"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(descricao||'').toUpperCase()}</div></td>
     <td colspan="3"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(materiais||'').toUpperCase()}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
-  <tr style="height:13.6mm;">
+  <tr style="height:24.6mm;">
     <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
     <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
     <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>
   </tr>
-  <tr style="height:27.4mm;">
+  <tr style="height:30.7mm;">
     <td colspan="7" style="padding:0;">
       <div class="sig-row">
         <div class="sig-col"><div class="sig-line"></div><div class="sig-name">T\u00C9CNICO EXECUTOR</div><div class="sig-sub">Nome leg\u00EDvel / Matr\u00EDcula / Empresa</div></div>
@@ -5115,7 +5115,7 @@
 
             // Altura da caixa de descrição (do DOCX): 163,5mm com a linha de
             // encerramento; sem ela, compensa os 11,7mm da linha ausente.
-            const descMM = encRow ? 163.5 : 175.2;
+            const descMM = encRow ? 158 : 170;
 
             return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -5126,13 +5126,12 @@
 <title>R.O. ${numero}</title>
 <style>
   /* Réplica fiel do DOCX RO_11_2026: tabela 190mm, alturas exatas */
-  /* margin:0 + folha A4 exata (210x297mm) com margens via padding:
-     impede o Chrome de reduzir/escalar a impressão. */
-  @page { size: A4 portrait; margin: 0; }
+  /* A4 margem 10mm: conteúdo de 190mm cabe em qualquer destino, sem escala. */
+  @page { size: A4 portrait; margin: 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { margin: 0; width: 210mm; }
+  html, body { margin: 0; }
   body { font-family: Helvetica, Arial, sans-serif; color: #000; background: #fff; }
-  .wrap { width: 210mm; min-height: 296mm; margin: 0 auto; padding: 8.1mm 10mm 4.9mm 10mm; }
+  .wrap { width: 190mm; margin: 0 auto; }
 
   table.ro { width: 190mm; border-collapse: collapse; table-layout: fixed; }
   table.ro td { border: 0.25mm solid #BFBFBF; }
