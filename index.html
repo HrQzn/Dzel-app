@@ -1845,6 +1845,28 @@
             auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
         });
 
+        // Escapa texto vindo do banco antes de injetar em innerHTML (proteção contra XSS armazenado).
+        function esc(v) {
+            if (v == null) return '';
+            return String(v)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        // Escapa valor usado dentro de string JS entre aspas simples num atributo (ex.: onclick="f('VALOR')").
+        function escJs(v) {
+            if (v == null) return '';
+            return String(v)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         // ════════════════════════════════════════════════════════════════
         // fetchAll — busca TODOS os registros com paginação automática
         // O Supabase/PostgREST retorna no máximo 1000 rows por request.
@@ -2634,7 +2656,7 @@
                             const bgP  = c.slaPct == null ? '#f1f5f9' : c.slaPct >= 90 ? '#dcfce7' : c.slaPct >= 70 ? '#fef9c3' : '#fee2e2';
                             const slaTxt = c.slaPct == null ? '—' : c.slaPct + '%';
                             return `<tr>
-                                <td style="font-weight:600;color:var(--text-primary);">${c.nome}</td>
+                                <td style="font-weight:600;color:var(--text-primary);">${esc(c.nome)}</td>
                                 <td style="text-align:center;">${c.total}</td>
                                 <td style="text-align:center;">${c.abertas}</td>
                                 <td style="text-align:center;font-family:'JetBrains Mono',monospace;">${formatarDuracao(c.tma)}</td>
@@ -2657,9 +2679,9 @@
                             const venceu = x.idade > metaSLA(d);
                             const prio = d.prioridade || 'Baixa';
                             return `<tr>
-                                <td style="font-weight:600;">${d.numero_os || '—'}</td>
-                                <td style="color:var(--text-primary);">${(d.titulo||'').slice(0,45)}${(d.titulo||'').length>45?'…':''}</td>
-                                <td>${(d.setor||'').slice(0,25)}</td>
+                                <td style="font-weight:600;">${esc(d.numero_os) || '—'}</td>
+                                <td style="color:var(--text-primary);">${esc((d.titulo||'').slice(0,45))}${(d.titulo||'').length>45?'…':''}</td>
+                                <td>${esc((d.setor||'').slice(0,25))}</td>
                                 <td style="text-align:center;"><span class="dash-badge" style="color:${corPrio(prio)};background:${bgPrio(prio)};">${prio}</span></td>
                                 <td style="text-align:center;font-weight:700;color:${venceu?'var(--danger)':'var(--text-secondary)'};">${dias}${venceu?' ⚠':''}</td>
                             </tr>`;
@@ -2842,7 +2864,7 @@
                 const tipo = meta.is_admin ? '<span class="badge bg-concluido">ADMIN</span>' : '<span class="badge bg-saiu">USUÁRIO</span>';
                 const lastLogin = u.usr_last_login ? new Date(u.usr_last_login).toLocaleString('pt-BR') : 'Nunca';
                 const userStr = encodeURIComponent(JSON.stringify(u));
-                return `<tr><td><strong>${meta.nome}</strong></td><td>${u.usr_email}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${u.usr_email}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button></td></tr>`;
+                return `<tr><td><strong>${esc(meta.nome)}</strong></td><td>${esc(u.usr_email)}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button></td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
         }
@@ -2912,7 +2934,7 @@
             const htmlRows = logs.map(l => {
                 const data = new Date(l.data_hora).toLocaleString('pt-BR');
                 const classAcao = l.acao === 'Exclusão' ? 'log-acao-exclusao' : (l.acao === 'Edição' ? 'log-acao-edicao' : '');
-                return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">${data}</td><td><strong>${l.usuario}</strong></td><td>${l.secao}</td><td class="${classAcao}">${l.acao}</td><td>${l.detalhes}</td></tr>`;
+                return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">${data}</td><td><strong>${esc(l.usuario)}</strong></td><td>${esc(l.secao)}</td><td class="${classAcao}">${esc(l.acao)}</td><td>${esc(l.detalhes)}</td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
         }
@@ -3187,7 +3209,7 @@
             const d = demandas.find(i => i.id == id); if (!d) return;
             document.getElementById('concluir-demanda-id').value = id;
             document.getElementById('concluir-info-demanda').innerHTML =
-                `<strong>${d.titulo}</strong>${d.numero_os ? ' — O.S. ' + d.numero_os : ''}<br><small style="color:var(--text-muted)">Aberta em: ${formatarData(d.data)} ${d.hora || ''}</small>`;
+                `<strong>${esc(d.titulo)}</strong>${d.numero_os ? ' — O.S. ' + esc(d.numero_os) : ''}<br><small style="color:var(--text-muted)">Aberta em: ${formatarData(d.data)} ${esc(d.hora)}</small>`;
             document.getElementById('concluir-hora').value = DateUtils.getToInput();
             document.getElementById('modal-concluir-demanda').style.display = 'flex';
         }
@@ -3742,7 +3764,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <base href="${baseHref}">
-<title>O.S. ${osNum}</title>
+<title>O.S. ${esc(osNum)}</title>
 <style>
   /* Réplica fiel do DOCX OS_4859: tabela 200mm, 7 colunas, alturas exatas */
   /* A4 margem 10mm: o conteúdo (190mm) cabe folgado na área imprimível de
@@ -3799,20 +3821,20 @@
       <div class="h-sec">SECRETARIA DA EDUCA\u00C7\u00C3O</div>
       <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVIS\u00C3O DE ZELADORIA</div>
     </td>
-    <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${osNum}</div></td>
+    <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${esc(osNum)}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">1. IDENTIFICA\u00C7\u00C3O DA SOLICITA\u00C7\u00C3O</td></tr>
   <tr style="height:10.6mm;">
-    <td colspan="2"><span class="lbl">DATA E HORA DE ABERTURA</span><span class="val">${dataBr}  ${d.hora || '--:--'}</span></td>
-    <td colspan="4"><span class="lbl">SOLICITANTE / CONTATO</span><span class="val">${(d.solicitante||'').toUpperCase()}</span></td>
-    <td><span class="lbl">PRIORIDADE NO SISTEMA</span><span class="val">${(d.prioridade||'').toUpperCase()}</span></td>
+    <td colspan="2"><span class="lbl">DATA E HORA DE ABERTURA</span><span class="val">${esc(dataBr)}  ${esc(d.hora) || '--:--'}</span></td>
+    <td colspan="4"><span class="lbl">SOLICITANTE / CONTATO</span><span class="val">${esc((d.solicitante||'').toUpperCase())}</span></td>
+    <td><span class="lbl">PRIORIDADE NO SISTEMA</span><span class="val">${esc((d.prioridade||'').toUpperCase())}</span></td>
   </tr>
   <tr style="height:10.5mm;">
-    <td colspan="6"><span class="lbl">UNIDADE / SETOR DE ORIGEM</span><span class="val">${(d.setor||'').toUpperCase()}</span></td>
-    <td><span class="lbl">STATUS ATUAL</span><span class="val">${(d.status||'').toUpperCase()}</span></td>
+    <td colspan="6"><span class="lbl">UNIDADE / SETOR DE ORIGEM</span><span class="val">${esc((d.setor||'').toUpperCase())}</span></td>
+    <td><span class="lbl">STATUS ATUAL</span><span class="val">${esc((d.status||'').toUpperCase())}</span></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">2. DESCRI\u00C7\u00C3O DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</td></tr>
-  <tr style="height:13.5mm;"><td colspan="7"><span class="val big">${(d.titulo||'').toUpperCase()}</span></td></tr>
+  <tr style="height:13.5mm;"><td colspan="7"><span class="val big">${esc((d.titulo||'').toUpperCase())}</span></td></tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">3. PARECER T\u00C9CNICO E EXECU\u00C7\u00C3O (PREENCHIMENTO PELA EQUIPE)</td></tr>
   <tr style="height:27.1mm;">
     <td colspan="7">
@@ -3841,8 +3863,8 @@
     </td>
   </tr>
   <tr>
-    <td colspan="4" style="height:100%;"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(descricao||'').toUpperCase()}</div></td>
-    <td colspan="3" style="height:100%;"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${(materiais||'').toUpperCase()}</div></td>
+    <td colspan="4" style="height:100%;"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc((descricao||'').toUpperCase())}</div></td>
+    <td colspan="3" style="height:100%;"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc((materiais||'').toUpperCase())}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
   <tr style="height:19.5mm;">
@@ -4413,8 +4435,8 @@
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print" title="Imprimir O.S."><i class="fas fa-print"></i></button>`;
             let btnEdit  = (pode('demandas', 'editar')) ? `<button onclick="editarDemanda(${d.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel   = (pode('demandas', 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
-            const contratadaDisplay = d.contratada ? `<br><span style="color:var(--accent);font-size:0.75rem;font-weight:600;"><i class="fas fa-hard-hat"></i> ${d.contratada}</span>` : '';
-            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><span class="badge bg-saiu">${d.prioridade}</span></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">${d.solicitante} · ${d.setor}</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:160px">${btnAvancar}${btnWA}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
+            const contratadaDisplay = d.contratada ? `<br><span style="color:var(--accent);font-size:0.75rem;font-weight:600;"><i class="fas fa-hard-hat"></i> ${esc(d.contratada)}</span>` : '';
+            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${esc(d.hora)}</small></td><td><span class="badge bg-saiu">${esc(d.prioridade)}</span></td><td><strong>${esc(d.titulo)}</strong><br><small style="color:var(--text-muted)">${esc(d.solicitante)} · ${esc(d.setor)}</small>${contratadaDisplay}</td><td><span class="badge ${badgeClass}">${esc(d.status)}</span></td><td>${tempoDisplay}</td><td style="min-width:160px">${btnAvancar}${btnWA}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         function criarLinhaTabelaSimples(d, prefixo) {
@@ -4426,7 +4448,7 @@
             let btnPrint = `<button onclick="abrirModalImpressao(${d.id})" class="action-btn btn-print"><i class="fas fa-print"></i></button>`;
             let btnEdit  = (pode(prefixo, 'editar')) ? `<button onclick="editarDemanda(${d.id}, '${prefixo}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
             let btnDel   = (pode(prefixo, 'excluir')) ? `<button onclick="deletarDemanda(${d.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
-            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${d.hora || ''}</small></td><td><strong>${d.titulo}</strong><br><small style="color:var(--text-muted)">Prioridade: ${d.prioridade}</small></td><td>${d.solicitante}<br><small style="color:var(--text-muted)">${d.setor}</small></td><td><span class="badge ${badgeClass}">${d.status}</span></td><td>${tempoDisplay}</td><td style="min-width:170px">${btnAvancar}${btnWA2}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
+            return `<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(d.data)}</strong><br><small style="color:var(--text-muted)">${esc(d.hora)}</small></td><td><strong>${esc(d.titulo)}</strong><br><small style="color:var(--text-muted)">Prioridade: ${esc(d.prioridade)}</small></td><td>${esc(d.solicitante)}<br><small style="color:var(--text-muted)">${esc(d.setor)}</small></td><td><span class="badge ${badgeClass}">${esc(d.status)}</span></td><td>${tempoDisplay}</td><td style="min-width:170px">${btnAvancar}${btnWA2}${btnPrint}${btnEdit}${btnDel}</td></tr>`;
         }
 
         window.renderizarApenasDemandas = function() {
@@ -4593,8 +4615,8 @@
                     let buttons = '';
                     if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    const imgTag = `<img src="${v.foto || defaultIcon}" class="avatar-table">`;
-                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${v.nome}</strong><br><small style="color:var(--text-muted)">${v.contato || ''}</small></td><td>${v.empresa || '-'}<br><small style="color:var(--text-muted)">${v.doc}</small></td><td>${v.responsavel}<br><small style="color:var(--text-muted)">${v.finalidade}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    const imgTag = `<img src="${esc(v.foto || defaultIcon)}" class="avatar-table">`;
+                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${esc(v.nome)}</strong><br><small style="color:var(--text-muted)">${esc(v.contato)}</small></td><td>${esc(v.empresa) || '-'}<br><small style="color:var(--text-muted)">${esc(v.doc)}</small></td><td>${esc(v.responsavel)}<br><small style="color:var(--text-muted)">${esc(v.finalidade)}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }
             });
         }
@@ -4602,7 +4624,7 @@
         window.baixaVisitante = function(id) {
             const v = visitantes.find(i => i.id == id); if (!v) return;
             document.getElementById('saida-visitante-id').value = id;
-            document.getElementById('saida-info-visitante').innerHTML = `<strong>${v.nome}</strong>${v.empresa ? ' — ' + v.empresa : ''} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(v.entrada)}</small>`;
+            document.getElementById('saida-info-visitante').innerHTML = `<strong>${esc(v.nome)}</strong>${v.empresa ? ' — ' + esc(v.empresa) : ''} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(v.entrada)}</small>`;
             document.getElementById('saida-vis-hora').value = DateUtils.getToInput();
             document.getElementById('modal-saida-visitante').style.display = 'flex';
         }
@@ -4715,7 +4737,7 @@
                     let buttons = '';
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${f.motorista}</strong><br><small style="color:var(--text-muted)">${f.contato||''}</small></td><td>${f.carro}</td><td>${f.setor||'-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${esc(f.motorista)}</strong><br><small style="color:var(--text-muted)">${esc(f.contato)}</small></td><td>${esc(f.carro)}</td><td>${esc(f.setor) || '-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }
             });
         }
@@ -4723,7 +4745,7 @@
         window.baixaVeiculo = function(id) {
             const f = frota.find(v => v.id == id); if (!f) return;
             document.getElementById('saida-veiculo-id').value = id;
-            document.getElementById('saida-info-veiculo').innerHTML = `<strong>${f.carro}</strong> — ${f.motorista} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(f.hora_inicial)}</small>`;
+            document.getElementById('saida-info-veiculo').innerHTML = `<strong>${esc(f.carro)}</strong> — ${esc(f.motorista)} <br><small style="color:var(--text-muted)">Entrada: ${formatarDataHoraReal(f.hora_inicial)}</small>`;
             document.getElementById('saida-hora').value = DateUtils.getToInput();
             document.getElementById('modal-saida-veiculo').style.display = 'flex';
         }
@@ -4812,11 +4834,11 @@
                 rowFn: (ev) => {
                     const badgeClass = ev.tipo === 'Interno' ? 'bg-interno' : 'bg-externo';
                     const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" style="color:#92400e;margin-left:6px;" title="Coffee Break"></i>' : '';
-                    const obsText = ev.obs ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;margin-top:3px;border-top:1px dashed var(--border);padding-top:3px">${ev.obs}</div>` : '';
+                    const obsText = ev.obs ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;margin-top:3px;border-top:1px dashed var(--border);padding-top:3px">${esc(ev.obs)}</div>` : '';
                     let buttons = '';
                     if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${ev.tipo}</span></td><td><strong>${ev.nome}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${ev.local}</small>${obsText}</td><td>${ev.organizador}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${ev.publico}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
+                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${esc(ev.tipo)}</span></td><td><strong>${esc(ev.nome)}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${esc(ev.local)}</small>${obsText}</td><td>${esc(ev.organizador)}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${esc(ev.publico)}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
                 }
             });
         }
@@ -4884,7 +4906,7 @@
                     let buttons = '';
                     if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
                     if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${c.nome}</strong><br><small style="color:var(--text-muted)">DOC: ${c.doc_identidade || '-'}</small></td><td>${c.setor}<br><small style="color:var(--text-muted)">${c.cargo || '-'}</small></td><td>Sala: <strong>${c.sala || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${c.ramal || '-'}</small></td><td><span class="badge ${badgeClass}">${c.status}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
+                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${esc(c.nome)}</strong><br><small style="color:var(--text-muted)">DOC: ${esc(c.doc_identidade) || '-'}</small></td><td>${esc(c.setor)}<br><small style="color:var(--text-muted)">${esc(c.cargo) || '-'}</small></td><td>Sala: <strong>${esc(c.sala) || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${esc(c.ramal) || '-'}</small></td><td><span class="badge ${badgeClass}">${esc(c.status)}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
                 }
             });
         }
@@ -5048,8 +5070,8 @@
                 const tempo   = o.status === 'Encerrada' && o.data_encerramento
                     ? `<span class="time-badge"><i class="fas fa-flag-checkered"></i> ${calcularTempoOco(o.data_hora, o.data_encerramento)}</span>`
                     : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${calcularTempoOco(o.data_hora)}</span>`;
-                const titulo  = o.numero ? `<strong>#${o.numero} — ${o.categoria}</strong>` : `<strong>${o.categoria}</strong>`;
-                const desc    = (o.descricao || '').substring(0, 55) + ((o.descricao||'').length > 55 ? '…' : '');
+                const titulo  = o.numero ? `<strong>#${esc(o.numero)} — ${esc(o.categoria)}</strong>` : `<strong>${esc(o.categoria)}</strong>`;
+                const desc    = esc((o.descricao || '').substring(0, 55)) + ((o.descricao||'').length > 55 ? '…' : '');
                 const btnWA   = `<button onclick="enviarWhatsAppOcorrencia(${o.id})" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
                 const btnPDF  = `<button onclick="gerarPDFOcorrencia(${o.id})" class="action-btn btn-print" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>`;
                 const btnPrint = `<button onclick="imprimirOcorrencia(${o.id})" class="action-btn btn-print" title="Imprimir R.O."><i class="fas fa-print"></i></button>`;
@@ -5057,10 +5079,10 @@
                 const btnDel  = pode('ocorrencias','excluir') ? `<button onclick="deletarOcorrencia(${o.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
                 return `<tr>
                     <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;white-space:nowrap">${dataFmt}</td>
-                    <td><span class="badge ${gravClass[o.gravidade]||'bg-saiu'}">${o.gravidade}</span></td>
-                    <td>${titulo}<br><small style="color:var(--text-muted)">${o.unidade} — ${o.local}</small></td>
-                    <td>${desc}<br><small style="color:var(--text-muted)">Resp: ${o.responsavel}</small></td>
-                    <td><span class="badge ${statClass[o.status]||'bg-saiu'}">${o.status}</span></td>
+                    <td><span class="badge ${gravClass[o.gravidade]||'bg-saiu'}">${esc(o.gravidade)}</span></td>
+                    <td>${titulo}<br><small style="color:var(--text-muted)">${esc(o.unidade)} — ${esc(o.local)}</small></td>
+                    <td>${desc}<br><small style="color:var(--text-muted)">Resp: ${esc(o.responsavel)}</small></td>
+                    <td><span class="badge ${statClass[o.status]||'bg-saiu'}">${esc(o.status)}</span></td>
                     <td>${tempo}</td>
                     <td style="min-width:170px">${btnWA}${btnPrint}${btnPDF}${btnEdit}${btnDel}</td>
                 </tr>`;
@@ -5123,7 +5145,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <base href="${baseHref}">
-<title>R.O. ${numero}</title>
+<title>R.O. ${esc(numero)}</title>
 <style>
   /* Réplica fiel do DOCX RO_11_2026: tabela 190mm, alturas exatas */
   /* A4 margem 10mm: conteúdo de 190mm cabe em qualquer destino, sem escala. */
@@ -5192,20 +5214,20 @@
     <tr><td class="sec" colspan="2">1 - Dados do Registro</td></tr>
 
     <tr>
-      <td class="cell" style="width:95mm"><span class="lbl">N\u00BA do Registro</span><span class="val">${numero}</span></td>
-      <td class="cell" style="width:95mm"><span class="lbl">Status</span><span class="val">${o.status || '-'}</span></td>
+      <td class="cell" style="width:95mm"><span class="lbl">N\u00BA do Registro</span><span class="val">${esc(numero)}</span></td>
+      <td class="cell" style="width:95mm"><span class="lbl">Status</span><span class="val">${esc(o.status) || '-'}</span></td>
     </tr>
     <tr>
       <td class="cell"><span class="lbl">Data / Hora de Abertura</span><span class="val">${dataStr}  ${horaStr}</span></td>
-      <td class="cell"><span class="lbl">Tipo de Ocorr\u00EAncia</span><span class="val">${o.categoria || '-'}</span></td>
+      <td class="cell"><span class="lbl">Tipo de Ocorr\u00EAncia</span><span class="val">${esc(o.categoria) || '-'}</span></td>
     </tr>
     <tr>
-      <td class="cell"><span class="lbl">Respons\u00E1vel (Fiscal/Autor)</span><span class="val">${o.responsavel || '-'}</span></td>
-      <td class="cell"><span class="lbl">Contratada</span><span class="val">${o.contratada || '-'}</span></td>
+      <td class="cell"><span class="lbl">Respons\u00E1vel (Fiscal/Autor)</span><span class="val">${esc(o.responsavel) || '-'}</span></td>
+      <td class="cell"><span class="lbl">Contratada</span><span class="val">${esc(o.contratada) || '-'}</span></td>
     </tr>
     <tr>
-      <td class="cell"><span class="lbl">Unidade / Pr\u00E9dio</span><span class="val">${o.unidade || '-'}</span></td>
-      <td class="cell"><span class="lbl">Setor / Local</span><span class="val">${o.local || '-'}</span></td>
+      <td class="cell"><span class="lbl">Unidade / Pr\u00E9dio</span><span class="val">${esc(o.unidade) || '-'}</span></td>
+      <td class="cell"><span class="lbl">Setor / Local</span><span class="val">${esc(o.local) || '-'}</span></td>
     </tr>
     ${encRow}
   </table>
