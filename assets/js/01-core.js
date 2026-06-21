@@ -315,7 +315,15 @@
                 document.getElementById('login-overlay').style.display = 'flex';
             }
         }
-        verificarSessao();
+        // Bootstrap só após TODOS os arquivos JS carregarem. Com sessão ativa,
+        // verificarSessao() chama iniciarSistema()->carregarDados()/iniciarRealtime(),
+        // que ficam em arquivos posteriores; chamar antes deles carregarem dava
+        // ReferenceError e travava a inicialização (sem dados e sem abas de admin).
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', verificarSessao);
+        } else {
+            verificarSessao();
+        }
 
         // ════════════════════════════════════════════════════════════════
         // DEBOUNCE nos campos de busca — evita re-render a cada tecla
