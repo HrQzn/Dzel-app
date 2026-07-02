@@ -49,7 +49,7 @@
             const mes = document.getElementById('filtro-mes-vis').value;
             const dia = document.getElementById('filtro-dia-vis').value;
             const termo = document.getElementById('filtro-busca-vis').value.toUpperCase();
-            const lista = visitantes.filter(v => { const bateMes = !mes || v.entrada.startsWith(mes); const bateDia = !dia || diaLocalISO(v.entrada) === dia; const bateTermo = !termo || v.nome.toUpperCase().includes(termo) || v.doc.toUpperCase().includes(termo) || v.empresa.toUpperCase().includes(termo); return bateMes && bateDia && bateTermo; });
+            const lista = visitantes.filter(v => { const bateMes = !mes || (v.entrada||'').startsWith(mes); const bateDia = !dia || diaLocalISO(v.entrada) === dia; const bateTermo = !termo || (v.nome||'').toUpperCase().includes(termo) || (v.doc||'').toUpperCase().includes(termo) || (v.empresa||'').toUpperCase().includes(termo); return bateMes && bateDia && bateTermo; });
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
             const tbody = document.querySelector('#tabela-visitantes tbody');
@@ -160,7 +160,7 @@
             const mes = document.getElementById('filtro-mes-frota').value;
             const dia = document.getElementById('filtro-dia-frota').value;
             const busca = document.getElementById('filtro-busca-frota').value.toUpperCase();
-            const lista = frota.filter(f => { const bData = !mes || f.hora_inicial.startsWith(mes); const bDia = !dia || diaLocalISO(f.hora_inicial) === dia; const bTexto = !busca || (f.motorista+f.carro+f.setor).toUpperCase().includes(busca); return bData && bDia && bTexto; });
+            const lista = frota.filter(f => { const bData = !mes || (f.hora_inicial||'').startsWith(mes); const bDia = !dia || diaLocalISO(f.hora_inicial) === dia; const bTexto = !busca || ((f.motorista||'')+(f.carro||'')+(f.setor||'')).toUpperCase().includes(busca); return bData && bDia && bTexto; });
             document.getElementById('dash-frota-total').innerText = lista.length;
             document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;
             document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;
@@ -272,7 +272,7 @@
             const mes = document.getElementById('filtro-mes-evento').value;
             const dia = document.getElementById('filtro-dia-evento').value;
             const busca = document.getElementById('filtro-busca-evento').value.toUpperCase();
-            const lista = eventos.filter(ev => { const bData = !mes || ev.data.startsWith(mes); const bDia = !dia || (ev.data||'') === dia; const bTexto = !busca || (ev.nome + ev.organizador + ev.local).toUpperCase().includes(busca); return bData && bDia && bTexto; });
+            const lista = eventos.filter(ev => { const bData = !mes || (ev.data||'').startsWith(mes); const bDia = !dia || (ev.data||'') === dia; const bTexto = !busca || ((ev.nome||'') + (ev.organizador||'') + (ev.local||'')).toUpperCase().includes(busca); return bData && bDia && bTexto; });
             document.getElementById('dash-eventos-qtd').innerText = lista.length;
             document.getElementById('dash-eventos-interno').innerText = lista.filter(e => e.tipo === 'Interno').length;
             document.getElementById('dash-eventos-externo').innerText = lista.filter(e => e.tipo === 'Externo').length;
@@ -342,7 +342,7 @@
         window.renderizarApenasCrachas = function() {
             const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase();
             const statusFiltro = document.getElementById('filtro-status-cracha').value;
-            const lista = crachas.filter(c => { const termo = (c.nome + c.setor + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; });
+            const lista = crachas.filter(c => { const termo = ((c.nome||'') + (c.setor||'') + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; });
             document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length;
             document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length;
             document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length;

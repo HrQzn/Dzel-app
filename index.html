@@ -426,7 +426,7 @@
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-demanda">Registrar Demanda</button>
-                            <button type="button" class="btn-primary" id="btn-import-demanda" onclick="abrirModalImport()" style="background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary" id="btn-import-demanda" onclick="abrirModalImport()" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-demanda" onclick="cancelarEdicaoDemanda()">Cancelar</button>
                         </div>
                     </form>
@@ -943,7 +943,9 @@
                 <i class="fas fa-file-import" style="color:var(--excel)"></i> Importar Planilha — Demandas
             </h3>
             <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem;">
-                Importe demandas em massa a partir de um arquivo Excel ou CSV. As colunas serão mapeadas automaticamente.
+                Importe demandas em massa a partir de um arquivo Excel ou CSV. As colunas serão mapeadas automaticamente
+                e cada linha é categorizada por tipo de serviço (Manutenção Predial, Ar Condicionado, Limpeza, Telefonia).
+                <strong style="color:var(--text-secondary)">Recurso exclusivo de administradores.</strong>
             </p>
 
             <!-- ETAPA 1: Upload -->
@@ -984,9 +986,22 @@
             <div id="import-step-preview" style="display:none">
                 <h4 style="color:var(--text-primary);margin-bottom:6px">Pré-visualização</h4>
                 <p id="import-preview-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px"></p>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px">
+                    <label for="import-cat-default" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary)">
+                        <i class="fas fa-tags"></i> Aplicar tipo de serviço às linhas sem categoria:
+                    </label>
+                    <select id="import-cat-default" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.8rem">
+                        <option value="">— Selecionar —</option>
+                        <option value="MANUTENÇÃO PREDIAL">Manutenção Predial</option>
+                        <option value="AR CONDICIONADO">Ar Condicionado</option>
+                        <option value="LIMPEZA">Limpeza</option>
+                        <option value="TELEFONIA">Telefonia</option>
+                    </select>
+                </div>
                 <div id="import-preview-table"></div>
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">
                     <i class="fas fa-info-circle"></i> Linhas com erros estão destacadas em vermelho e não serão importadas.
+                    O tipo de serviço define em qual aba (Predial / Ar Condicionado / Limpeza) a demanda aparecerá — ajuste linha a linha se necessário.
                 </p>
             </div>
 

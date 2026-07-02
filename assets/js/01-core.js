@@ -384,6 +384,10 @@
             const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias'];
             allTabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden-tab'));
 
+            // Botão "Importar Planilha" (Demandas) — exclusivo de administradores
+            const btnImport = document.getElementById('btn-import-demanda');
+            if (btnImport) btnImport.style.display = userData.isAdmin ? '' : 'none';
+
             if (userData.isAdmin) {
                 allTabs.forEach(t => document.getElementById('tab-' + t).classList.remove('hidden-tab'));
                 carregarUsuarios();

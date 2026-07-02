@@ -39,7 +39,7 @@
             if (contratada.includes("AR CONDICIONADO") || texto.includes("AR CONDICIONADO")) return 'AR';
             if (contratada.includes("PREDIAL") || texto.includes("PREDIAL") || texto.includes("ELÉTRICA") || texto.includes("PINTURA") || texto.includes("PORTA") || texto.includes("FECHADURA")) return 'PREDIAL';
             if (contratada.includes("LIMPEZA") || texto.includes("LIMPEZA") || texto.includes("COPA") || texto.includes("CAFÉ") || texto.includes("ÁGUA")) return 'LIMPEZA';
-            if (contratada.includes("RAMAL") || texto.includes("RAMAL") || texto.includes("TELEFONE")) return 'RAMAL';
+            if (contratada.includes("RAMAL") || contratada.includes("TELEFONIA") || texto.includes("RAMAL") || texto.includes("TELEFONE") || texto.includes("TELEFONIA")) return 'RAMAL';
             return 'OUTROS';
         }
 

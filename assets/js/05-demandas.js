@@ -247,7 +247,8 @@
                 }
                 registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
-                if(!error) syncSheets('demandas', 'upsert', novaDemanda);
+                // upsert no Sheets precisa do id para localizar a linha existente
+                if(!error) syncSheets('demandas', 'upsert', { ...(itemAntigo || {}), ...novaDemanda, id: Number(idEdicao) });
             } else {
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }

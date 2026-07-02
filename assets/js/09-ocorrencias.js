@@ -89,7 +89,7 @@
                 const bM = !mes  || (o.data_hora || '').startsWith(mes);
                 const bD = !dia  || diaLocalISO(o.data_hora) === dia;
                 const bS = !stat || o.status === stat;
-                const bT = !termo || (o.unidade+o.local+o.categoria+o.descricao+o.responsavel+(o.numero||'')).toUpperCase().includes(termo);
+                const bT = !termo || ((o.unidade||'')+(o.local||'')+(o.categoria||'')+(o.descricao||'')+(o.responsavel||'')+(o.numero||'')).toUpperCase().includes(termo);
                 return bM && bD && bS && bT;
             });
             document.getElementById('dash-oco-total').innerText     = lista.length;
