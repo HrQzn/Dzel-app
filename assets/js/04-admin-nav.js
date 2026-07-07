@@ -223,6 +223,7 @@
         }
 
         function calcularTempoDecorrido(dataStr, horaStr, dataFimStr) {
+            if (!dataStr) return '--';   // demanda sem data (importada/legada) não derruba a tabela
             const [ano, mes, dia] = dataStr.split('-').map(Number);
             const [h, m] = (horaStr || '00:00').split(':').map(Number);
             const inicio = new Date(Date.UTC(ano, mes - 1, dia, h + 3, m, 0));

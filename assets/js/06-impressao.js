@@ -993,10 +993,12 @@
 
                 // ─── RODAPÉ EM TODAS AS PÁGINAS ──────────────────────────
                 const dataAtual = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                // Usa o usuário logado (currentUserData) — a chave 'dzel_user' do
+                // sessionStorage nunca era gravada, então o rodapé saía sempre "Sistema".
                 let usuario = 'Sistema';
                 try {
-                    const u = JSON.parse(sessionStorage.getItem('dzel_user') || '{}');
-                    usuario = u.nome || u.email || 'Sistema';
+                    if (typeof currentUserData === 'object' && currentUserData)
+                        usuario = currentUserData.nome || currentUserData.email || 'Sistema';
                 } catch(e) {}
 
                 const totalPages = pdf.internal.getNumberOfPages();
