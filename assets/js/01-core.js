@@ -303,12 +303,23 @@
             const { data } = await sb.auth.getSession();
             if (data.session) {
                 const user = data.session.user;
-                const meta = user.user_metadata;
+                const meta = user.user_metadata || {};
+                // ── Autorização vem de public.profiles (fonte de verdade, protegida
+                // por RLS e gravada só pelas funções admin_*), NUNCA de user_metadata:
+                // o próprio usuário pode editar o metadata via auth.updateUser, então
+                // confiar nele para is_admin/permissoes permitiria auto-elevação. ──
+                let perfil = null;
+                try {
+                    const { data: p } = await sb.from('profiles')
+                        .select('nome,is_admin,permissoes').eq('id', user.id).maybeSingle();
+                    perfil = p;
+                } catch (e) { console.warn('Falha ao carregar perfil de autorização:', e?.message); }
+                // Fail-closed: sem perfil confiável, trata como usuário sem privilégios.
                 currentUserData = {
-                    nome: meta.nome || 'Usuário',
+                    nome: (perfil && perfil.nome) || meta.nome || 'Usuário',
                     email: user.email,
-                    isAdmin: meta.is_admin === true,
-                    perms: meta.permissoes || {}
+                    isAdmin: perfil ? perfil.is_admin === true : false,
+                    perms: (perfil && perfil.permissoes) || {}
                 };
                 iniciarSistema(currentUserData);
             } else {
