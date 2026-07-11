@@ -114,21 +114,49 @@
                     });
                 } catch(e) {}
 
-                // ── Texto central institucional ────────────────────────────
-                pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y + 6, {align:'center'});
-                pdf.setFontSize(9); pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y + 11, {align:'center'});
-                pdf.setFontSize(7); pdf.setFont('helvetica','normal');
-                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y + 15, {align:'center'});
-                pdf.text('DIVISAO DE ZELADORIA', ctrX, Y + 18.5, {align:'center'});
+                // ── Logo da contratada: centralizada na célula direita ─────
+                const cat = getCategoriaDemanda(d);
+                const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
+                const logoW = 24, logoH = 9;
+                const logoX = celDirCX - logoW / 2;   // centro H
+                const logoY = Y + 3;                   // margem superior
+                if (logoSrc) {
+                    try {
+                        await new Promise((resolve) => {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width  = img.naturalWidth  || img.width;
+                                canvas.height = img.naturalHeight || img.height;
+                                canvas.getContext('2d').drawImage(img, 0, 0);
+                                pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG',
+                                    logoX, logoY, logoW, logoH);
+                                resolve();
+                            };
+                            img.onerror = resolve;
+                            img.src = logoSrc;
+                        });
+                    } catch(e) {}
+                }
 
-                // ── Célula direita: "ORDEM DE SERVICO" + Nº (vermelho), como o
-                //    modelo oficial (sem logo de contratada). ───────────────────
+                // ── Texto central institucional ────────────────────────────
+                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y + 5, {align:'center'});
+                pdf.setFontSize(9); pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y + 10, {align:'center'});
+                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y + 14, {align:'center'});
+                pdf.text('DIVISAO DE ZELADORIA', ctrX, Y + 18, {align:'center'});
+
+                // ── Nº O.S. na célula direita (abaixo do logo, se houver) ───
                 const osNum = d.numero_os ? d.numero_os : d.id;
-                pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(60,60,60);
-                pdf.text('ORDEM DE SERVICO', celDirCX, Y + 9, {align:'center'});
-                pdf.setFontSize(15); pdf.setTextColor(192,57,43);
-                pdf.text(`No ${osNum}`, celDirCX, Y + 17, {align:'center'});
+                if (!logoSrc) {
+                    pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                    pdf.text('ORDEM DE SERVICO', celDirCX, Y + 10, {align:'center'});
+                }
+                const numY = logoSrc ? logoY + logoH + 5 : Y + 17;
+                pdf.setFontSize(13); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
+                pdf.text(`${logoSrc ? 'O.S No ' : 'No '}${osNum}`, celDirCX, numY, {align:'center'});
                 pdf.setTextColor(0,0,0);
 
                 pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
@@ -254,8 +282,12 @@
                 pdf.setLineWidth(0.5); linhah(Y+locH); pdf.setLineWidth(0.3);
                 Y += locH;
 
-                // Campos de texto livres (Descrição serviços | Materiais)
-                const camposMH = 35;
+                // Campos de texto livres (Descrição serviços | Materiais).
+                // A caixa se estende para preencher o restante da folha A4: as
+                // seções seguintes ocupam ~47mm (seção 4 = 5 + termo 14 + assinaturas
+                // 28) e queremos as assinaturas terminando ~283mm (rodapé logo abaixo),
+                // então a descrição absorve todo o espaço sobrando — sem vão em branco.
+                const camposMH = Math.max(35, 283 - Y - (5 + 14 + 28));
                 const midX = OX + PW / 2;
                 linhav(midX, Y, Y + camposMH);
 
@@ -364,10 +396,15 @@
             // d.data.split() lançava TypeError e a janela de impressão saía em branco.
             const dataParts = (d.data || '').split('-');
             const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : (d.data || '');
+            const logoInfo = getLogoInfoParaOS(d);
             const chks = montarCheckboxes(d);
+            // Célula direita: logo da contratada (quando houver) + Nº em vermelho.
+            const logoHTML = logoInfo
+                ? `<img src="${logoInfo.src}" style="width:${logoInfo.width};height:${logoInfo.height};object-fit:${logoInfo.fit};display:block;margin:0 auto 3px;" onerror="this.style.display='none'">`
+                : '';
+            const topTextHTML = logoInfo ? '' : '<div class="os-top">ORDEM DE SERVIÇO</div>';
+            const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
-            // Cabeçalho padronizado como o modelo oficial: célula direita mostra
-            // "ORDEM DE SERVIÇO" + o número em vermelho (sem logo de contratada).
             // Preenche o Termo de Encerramento com os horários já registrados pelo
             // sistema (início do atendimento / término); senão, linha em branco.
             const _iniOS = _dataHoraBRTos(d.data_inicio_atendimento);
@@ -392,10 +429,13 @@
      QUALQUER destino (inclui Microsoft Print to PDF), sem o Chrome escalar. */
   @page { size: A4 portrait; margin: 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; }
   body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
-  .sheet { width: 190mm; height: 100%; margin: 0 auto; }
-  table.os { width: 190mm; height: calc(100% - 6mm); margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
+  /* Altura fixa = área útil do A4 (297mm - 2x10mm de margem). Assim a folha é
+     sempre preenchida por completo, sem sobrar espaço em branco embaixo, tanto
+     ao abrir na tela quanto ao imprimir / Microsoft Print to PDF. */
+  .sheet { width: 190mm; height: 277mm; margin: 0 auto; }
+  table.os { width: 190mm; height: 271mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
   table.os td { border: 0.5pt solid #000; vertical-align: top; padding: 1mm 2mm; }
   td.sec { background: #E5E5E5; text-align: center; font-weight: bold; font-size: 8pt; vertical-align: middle; padding: 0.6mm 2mm; }
   .lbl { display: block; font-size: 7pt; font-weight: bold; color: #505050; margin-bottom: 1mm; }
@@ -410,7 +450,7 @@
   td.hdr-num { text-align: center; vertical-align: middle; }
   td.hdr-num img { max-width: 44mm; }
   .os-top { font-size: 8pt; font-weight: bold; color: #333; text-transform: uppercase; letter-spacing: 0.2px; }
-  .os-num { color: #C0392B; font-size: 15pt; font-weight: bold; margin-top: 1.2mm; }
+  .os-num { color: #C0392B; font-size: 13pt; font-weight: bold; margin-top: 1mm; }
   /* Checkbox desenhado (não depende de glifo de fonte) — confiável no
      Microsoft Print to PDF, no celular e no navegador. */
   .cbox { display: inline-block; width: 2.7mm; height: 2.7mm; border: 0.5pt solid #333;
@@ -450,7 +490,7 @@
       <div class="h-sec">SECRETARIA DA EDUCA\u00C7\u00C3O</div>
       <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVIS\u00C3O DE ZELADORIA</div>
     </td>
-    <td class="hdr-num"><div class="os-top">ORDEM DE SERVIÇO</div><div class="os-num">Nº ${esc(osNum)}</div></td>
+    <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${esc(osNum)}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">1. IDENTIFICA\u00C7\u00C3O DA SOLICITA\u00C7\u00C3O</td></tr>
   <tr style="height:10.6mm;">

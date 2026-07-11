@@ -132,12 +132,16 @@ Sheets via Apps Script. Sem etapa de build.
 - **Corrigido:** o rodapé do **Relatório Consolidado (PDF)** lia `sessionStorage`
   (`dzel_user`, nunca gravado) e sempre saía "por Sistema". Agora usa o usuário logado
   (`currentUserData`).
-- **Layout alinhado ao modelo oficial (HTML + PDF):** cabeçalho padronizado — célula
-  direita mostra "ORDEM DE SERVIÇO" + o número em vermelho (removido o logo da
-  contratada, que era redundante com o checkbox de equipe). Checkboxes desenhados como
+- **Layout alinhado ao modelo oficial (HTML + PDF):** checkboxes desenhados como
   quadrados (marcado = verde com "check" branco) em vez de `[ ]`/`[X]` — no HTML via
   CSS, no PDF via vetores, sem depender de glifo (confiável no Microsoft Print to PDF e
-  no celular). Assinatura central passou a "GESTOR / FISCAL (DZEL)".
+  no celular). Assinatura central passou a "GESTOR / FISCAL (DZEL)". O logo da
+  contratada (épura/igm) foi **mantido** no cabeçalho, ao lado do "O.S Nº" em vermelho.
+- **Preenchimento total da folha A4:** a O.S. passou a ter altura fixa igual à área
+  útil do A4 (277mm), com a seção de descrição/materiais absorvendo o espaço restante —
+  as assinaturas ficam no rodapé da página e não sobra vão em branco embaixo, tanto ao
+  abrir na tela quanto ao imprimir. No PDF, a caixa de descrição é calculada para o
+  mesmo efeito.
 
 ---
 
