@@ -120,6 +120,15 @@ Sheets via Apps Script. Sem etapa de build.
   referência (cabeçalho com brasão, seções numeradas, checkboxes de equipe/local,
   termo de encerramento, assinaturas, rodapé). Dados escapados. Estratégia dupla
   desktop (popup) / mobile (overlay com scroll).
+- **Corrigido (bug):** `gerarHTMLOS` fazia `d.data.split('-')` sem proteção — uma O.S.
+  de registro importado/legado com data nula abria a janela de impressão **em branco**.
+  Agora é tolerante a data nula (igual à versão PDF, que já era protegida).
+- **Melhorado (campos e informações):** a Seção 4 "Termo de Encerramento" mostrava
+  sempre linhas em branco (`___/___/20___`). Agora, quando o sistema já registrou o
+  **início do atendimento** (`data_inicio_atendimento`) e o **término** (`data_fim`),
+  a O.S. os imprime preenchidos em BRT (ex.: "15/06/2026 ÀS 09:10"), em negrito — tanto
+  no HTML quanto no PDF. O.S. ainda pendente mantém a linha em branco para preenchimento
+  manual. Menos preenchimento à mão, registro mais profissional.
 - **Corrigido:** o rodapé do **Relatório Consolidado (PDF)** lia `sessionStorage`
   (`dzel_user`, nunca gravado) e sempre saía "por Sistema". Agora usa o usuário logado
   (`currentUserData`).

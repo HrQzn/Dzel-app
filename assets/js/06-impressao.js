@@ -1,3 +1,17 @@
+        // Converte um timestamp ISO (UTC, gravado pelo sistema) para a data/hora
+        // local BRT usada na O.S. — {data:'15/06/2026', hora:'09:10'} ou null.
+        // Usado para preencher automaticamente o "Termo de Encerramento" com o
+        // início do atendimento e o término que o sistema já registrou.
+        function _dataHoraBRTos(iso) {
+            if (!iso) return null;
+            const dt = new Date(iso);
+            if (isNaN(dt.getTime())) return null;
+            const s = dt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo',
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const p = s.replace(',', '').trim().split(/\s+/);
+            return { data: p[0], hora: p[1] || '' };
+        }
+
         async function gerarPDFOS(id, descricao, materiais) {
             const btnPDF = document.getElementById('btn-acao-pdf');
             const textoOriginal = btnPDF.innerHTML;
@@ -281,10 +295,19 @@
                 const e1x = OX + PW * 0.25;
                 const e2x = OX + PW * 0.50;
                 linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
+                // Preenche com os horários que o sistema registrou; se não houver,
+                // mantém a linha em branco para preenchimento manual.
+                const _ini = _dataHoraBRTos(d.data_inicio_atendimento);
+                const _fim = _dataHoraBRTos(d.data_fim);
+                const _iniTxt = _ini ? `${_ini.data} AS ${_ini.hora}` : '___/___/20___ AS ___:___';
+                const _fimTxt = _fim ? `${_fim.data} AS ${_fim.hora}` : '___/___/20___ AS ___:___';
                 label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
-                pdf.setFontSize(8); pdf.text('___/___/20___ AS ___:___', OX+2, Y+9);
+                pdf.setFontSize(8); pdf.setFont('helvetica', _ini ? 'bold' : 'normal');
+                pdf.text(_iniTxt, OX+2, Y+9);
                 label('TERMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
-                pdf.setFontSize(8); pdf.text('___/___/20___ AS ___:___', e1x+2, Y+9);
+                pdf.setFontSize(8); pdf.setFont('helvetica', _fim ? 'bold' : 'normal');
+                pdf.text(_fimTxt, e1x+2, Y+9);
+                pdf.setFont('helvetica', 'normal');
                 label('OBSERVACOES FINAIS / PENDENCIAS', e2x+1, Y+3.5);
                 linhah(Y+enc4H); Y += enc4H;
 
@@ -348,8 +371,10 @@
             // URL base absoluta — resolve imagens relativas na nova janela
             const baseHref = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
 
-            const dataParts = d.data.split('-');
-            const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : d.data;
+            // Protege contra data nula (registros importados/legados): sem guarda,
+            // d.data.split() lançava TypeError e a janela de impressão saía em branco.
+            const dataParts = (d.data || '').split('-');
+            const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : (d.data || '');
             const logoInfo = getLogoInfoParaOS(d);
             const chks = montarCheckboxes(d);
 
@@ -359,6 +384,12 @@
             const topTextHTML = logoInfo ? '' : '<p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:5px;">ORDEM DE SERVIÇO</p>';
             const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
+            // Preenche o Termo de Encerramento com os horários já registrados pelo
+            // sistema (início do atendimento / término); senão, linha em branco.
+            const _iniOS = _dataHoraBRTos(d.data_inicio_atendimento);
+            const _fimOS = _dataHoraBRTos(d.data_fim);
+            const inicioAtendTxt  = _iniOS ? `<strong>${esc(_iniOS.data)} ÀS ${esc(_iniOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
+            const terminoAtendTxt = _fimOS ? `<strong>${esc(_fimOS.data)} ÀS ${esc(_fimOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
             // [X] marcado fica verde-negrito, como no DOCX de referência
             const ck = (m, txt) => m === '[X]'
                 ? `<span class="ck-on">[X] ${txt}</span>`
@@ -474,8 +505,8 @@
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
   <tr style="height:19.5mm;">
-    <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
-    <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">___/___/20___ \u00C0S ___:___</div></td>
+    <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">${inicioAtendTxt}</div></td>
+    <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">${terminoAtendTxt}</div></td>
     <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>
   </tr>
   <tr style="height:27.4mm;">
