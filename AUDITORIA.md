@@ -132,6 +132,12 @@ Sheets via Apps Script. Sem etapa de build.
 - **Corrigido:** o rodapé do **Relatório Consolidado (PDF)** lia `sessionStorage`
   (`dzel_user`, nunca gravado) e sempre saía "por Sistema". Agora usa o usuário logado
   (`currentUserData`).
+- **Layout alinhado ao modelo oficial (HTML + PDF):** cabeçalho padronizado — célula
+  direita mostra "ORDEM DE SERVIÇO" + o número em vermelho (removido o logo da
+  contratada, que era redundante com o checkbox de equipe). Checkboxes desenhados como
+  quadrados (marcado = verde com "check" branco) em vez de `[ ]`/`[X]` — no HTML via
+  CSS, no PDF via vetores, sem depender de glifo (confiável no Microsoft Print to PDF e
+  no celular). Assinatura central passou a "GESTOR / FISCAL (DZEL)".
 
 ---
 

@@ -114,57 +114,21 @@
                     });
                 } catch(e) {}
 
-                // ── Logo da contratada: centralizada na célula direita ─────
-                const cat = getCategoriaDemanda(d);
-                const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
-                const logoW = 24, logoH = 9;
-                const logoX = celDirCX - logoW / 2;   // centro H
-                const logoY = Y + 3;                   // margem superior
-                if (logoSrc) {
-                    try {
-                        await new Promise((resolve) => {
-                            const img = new Image();
-                            img.crossOrigin = 'anonymous';
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                canvas.width  = img.naturalWidth  || img.width;
-                                canvas.height = img.naturalHeight || img.height;
-                                canvas.getContext('2d').drawImage(img, 0, 0);
-                                pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG',
-                                    logoX, logoY, logoW, logoH);
-                                resolve();
-                            };
-                            img.onerror = resolve;
-                            img.src = logoSrc;
-                        });
-                    } catch(e) {}
-                }
+                // ── Texto central institucional ────────────────────────────
+                pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y + 6, {align:'center'});
+                pdf.setFontSize(9); pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y + 11, {align:'center'});
+                pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y + 15, {align:'center'});
+                pdf.text('DIVISAO DE ZELADORIA', ctrX, Y + 18.5, {align:'center'});
 
-                // ── Texto central — alinhado ao CENTRO da coluna do meio ──
-                // (não ao centro da página inteira)
-                const textoY1 = logoSrc ? Y + 5  : Y + 5;
-                const textoY2 = logoSrc ? Y + 10 : Y + 10;
-                const textoY3 = logoSrc ? Y + 14 : Y + 14;
-                const textoY4 = logoSrc ? Y + 18 : Y + 18;
-
-                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, textoY1, {align:'center'});
-                pdf.setFontSize(9);
-                pdf.text('SECRETARIA DA EDUCACAO', ctrX, textoY2, {align:'center'});
-                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
-                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, textoY3, {align:'center'});
-                pdf.text('DIVISAO DE ZELADORIA', ctrX, textoY4, {align:'center'});
-
-                // ── Nº OS: centralizado na célula direita, abaixo do logo ─
+                // ── Célula direita: "ORDEM DE SERVICO" + Nº (vermelho), como o
+                //    modelo oficial (sem logo de contratada). ───────────────────
                 const osNum = d.numero_os ? d.numero_os : d.id;
-                if (!logoSrc) {
-                    // Sem logo: mostra "ORDEM DE SERVICO" acima do número
-                    pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                    pdf.text('ORDEM DE SERVICO', celDirCX, Y + 10, {align:'center'});
-                }
-                const numY = logoSrc ? logoY + logoH + 5 : Y + 17;
-                pdf.setFontSize(13); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
-                pdf.text(`No. ${osNum}`, celDirCX, numY, {align:'center'});
+                pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(60,60,60);
+                pdf.text('ORDEM DE SERVICO', celDirCX, Y + 9, {align:'center'});
+                pdf.setFontSize(15); pdf.setTextColor(192,57,43);
+                pdf.text(`No ${osNum}`, celDirCX, Y + 17, {align:'center'});
                 pdf.setTextColor(0,0,0);
 
                 pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
@@ -219,7 +183,25 @@
                 // ══════════════════════════════════════════════════════════════
                 Y = secao('3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)', Y, 5);
 
-                // Checkboxes equipes (2 colunas)
+                // Checkbox desenhado (quadrado) — igual ao modelo oficial, sem
+                // depender de glifo. Verde com "check" branco quando marcado.
+                const caixa = (x, yBaseline, on) => {
+                    const sz = 2.6, top = yBaseline - 2.3;
+                    pdf.setLineWidth(0.2);
+                    if (on) {
+                        pdf.setFillColor(0,120,0); pdf.setDrawColor(0,120,0);
+                        pdf.rect(x, top, sz, sz, 'FD');
+                        pdf.setDrawColor(255,255,255); pdf.setLineWidth(0.4);
+                        pdf.line(x+0.6, top+1.4, x+1.1, top+2.0);
+                        pdf.line(x+1.1, top+2.0, x+2.1, top+0.7);
+                    } else {
+                        pdf.setDrawColor(60,60,60);
+                        pdf.rect(x, top, sz, sz, 'D');
+                    }
+                    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3);
+                };
+
+                // Checkboxes equipes (3 colunas)
                 label('EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA', OX+1, Y+4);
                 const chks = montarCheckboxes(d);
                 const equipes = [
@@ -232,7 +214,6 @@
                     [chks.extintores, 'MANUT. E RECARGA EXTINTORES'],
                     ['[ ]',           'OUTROS: _______________________'],
                 ];
-                pdf.setFontSize(8); pdf.setFont('helvetica','normal');
                 const colW3 = PW / 3;
                 equipes.forEach((eq, i) => {
                     const col = i % 3;
@@ -240,9 +221,10 @@
                     const ex  = OX + 2 + col * colW3;
                     const ey  = Y + 8 + row * 5.5;
                     const marcado = eq[0] === '[X]';
-                    pdf.setFont('helvetica', marcado ? 'bold' : 'normal');
+                    caixa(ex, ey, marcado);
+                    pdf.setFontSize(8); pdf.setFont('helvetica', marcado ? 'bold' : 'normal');
                     pdf.setTextColor(marcado ? 0 : 80, marcado ? 120 : 80, marcado ? 0 : 80);
-                    pdf.text(`${eq[0]} ${s(eq[1])}`, ex, ey);
+                    pdf.text(s(eq[1]), ex + 3.6, ey);
                 });
                 pdf.setTextColor(0,0,0);
                 const eqH = Math.ceil(equipes.length / 3) * 5.5 + 11;
@@ -251,15 +233,22 @@
                 // Checkboxes locais (4 colunas)
                 label('LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO', OX+1, Y+4);
                 const locais = ['SEDE','AROUCHE','EFAPE','ARMENIA','CASA VERDE','SAO DOMINGOS','CAJAMAR','TENENTE PENA','CENTRO OESTE','CAPE'];
-                pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
+                pdf.setFontSize(8); pdf.setFont('helvetica','normal');
                 const colW4 = PW / 4;
                 locais.forEach((loc, i) => {
                     const col = i % 4;
                     const row = Math.floor(i / 4);
-                    pdf.text(`[ ] ${s(loc)}`, OX + 2 + col * colW4, Y + 8 + row * 5.5);
+                    const lx = OX + 2 + col * colW4;
+                    const ly = Y + 8 + row * 5.5;
+                    caixa(lx, ly, false);
+                    pdf.setTextColor(80,80,80);
+                    pdf.text(s(loc), lx + 3.6, ly);
                 });
                 const rowsLoc = Math.ceil(locais.length / 4);
-                pdf.text(`[ ] OUTRO: ______________________________`, OX + 2, Y + 8 + rowsLoc * 5.5);
+                const outroY = Y + 8 + rowsLoc * 5.5;
+                caixa(OX + 2, outroY, false);
+                pdf.setTextColor(80,80,80);
+                pdf.text('OUTRO: ______________________________', OX + 2 + 3.6, outroY);
                 pdf.setTextColor(0,0,0);
                 const locH = (rowsLoc + 1) * 5.5 + 10;
                 pdf.setLineWidth(0.5); linhah(Y+locH); pdf.setLineWidth(0.3);
@@ -320,8 +309,8 @@
                 linhav(OX + sigW * 2, Y, Y + sigH);
 
                 const sigs = [
-                    ['TECNICO EXECUTOR',        'Nome legivel / Matricula / Empresa'],
-                    ['FISCAL',   'Carimbo e Assinatura'],
+                    ['TECNICO EXECUTOR',         'Nome legivel / Matricula / Empresa'],
+                    ['GESTOR / FISCAL (DZEL)',   'Carimbo e Assinatura'],
                     ['SOLICITANTE / RECEBEDOR',  'Atesto a conformidade do servico'],
                 ];
                 sigs.forEach((sig, i) => {
@@ -375,15 +364,10 @@
             // d.data.split() lançava TypeError e a janela de impressão saía em branco.
             const dataParts = (d.data || '').split('-');
             const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : (d.data || '');
-            const logoInfo = getLogoInfoParaOS(d);
             const chks = montarCheckboxes(d);
-
-            const logoHTML = logoInfo
-                ? `<img src="${logoInfo.src}" style="width:${logoInfo.width};height:${logoInfo.height};object-fit:${logoInfo.fit};display:block;margin-bottom:5px;" onerror="this.style.display='none'">`
-                : '';
-            const topTextHTML = logoInfo ? '' : '<p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:5px;">ORDEM DE SERVIÇO</p>';
-            const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
+            // Cabeçalho padronizado como o modelo oficial: célula direita mostra
+            // "ORDEM DE SERVIÇO" + o número em vermelho (sem logo de contratada).
             // Preenche o Termo de Encerramento com os horários já registrados pelo
             // sistema (início do atendimento / término); senão, linha em branco.
             const _iniOS = _dataHoraBRTos(d.data_inicio_atendimento);
@@ -392,8 +376,8 @@
             const terminoAtendTxt = _fimOS ? `<strong>${esc(_fimOS.data)} ÀS ${esc(_fimOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
             // [X] marcado fica verde-negrito, como no DOCX de referência
             const ck = (m, txt) => m === '[X]'
-                ? `<span class="ck-on">[X] ${txt}</span>`
-                : `[ ] ${txt}`;
+                ? `<span class="cbox on"></span><b class="ck-on">${txt}</b>`
+                : `<span class="cbox"></span>${txt}`;
 
             return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -425,7 +409,15 @@
   .h-coord { font-size: 7pt; margin-top: 0.5mm; }
   td.hdr-num { text-align: center; vertical-align: middle; }
   td.hdr-num img { max-width: 44mm; }
-  .os-num { color: #C0392B; font-size: 13pt; font-weight: bold; }
+  .os-top { font-size: 8pt; font-weight: bold; color: #333; text-transform: uppercase; letter-spacing: 0.2px; }
+  .os-num { color: #C0392B; font-size: 15pt; font-weight: bold; margin-top: 1.2mm; }
+  /* Checkbox desenhado (não depende de glifo de fonte) — confiável no
+     Microsoft Print to PDF, no celular e no navegador. */
+  .cbox { display: inline-block; width: 2.7mm; height: 2.7mm; border: 0.5pt solid #333;
+    box-sizing: border-box; vertical-align: -0.4mm; margin-right: 1.3mm; position: relative; }
+  .cbox.on { border-color: #007800; background: #007800; }
+  .cbox.on::after { content: ""; position: absolute; left: 0.85mm; top: 0.3mm;
+    width: 0.7mm; height: 1.4mm; border: solid #fff; border-width: 0 0.5pt 0.5pt 0; transform: rotate(45deg); }
   .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
   .ck-on { color: #007800; font-weight: bold; }
@@ -458,7 +450,7 @@
       <div class="h-sec">SECRETARIA DA EDUCA\u00C7\u00C3O</div>
       <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVIS\u00C3O DE ZELADORIA</div>
     </td>
-    <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${esc(osNum)}</div></td>
+    <td class="hdr-num"><div class="os-top">ORDEM DE SERVIÇO</div><div class="os-num">Nº ${esc(osNum)}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">1. IDENTIFICA\u00C7\u00C3O DA SOLICITA\u00C7\u00C3O</td></tr>
   <tr style="height:10.6mm;">
@@ -484,7 +476,7 @@
         <div>${ck(chks.ti,'SUPORTE TI')}</div>
         <div>${ck(chks.telefonia,'TELEFONIA')}</div>
         <div>${ck(chks.extintores,'MANUT. E RECARGA EXTINTORES')}</div>
-        <div style="grid-column:span 2;">[ ] OUTROS: __________________________________</div>
+        <div style="grid-column:span 2;"><span class="cbox"></span>OUTROS: __________________________________</div>
       </div>
     </td>
   </tr>
@@ -492,10 +484,10 @@
     <td colspan="7">
       <span class="lbl">LOCAL DE ATUA\u00C7\u00C3O / PR\u00C9DIO VINCULADO</span>
       <div class="grid4">
-        <div>[ ] SEDE</div><div>[ ] AROUCHE</div><div>[ ] EFAPE</div><div>[ ] ARM\u00CANIA</div>
-        <div>[ ] CASA VERDE</div><div>[ ] S\u00C3O DOMINGOS</div><div>[ ] CAJAMAR</div><div>[ ] TENENTE PENA</div>
-        <div>[ ] CENTRO OESTE</div><div>[ ] CAPE</div>
-        <div style="grid-column:span 2;">[ ] OUTRO: ______________________________________</div>
+        <div><span class="cbox"></span>SEDE</div><div><span class="cbox"></span>AROUCHE</div><div><span class="cbox"></span>EFAPE</div><div><span class="cbox"></span>ARM\u00CANIA</div>
+        <div><span class="cbox"></span>CASA VERDE</div><div><span class="cbox"></span>S\u00C3O DOMINGOS</div><div><span class="cbox"></span>CAJAMAR</div><div><span class="cbox"></span>TENENTE PENA</div>
+        <div><span class="cbox"></span>CENTRO OESTE</div><div><span class="cbox"></span>CAPE</div>
+        <div style="grid-column:span 2;"><span class="cbox"></span>OUTRO: ______________________________________</div>
       </div>
     </td>
   </tr>
@@ -513,7 +505,7 @@
     <td colspan="7" style="padding:0;">
       <div class="sig-row">
         <div class="sig-col"><div class="sig-line"></div><div class="sig-name">T\u00C9CNICO EXECUTOR</div><div class="sig-sub">Nome leg\u00EDvel / Matr\u00EDcula / Empresa</div></div>
-        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">FISCAL</div><div class="sig-sub">Carimbo e Assinatura</div></div>
+        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">GESTOR / FISCAL (DZEL)</div><div class="sig-sub">Carimbo e Assinatura</div></div>
         <div class="sig-col"><div class="sig-line"></div><div class="sig-name">SOLICITANTE / RECEBEDOR</div><div class="sig-sub">Atesto a conformidade do servi\u00E7o</div></div>
       </div>
     </td>
