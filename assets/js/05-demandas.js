@@ -179,7 +179,15 @@
             const horaLocal = document.getElementById('concluir-hora').value;
             if (!horaLocal) { alert('Informe a data e hora do encerramento.'); return; }
             const item = demandas.find(d => d.id == id); if (!item) return;
-            const upd = { status: 'Concluído', data_fim: DateUtils.toDatabaseISO(horaLocal) };
+            const upd = {
+                status: 'Concluído',
+                data_fim: DateUtils.toDatabaseISO(horaLocal),
+                // Garante o carimbo de Início do Atendimento: preserva o que já
+                // existir; se a demanda foi concluída sem nunca ter passado por
+                // "Em Andamento" no sistema (ex.: registro importado), usa o
+                // próprio horário de encerramento para o campo não ficar nulo.
+                data_inicio_atendimento: item.data_inicio_atendimento || DateUtils.toDatabaseISO(horaLocal)
+            };
             const { error } = await sb.from('demandas').update(upd).eq('id', id);
             if (error) { alert('Erro: ' + error.message); return; }
             registrarLog('Edição', 'Demandas', `Concluiu demanda ID: ${id}`);

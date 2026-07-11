@@ -12,6 +12,23 @@
             return { data: p[0], hora: p[1] || '' };
         }
 
+        // Início do Atendimento exibido na O.S.: usa o carimbo de 1ª resposta
+        // (data_inicio_atendimento). Registros importados/legados não têm esse
+        // carimbo — nesse caso cai para a data/hora de ABERTURA, garantindo que o
+        // campo nunca saia em branco no documento. É apenas apresentação: não
+        // grava no banco nem interfere no cálculo de SLA (tempo de 1ª resposta).
+        function _inicioAtendOS(d) {
+            const carimbo = _dataHoraBRTos(d && d.data_inicio_atendimento);
+            if (carimbo) return carimbo;
+            if (d && d.data) {
+                const p = String(d.data).split('-');
+                const dataBr = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(d.data);
+                const hora = (d.hora && /^\d{1,2}:\d{2}/.test(d.hora)) ? d.hora.slice(0, 5) : '';
+                return { data: dataBr, hora };
+            }
+            return null;
+        }
+
         async function gerarPDFOS(id, descricao, materiais) {
             const btnPDF = document.getElementById('btn-acao-pdf');
             const textoOriginal = btnPDF.innerHTML;
@@ -27,9 +44,13 @@
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
                 // ── Dimensões da página ──────────────────────────────────────
-                const PW = 200;   // largura útil (210 - 5mm cada lado)
-                const OX = 5;     // origem X
-                let   Y  = 8;     // cursor Y (avança linha a linha)
+                // Mesma margem da versão HTML/impressão (10mm cada lado), para
+                // que o PDF baixado e o Print-to-PDF tenham margens idênticas.
+                const PW = 190;   // largura útil (210 - 10mm cada lado)
+                const OX = 10;    // origem X (margem esquerda = 10mm)
+                const TOPY = 10;  // margem superior = 10mm
+                const BOTY = 285; // limite inferior do conteúdo (~10mm de rodapé)
+                let   Y  = TOPY;  // cursor Y (avança linha a linha)
 
                 // ── Sanitize: remove acentos para compatibilidade com helvetica ──
                 const s = (str) => String(str || '')
@@ -76,21 +97,23 @@
                 const hdrH = 24;  // altura ligeiramente maior para melhor respiro
                 rect(OX, Y, PW, hdrH);
 
-                // Divisores verticais: célula esquerda 15% | centro 60% | direita 25%
-                const c1x = OX + PW * 0.15;          // x = 35mm
-                const c2x = OX + PW * 0.75;          // x = 155mm
+                // Divisores verticais SIMÉTRICOS: esquerda 20% | centro 60% | direita 20%.
+                // Colunas laterais iguais garantem que o texto central caia no
+                // centro EXATO da página (mesma proporção da versão HTML/impressão).
+                const c1x = OX + PW * 0.20;
+                const c2x = OX + PW * 0.80;
                 linhav(c1x, Y, Y + hdrH);
                 linhav(c2x, Y, Y + hdrH);
 
                 // ── Centros exatos de cada célula ──────────────────────────
-                // Célula esquerda: OX(5) até c1x(35) → largura 30mm
-                const celEsqW = c1x - OX;            // 30mm
-                // Célula centro: c1x(35) até c2x(155) → largura 120mm
-                const ctrX = (c1x + c2x) / 2;        // 95mm  ← centro real da coluna
-                // Célula direita: c2x(155) até OX+PW(205) → largura 50mm
-                const celDirX  = c2x;                 // 155mm
-                const celDirW  = (OX + PW) - c2x;    // 50mm
-                const celDirCX = c2x + celDirW / 2;  // 180mm ← centro real da coluna direita
+                // Célula esquerda: OX até c1x
+                const celEsqW = c1x - OX;
+                // Célula centro: c1x até c2x → centro = centro da página
+                const ctrX = (c1x + c2x) / 2;        // = OX + PW/2 (centro real da folha)
+                // Célula direita: c2x até OX+PW
+                const celDirX  = c2x;
+                const celDirW  = (OX + PW) - c2x;
+                const celDirCX = c2x + celDirW / 2;  // centro real da coluna direita
 
                 // ── Brasão: centralizado na célula esquerda ────────────────
                 const brasaoW = 15, brasaoH = 15;
@@ -285,9 +308,9 @@
                 // Campos de texto livres (Descrição serviços | Materiais).
                 // A caixa se estende para preencher o restante da folha A4: as
                 // seções seguintes ocupam ~47mm (seção 4 = 5 + termo 14 + assinaturas
-                // 28) e queremos as assinaturas terminando ~283mm (rodapé logo abaixo),
+                // 28) e queremos as assinaturas terminando em BOTY (rodapé logo abaixo),
                 // então a descrição absorve todo o espaço sobrando — sem vão em branco.
-                const camposMH = Math.max(35, 283 - Y - (5 + 14 + 28));
+                const camposMH = Math.max(35, BOTY - Y - (5 + 14 + 28));
                 const midX = OX + PW / 2;
                 linhav(midX, Y, Y + camposMH);
 
@@ -318,9 +341,9 @@
                 linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
                 // Preenche com os horários que o sistema registrou; se não houver,
                 // mantém a linha em branco para preenchimento manual.
-                const _ini = _dataHoraBRTos(d.data_inicio_atendimento);
+                const _ini = _inicioAtendOS(d);
                 const _fim = _dataHoraBRTos(d.data_fim);
-                const _iniTxt = _ini ? `${_ini.data} AS ${_ini.hora}` : '___/___/20___ AS ___:___';
+                const _iniTxt = _ini ? `${_ini.data}${_ini.hora ? ' AS ' + _ini.hora : ''}` : '___/___/20___ AS ___:___';
                 const _fimTxt = _fim ? `${_fim.data} AS ${_fim.hora}` : '___/___/20___ AS ___:___';
                 label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
                 pdf.setFontSize(8); pdf.setFont('helvetica', _ini ? 'bold' : 'normal');
@@ -360,7 +383,7 @@
 
                 // Borda externa da OS inteira
                 pdf.setLineWidth(0.7);
-                pdf.rect(OX, 8, PW, Y - 8);
+                pdf.rect(OX, TOPY, PW, Y - TOPY);
                 pdf.setLineWidth(0.3);
 
                 // Rodapé
@@ -407,9 +430,9 @@
             const osNum = d.numero_os ? d.numero_os : d.id;
             // Preenche o Termo de Encerramento com os horários já registrados pelo
             // sistema (início do atendimento / término); senão, linha em branco.
-            const _iniOS = _dataHoraBRTos(d.data_inicio_atendimento);
+            const _iniOS = _inicioAtendOS(d);
             const _fimOS = _dataHoraBRTos(d.data_fim);
-            const inicioAtendTxt  = _iniOS ? `<strong>${esc(_iniOS.data)} ÀS ${esc(_iniOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
+            const inicioAtendTxt  = _iniOS ? `<strong>${esc(_iniOS.data)}${_iniOS.hora ? ' ÀS ' + esc(_iniOS.hora) : ''}</strong>` : '___/___/20___ ÀS ___:___';
             const terminoAtendTxt = _fimOS ? `<strong>${esc(_fimOS.data)} ÀS ${esc(_fimOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
             // [X] marcado fica verde-negrito, como no DOCX de referência
             const ck = (m, txt) => m === '[X]'
@@ -424,18 +447,23 @@
 <base href="${baseHref}">
 <title>O.S. ${esc(osNum)}</title>
 <style>
-  /* Réplica fiel do DOCX OS_4859: tabela 200mm, 7 colunas, alturas exatas */
-  /* A4 margem 10mm: o conteúdo (190mm) cabe folgado na área imprimível de
-     QUALQUER destino (inclui Microsoft Print to PDF), sem o Chrome escalar. */
+  /* ── PADRÃO A4 ÚNICO PARA TELA, PDF E IMPRESSÃO ──────────────────────────
+     Folha A4 (210×297mm), margem de 10mm em todos os destinos. A área útil é
+     190×277mm. O conteúdo é dimensionado EXATAMENTE nessa área, então nenhum
+     navegador precisa reduzir escala ("fit to page") e não sobra conteúdo para
+     uma 2ª página — o mesmo resultado no Chrome, Edge, Firefox e no
+     Microsoft Print to PDF. */
   @page { size: A4 portrait; margin: 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { margin: 0; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
-  /* Altura fixa = área útil do A4 (297mm - 2x10mm de margem). Assim a folha é
-     sempre preenchida por completo, sem sobrar espaço em branco embaixo, tanto
-     ao abrir na tela quanto ao imprimir / Microsoft Print to PDF. */
-  .sheet { width: 190mm; height: 277mm; margin: 0 auto; }
-  table.os { width: 190mm; height: 271mm; margin: 0 auto; border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
+  html, body { margin: 0; padding: 0; width: 190mm; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff;
+    -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* Folha = área útil do A4. flex-column + overflow:hidden garantem que a
+     tabela (272mm) + rodapé (5mm) preencham a página sem estourar para a 2ª. */
+  .sheet { width: 190mm; height: 277mm; margin: 0 auto; display: flex;
+    flex-direction: column; overflow: hidden; }
+  table.os { width: 190mm; max-width: 190mm; height: 272mm; flex: 0 0 auto; margin: 0;
+    border-collapse: collapse; table-layout: fixed; border: 1.5pt solid #000; }
   table.os td { border: 0.5pt solid #000; vertical-align: top; padding: 1mm 2mm; }
   td.sec { background: #E5E5E5; text-align: center; font-weight: bold; font-size: 8pt; vertical-align: middle; padding: 0.6mm 2mm; }
   .lbl { display: block; font-size: 7pt; font-weight: bold; color: #505050; margin-bottom: 1mm; }
@@ -448,7 +476,7 @@
   .h-sec { font-size: 9pt; font-weight: bold; }
   .h-coord { font-size: 7pt; margin-top: 0.5mm; }
   td.hdr-num { text-align: center; vertical-align: middle; }
-  td.hdr-num img { max-width: 44mm; }
+  td.hdr-num img { max-width: 34mm; max-height: 15mm; }
   .os-top { font-size: 8pt; font-weight: bold; color: #333; text-transform: uppercase; letter-spacing: 0.2px; }
   .os-num { color: #C0392B; font-size: 13pt; font-weight: bold; margin-top: 1mm; }
   /* Checkbox desenhado (não depende de glifo de fonte) — confiável no
@@ -470,11 +498,20 @@
   .sig-line { width: 88%; border-top: 0.75pt solid #000; margin-bottom: 1.2mm; }
   .sig-name { font-size: 8pt; font-weight: bold; white-space: nowrap; }
   .sig-sub { font-size: 7pt; color: #505050; margin-top: 0.5mm; white-space: nowrap; }
-  .footer { text-align: center; font-size: 7.5pt; font-style: italic; margin-top: 2.5mm; color: #555; }
+  .footer { flex: 0 0 auto; height: 5mm; line-height: 5mm; text-align: center;
+    font-size: 7.5pt; font-style: italic; margin: 0; color: #555; overflow: hidden; }
   /* Botão fechar — visível na tela, oculto na impressão */
   #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; border: none;
     padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 9999; }
-  @media print { #btn-fechar { display: none !important; } }
+  /* Cores de fundo (faixas cinza das seções, checkbox verde) impressas fielmente
+     e sem qualquer transform/scale/zoom que altere o tamanho da folha. */
+  @media print {
+    html, body { width: 190mm; margin: 0 !important; padding: 0 !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet { margin: 0 auto !important; transform: none !important; zoom: 1 !important; }
+    table.os, table.os * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #btn-fechar { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -482,7 +519,7 @@
 
 <div class="sheet">
 <table class="os">
-  <colgroup><col style="width:15%"><col style="width:10%"><col style="width:8.35%"><col style="width:16.65%"><col style="width:16.65%"><col style="width:8.35%"><col style="width:25%"></colgroup>
+  <colgroup><col style="width:20%"><col style="width:10%"><col style="width:8.35%"><col style="width:16.65%"><col style="width:16.65%"><col style="width:8.35%"><col style="width:20%"></colgroup>
   <tr style="height:23.3mm;">
     <td class="hdr-brasao"><img src="brasao.jpg" alt="SP" onerror="this.style.display='none'"></td>
     <td class="hdr-centro" colspan="5">

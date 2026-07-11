@@ -282,8 +282,11 @@
         function montarDadosOS(id) { return demandas.find(item => item.id == id); }
         function getLogoInfoParaOS(d) {
             const cat = getCategoriaDemanda(d);
-            if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '140px', height: '60px', fit: 'cover' };
-            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '145px', height: '55px', fit: 'contain' };
+            // Dimensões em mm que cabem na célula direita do cabeçalho (20% de
+            // 190mm = 38mm). object-fit:contain mostra o logotipo inteiro, sem
+            // corte, mantendo a proporção — igual em tela, PDF e impressão.
+            if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '32mm', height: '13mm', fit: 'contain' };
+            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '32mm', height: '13mm', fit: 'contain' };
             return null;
         }
         function montarCheckboxes(d) {
