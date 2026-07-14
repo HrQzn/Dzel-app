@@ -381,8 +381,24 @@
         window.fazerLogin = async function() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-pass').value;
+            const btn = document.querySelector('.login-btn');
+            const errEl = document.getElementById('login-error');
+            if (errEl) errEl.style.display = 'none';
+            // Feedback imediato (evita duplo clique e a sensação de "travou" durante a rede)
+            let htmlOrig;
+            if (btn) { htmlOrig = btn.innerHTML; btn.disabled = true; btn.innerHTML = 'Entrando… <i class="fas fa-spinner fa-spin"></i>'; }
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) { document.getElementById('login-error').style.display = 'block'; } else { location.reload(); }
+            if (error) {
+                if (errEl) errEl.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.innerHTML = htmlOrig; }
+            } else {
+                // Transição suave login → app SEM recarregar a página. Antes usava
+                // location.reload(), que reprocessava tudo e causava o "reboot"/flash.
+                // verificarSessao() encontra a sessão recém-criada, carrega o perfil e
+                // chama iniciarSistema() (esconde o login, mostra o app e carrega os dados).
+                await verificarSessao();
+                if (btn) { btn.disabled = false; btn.innerHTML = htmlOrig; }
+            }
         }
 
         function iniciarSistema(userData) {
