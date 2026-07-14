@@ -127,7 +127,7 @@
             const listaDemandas   = demandasEscopoDash().filter(d => !filtroMes || (d.data||'').startsWith(filtroMes));
             const listaFrota      = frota.filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes));
             let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
-            listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
+            listaDemandas.forEach(d => { const cat = getCategoriaCached(d); counts[cat] = (counts[cat] || 0) + 1; });
             const totalFrota = listaFrota.length;
             const isMobile = window.innerWidth <= 900;
 

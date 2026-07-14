@@ -18,8 +18,9 @@
     <!-- Google Fonts — já tem display=swap, manter non-blocking -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
-    <!-- Supabase — síncrono (necessário para inline script imediato, ~80KB) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase (~80KB) — defer: baixa em paralelo sem bloquear o 1º paint.
+         Executa antes de 01-core.js (defer preserva a ordem do documento). -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Chart.js + plugin — defer (só usado no Dashboard) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0" defer></script>
@@ -1029,15 +1030,17 @@
         </div>
     </div>
 
-    <script src="assets/js/01-core.js"></script>
-    <script src="assets/js/02-dados-sla.js"></script>
-    <script src="assets/js/03-dashboard.js"></script>
-    <script src="assets/js/04-admin-nav.js"></script>
-    <script src="assets/js/05-demandas.js"></script>
-    <script src="assets/js/06-impressao.js"></script>
-    <script src="assets/js/07-demandas-render.js"></script>
-    <script src="assets/js/08-cadastros.js"></script>
-    <script src="assets/js/09-ocorrencias.js"></script>
-    <script src="assets/js/10-import.js"></script>
+    <!-- defer: os 10 módulos baixam em paralelo e executam na ordem do documento,
+         após o parse do HTML e antes do DOMContentLoaded (sem waterfall síncrono). -->
+    <script src="assets/js/01-core.js" defer></script>
+    <script src="assets/js/02-dados-sla.js" defer></script>
+    <script src="assets/js/03-dashboard.js" defer></script>
+    <script src="assets/js/04-admin-nav.js" defer></script>
+    <script src="assets/js/05-demandas.js" defer></script>
+    <script src="assets/js/06-impressao.js" defer></script>
+    <script src="assets/js/07-demandas-render.js" defer></script>
+    <script src="assets/js/08-cadastros.js" defer></script>
+    <script src="assets/js/09-ocorrencias.js" defer></script>
+    <script src="assets/js/10-import.js" defer></script>
 </body>
 </html>

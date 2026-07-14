@@ -198,7 +198,7 @@
 
         // Helper: atualiza KPI cards de Predial / AR / Limpeza sem recriar gráficos
         function _atualizarKPIsAbas(lista) {
-            const fil = (cat, st) => lista.filter(d => getCategoriaDemanda(d) === cat && (!st || d.status === st)).length;
+            const fil = (cat, st) => lista.filter(d => getCategoriaCached(d) === cat && (!st || d.status === st)).length;
             const e = id => document.getElementById(id);
             [['predial','PREDIAL'],['ar','AR'],['limpeza','LIMPEZA']].forEach(([pfx,cat]) => {
                 if (e(`dash-${pfx}-total`))     e(`dash-${pfx}-total`).innerText     = fil(cat);
@@ -228,7 +228,7 @@
                 const publicoEventos  = listaEventos.reduce((s, e) => s + (parseInt(e.publico) || 0), 0);
 
                 let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
-                listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
+                listaDemandas.forEach(d => { const cat = getCategoriaCached(d); counts[cat] = (counts[cat] || 0) + 1; });
 
                 const totalManutencao = counts['PREDIAL'] + counts['AR'];
                 const totalGeral = totalFrota + totalVisitantes + listaDemandas.length + totalEventos + totalCrachas;
@@ -249,21 +249,21 @@
                 set('dash-demanda-concluido',dConc);
 
                 // ── Cards Predial ──
-                const pList = listaDemandas.filter(d => getCategoriaDemanda(d) === 'PREDIAL');
+                const pList = listaDemandas.filter(d => getCategoriaCached(d) === 'PREDIAL');
                 set('dash-predial-total',    pList.length);
                 set('dash-predial-pendente', pList.filter(d => d.status === 'Pendente').length);
                 set('dash-predial-andamento',pList.filter(d => d.status === 'Em Andamento').length);
                 set('dash-predial-concluido',pList.filter(d => d.status === 'Concluído').length);
 
                 // ── Cards AR ──
-                const aList = listaDemandas.filter(d => getCategoriaDemanda(d) === 'AR');
+                const aList = listaDemandas.filter(d => getCategoriaCached(d) === 'AR');
                 set('dash-ar-total',    aList.length);
                 set('dash-ar-pendente', aList.filter(d => d.status === 'Pendente').length);
                 set('dash-ar-andamento',aList.filter(d => d.status === 'Em Andamento').length);
                 set('dash-ar-concluido',aList.filter(d => d.status === 'Concluído').length);
 
                 // ── Cards Limpeza ──
-                const lList = listaDemandas.filter(d => getCategoriaDemanda(d) === 'LIMPEZA');
+                const lList = listaDemandas.filter(d => getCategoriaCached(d) === 'LIMPEZA');
                 set('dash-limpeza-total',    lList.length);
                 set('dash-limpeza-pendente', lList.filter(d => d.status === 'Pendente').length);
                 set('dash-limpeza-andamento',lList.filter(d => d.status === 'Em Andamento').length);

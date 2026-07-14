@@ -326,14 +326,18 @@
                 document.getElementById('login-overlay').style.display = 'flex';
             }
         }
-        // Bootstrap só após TODOS os arquivos JS carregarem. Com sessão ativa,
-        // verificarSessao() chama iniciarSistema()->carregarDados()/iniciarRealtime(),
-        // que ficam em arquivos posteriores; chamar antes deles carregarem dava
-        // ReferenceError e travava a inicialização (sem dados e sem abas de admin).
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', verificarSessao);
-        } else {
+        // Bootstrap só após TODOS os arquivos JS carregarem. verificarSessao()
+        // chama iniciarSistema()->carregarDados()/iniciarRealtime(), definidos em
+        // arquivos posteriores (02, 04…). Com <script defer>, 01-core.js executa
+        // em readyState 'interactive' (ANTES dos módulos seguintes rodarem);
+        // chamar verificarSessao() aqui direto poderia, se getSession()/profiles
+        // resolvessem rápido, alcançar carregarDados() antes de 02 carregar →
+        // ReferenceError. O DOMContentLoaded dispara logo após o ÚLTIMO script
+        // defer, quando todas as funções já existem — então agendamos nele.
+        if (document.readyState === 'complete') {
             verificarSessao();
+        } else {
+            document.addEventListener('DOMContentLoaded', verificarSessao);
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -401,7 +405,7 @@
 
             if (userData.isAdmin) {
                 allTabs.forEach(t => document.getElementById('tab-' + t).classList.remove('hidden-tab'));
-                carregarUsuarios();
+                // carregarUsuarios() agora é lazy (carregado ao abrir a aba Usuários)
                 if(!document.querySelector('.section.active')) window.switchTab('dashboard');
             } else {
                 let firstTab = null;
