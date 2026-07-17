@@ -299,9 +299,23 @@
             };
         }
 
+        // Esconde o splash de boot (com fade). Idempotente.
+        function _esconderBootSplash() {
+            const s = document.getElementById('boot-splash');
+            if (!s || s.dataset.hidden) return;
+            s.dataset.hidden = '1';
+            s.style.opacity = '0';
+            s.style.pointerEvents = 'none';
+            setTimeout(() => { s.style.display = 'none'; }, 350);
+        }
+
         async function verificarSessao() {
-            const { data } = await sb.auth.getSession();
-            if (data.session) {
+            let data = null;
+            // getSession pode falhar (rede/refresh de token). Fail-safe: cai no login,
+            // nunca deixa o usuário preso no splash.
+            try { ({ data } = await sb.auth.getSession()); }
+            catch (e) { console.warn('getSession falhou:', e?.message); }
+            if (data && data.session) {
                 const user = data.session.user;
                 const meta = user.user_metadata || {};
                 // ── Autorização vem de public.profiles (fonte de verdade, protegida
@@ -323,7 +337,9 @@
                 };
                 iniciarSistema(currentUserData);
             } else {
+                // Sem sessão: revela o login e some com o splash.
                 document.getElementById('login-overlay').style.display = 'flex';
+                _esconderBootSplash();
             }
         }
         // Bootstrap só após TODOS os arquivos JS carregarem. verificarSessao()
@@ -403,6 +419,7 @@
 
         function iniciarSistema(userData) {
             document.getElementById('login-overlay').style.display = 'none';
+            _esconderBootSplash();
             // FIX: usa classe em vez de style inline para não quebrar o seletor CSS
             document.getElementById('app-content').classList.add('app-visible');
             document.getElementById('user-display').innerText = `Olá, ${userData.nome}`;
