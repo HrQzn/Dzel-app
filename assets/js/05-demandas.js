@@ -81,8 +81,19 @@
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
                 data = data.map(d => {
-                    const fim = fmtDataHoraBRT(d.data_fim);   // separa encerramento em data + hora (BRT)
-                    return { ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: fmtDataExport(d.data), HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: fim.data, HORA_FIM: fim.hora };
+                    const ini = fmtDataHoraBRT(d.data_inicio_atendimento); // saída de "Pendente"
+                    const fim = fmtDataHoraBRT(d.data_fim);                 // encerramento
+                    return {
+                        ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor,
+                        SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade,
+                        DATA_ABERTURA: fmtDataExport(d.data), HORA_ABERTURA: d.hora,
+                        DATA_INICIO_ATEND: ini.data, HORA_INICIO_ATEND: ini.hora,
+                        STATUS: d.status,
+                        DATA_FIM: fim.data, HORA_FIM: fim.hora,
+                        // Duração (abertura → conclusão; nas abertas, tempo decorrido até agora),
+                        // mesma lógica/valor da coluna "Tempo" da tabela.
+                        DURACAO: calcularTempoDecorrido(d.data, d.hora, d.data_fim)
+                    };
                 });
             } else {
                 // Formata datas/timestamps (entrada, saída, data_hora, etc.) em PT-BR
