@@ -51,6 +51,20 @@
             return valor;
         }
 
+        // Divide um timestamp ISO (UTC) em { data:'DD/MM/AAAA', hora:'HH:MM' } no
+        // horário de Brasília — usado na exportação para separar data e hora do
+        // encerramento em duas colunas (igual ao par abertura/hora).
+        function fmtDataHoraBRT(iso) {
+            if (!iso) return { data: '', hora: '' };
+            const dt = new Date(iso);
+            if (isNaN(dt.getTime())) return { data: String(iso), hora: '' };
+            const opts = { timeZone: 'America/Sao_Paulo' };
+            return {
+                data: dt.toLocaleDateString('pt-BR', { ...opts, day: '2-digit', month: '2-digit', year: 'numeric' }),
+                hora: dt.toLocaleTimeString('pt-BR', { ...opts, hour: '2-digit', minute: '2-digit' })
+            };
+        }
+
         async function exportarExcel(tipo) {
             if (!pode(tipo, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
             await ensureXLSX(); // Carrega SheetJS sob demanda (~500KB)
@@ -66,7 +80,10 @@
             else if (tipo === 'ocorrencias') { data = ocorrencias; nomeArquivo = "Relatorio_Ocorrencias.xlsx"; }
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
-                data = data.map(d => ({ ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: fmtDataExport(d.data), HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: fmtDataExport(d.data_fim) }));
+                data = data.map(d => {
+                    const fim = fmtDataHoraBRT(d.data_fim);   // separa encerramento em data + hora (BRT)
+                    return { ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: fmtDataExport(d.data), HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: fim.data, HORA_FIM: fim.hora };
+                });
             } else {
                 // Formata datas/timestamps (entrada, saída, data_hora, etc.) em PT-BR
                 data = data.map(item => {
