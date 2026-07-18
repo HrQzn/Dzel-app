@@ -31,6 +31,9 @@
             // Atualiza TODOS os cards/KPIs sempre, independente da aba ativa
             atualizarTodosKPIs();
             if(activeTab === 'dashboard') { renderizarDashboard(); }
+            // 1ª carga concluída e renderizada → revela o app já populado (some o splash
+            // de boot). Idempotente: nas recargas de CRUD/realtime é no-op.
+            if (typeof _esconderBootSplash === 'function') _esconderBootSplash();
         }
 
         function getCategoriaDemanda(d) {

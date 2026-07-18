@@ -299,14 +299,35 @@
             };
         }
 
-        // Esconde o splash de boot (com fade). Idempotente.
+        // ════════════════════════════════════════════════════════════════
+        // SPLASH DE BOOT — cobre TODA a transição (auth + 1ª carga de dados),
+        // revelando o app já populado. Evita o flicker "vazio → cheio" (duplo
+        // render) que parece um "refresh" ao logar, além do FOUC da tela de login.
+        // ════════════════════════════════════════════════════════════════
+        let _bootSplashFailsafe = null;
+        function _armarFailsafeSplash() {
+            clearTimeout(_bootSplashFailsafe);
+            // Nunca deixa o usuário preso no splash (rede lenta/erro inesperado).
+            _bootSplashFailsafe = setTimeout(_esconderBootSplash, 10000);
+        }
+        function _mostrarBootSplash() {
+            const s = document.getElementById('boot-splash');
+            if (!s) return;
+            delete s.dataset.hidden;
+            s.style.display = 'flex';
+            s.style.opacity = '1';
+            s.style.pointerEvents = '';
+            _armarFailsafeSplash();
+        }
+        // Esconde o splash (com fade). Idempotente.
         function _esconderBootSplash() {
             const s = document.getElementById('boot-splash');
             if (!s || s.dataset.hidden) return;
             s.dataset.hidden = '1';
+            clearTimeout(_bootSplashFailsafe);
             s.style.opacity = '0';
             s.style.pointerEvents = 'none';
-            setTimeout(() => { s.style.display = 'none'; }, 350);
+            setTimeout(() => { if (s.dataset.hidden) s.style.display = 'none'; }, 350);
         }
 
         async function verificarSessao() {
@@ -350,6 +371,7 @@
         // resolvessem rápido, alcançar carregarDados() antes de 02 carregar →
         // ReferenceError. O DOMContentLoaded dispara logo após o ÚLTIMO script
         // defer, quando todas as funções já existem — então agendamos nele.
+        _armarFailsafeSplash();   // splash já visível no load — nunca fica preso
         if (document.readyState === 'complete') {
             verificarSessao();
         } else {
@@ -394,32 +416,39 @@
         window.esqueceuSenha = function() {
             alert('Para redefinir sua senha, contate o administrador do sistema (Divisão de Zeladoria — COGESPA).');
         }
+        let _loginEmAndamento = false;
         window.fazerLogin = async function() {
+            if (_loginEmAndamento) return;          // evita duplo submit (clique + Enter)
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-pass').value;
-            const btn = document.querySelector('.login-btn');
             const errEl = document.getElementById('login-error');
             if (errEl) errEl.style.display = 'none';
-            // Feedback imediato (evita duplo clique e a sensação de "travou" durante a rede)
-            let htmlOrig;
-            if (btn) { htmlOrig = btn.innerHTML; btn.disabled = true; btn.innerHTML = 'Entrando… <i class="fas fa-spinner fa-spin"></i>'; }
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            // Mostra o splash JÁ no clique: cobre TODA a transição (auth + 1ª carga),
+            // sem recarregar a página. Antes usava location.reload() (reprocessava tudo)
+            // e depois revelava o app vazio antes dos dados — os dois causavam o "refresh".
+            _loginEmAndamento = true;
+            _mostrarBootSplash();
+            let error = null;
+            try { ({ error } = await sb.auth.signInWithPassword({ email, password })); }
+            catch (e) { error = e; }
             if (error) {
+                _loginEmAndamento = false;
+                _esconderBootSplash();               // volta pra tela de login
                 if (errEl) errEl.style.display = 'block';
-                if (btn) { btn.disabled = false; btn.innerHTML = htmlOrig; }
             } else {
-                // Transição suave login → app SEM recarregar a página. Antes usava
-                // location.reload(), que reprocessava tudo e causava o "reboot"/flash.
-                // verificarSessao() encontra a sessão recém-criada, carrega o perfil e
-                // chama iniciarSistema() (esconde o login, mostra o app e carrega os dados).
+                // Sucesso: verificarSessao() carrega o perfil e chama iniciarSistema();
+                // o splash só some quando o 1º carregarDados() renderiza (app já populado).
                 await verificarSessao();
-                if (btn) { btn.disabled = false; btn.innerHTML = htmlOrig; }
+                _loginEmAndamento = false;
             }
         }
 
         function iniciarSistema(userData) {
             document.getElementById('login-overlay').style.display = 'none';
-            _esconderBootSplash();
+            // O splash continua visível até o 1º carregarDados() renderizar os dados
+            // (ver fim de carregarDados). Assim o app é revelado já populado, sem o
+            // flicker "vazio → cheio". Fail-safe garante que ele não fique preso.
+            _armarFailsafeSplash();
             // FIX: usa classe em vez de style inline para não quebrar o seletor CSS
             document.getElementById('app-content').classList.add('app-visible');
             document.getElementById('user-display').innerText = `Olá, ${userData.nome}`;
