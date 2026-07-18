@@ -28,6 +28,29 @@
             video.style.display = "none"; imgPreview.style.display = "block"; btnCapturar.style.display = "none"; btnIniciar.style.display = "inline-block";
         }
 
+        // ── Formatação de datas para exportação (PT-BR) ──
+        // Data pura "YYYY-MM-DD"            → "DD/MM/AAAA"
+        // Timestamp ISO "…T…+00:00" (UTC)  → "DD/MM/AAAA HH:MM" no horário de Brasília
+        // Qualquer outro valor              → devolvido intacto (preserva números/texto)
+        const _reDataPuraExp = /^\d{4}-\d{2}-\d{2}$/;
+        const _reISOExp      = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+        function fmtDataExport(valor) {
+            if (valor == null || valor === '') return valor;
+            const s = String(valor);
+            if (_reDataPuraExp.test(s)) { const [a, m, d] = s.split('-'); return `${d}/${m}/${a}`; }
+            if (_reISOExp.test(s)) {
+                const dt = new Date(s);
+                if (!isNaN(dt.getTime())) {
+                    return dt.toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    }).replace(',', '');
+                }
+            }
+            return valor;
+        }
+
         async function exportarExcel(tipo) {
             if (!pode(tipo, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
             await ensureXLSX(); // Carrega SheetJS sob demanda (~500KB)
@@ -43,9 +66,15 @@
             else if (tipo === 'ocorrencias') { data = ocorrencias; nomeArquivo = "Relatorio_Ocorrencias.xlsx"; }
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
-                data = data.map(d => ({ ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: d.data, HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: d.data_fim }));
+                data = data.map(d => ({ ID: d.id, NUMERO_OS: d.numero_os, TITULO: d.titulo, SETOR: d.setor, SOLICITANTE: d.solicitante, CONTRATADA: d.contratada, PRIORIDADE: d.prioridade, DATA_ABERTURA: fmtDataExport(d.data), HORA_ABERTURA: d.hora, STATUS: d.status, DATA_FIM: fmtDataExport(d.data_fim) }));
             } else {
-                data = data.map(item => { const novo = {...item}; if(novo.foto) novo.foto = "(Imagem Salva)"; return novo; });
+                // Formata datas/timestamps (entrada, saída, data_hora, etc.) em PT-BR
+                data = data.map(item => {
+                    const novo = {...item};
+                    if(novo.foto) novo.foto = "(Imagem Salva)";
+                    for (const k in novo) novo[k] = fmtDataExport(novo[k]);
+                    return novo;
+                });
             }
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
