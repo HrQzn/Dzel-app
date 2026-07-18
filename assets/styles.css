@@ -105,6 +105,28 @@
             }
         }
 
+        /* ======== SPLASH DE BOOT (cobre a checagem de sessão; evita flash da login) ======== */
+        #boot-splash {
+            position: fixed; inset: 0; background: #0a1018;
+            z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 22px;
+            transition: opacity 0.3s ease;
+        }
+        .boot-splash-logo {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            border: 1px solid rgba(96,165,250,0.45);
+            border-radius: 18px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #fff;
+            box-shadow: 0 8px 24px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .boot-spinner {
+            width: 30px; height: 30px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.14); border-top-color: #3b82f6;
+            animation: bootspin 0.75s linear infinite;
+        }
+        @keyframes bootspin { to { transform: rotate(360deg); } }
+
         /* ======== LOGIN (tema escuro — azul institucional) ======== */
         #login-overlay {
             position: fixed; inset: 0;

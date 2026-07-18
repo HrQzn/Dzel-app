@@ -1,7 +1,10 @@
+        // Carregado sob demanda (ao abrir a aba Usuários), não no boot — remove
+        // 1 RPC (admin_get_users) do caminho crítico de inicialização do admin.
+        let _usuariosCarregados = false;
         async function carregarUsuarios() {
             if(!currentUserData.isAdmin) return;
             const { data, error } = await sb.rpc('admin_get_users');
-            if(data) { appUsers = data; renderizarTabelaUsuarios(); }
+            if(data) { appUsers = data; _usuariosCarregados = true; renderizarTabelaUsuarios(); }
         }
 
         async function salvarUsuario() {
@@ -201,6 +204,7 @@
             if(tabId === 'crachas') { window.renderizarApenasCrachas(); }
             if(tabId === 'ocorrencias') { window.renderizarApenasOcorrencias(); document.getElementById('oco-data').value = DateUtils.getToInput(); }
             if(tabId === 'auditoria') { renderizarLogs(); }
+            if(tabId === 'usuarios' && !_usuariosCarregados) { carregarUsuarios(); }
             if(tabId === 'predial') { const brt = DateUtils.getToInput(); document.getElementById('predial-data').value = brt.slice(0, 10); document.getElementById('predial-hora').value = brt.slice(11, 16); }
             if(tabId === 'ar') { const brt = DateUtils.getToInput(); document.getElementById('ar-data').value = brt.slice(0, 10); document.getElementById('ar-hora').value = brt.slice(11, 16); }
             if(tabId === 'limpeza') { const brt = DateUtils.getToInput(); document.getElementById('limpeza-data').value = brt.slice(0, 10); document.getElementById('limpeza-hora').value = brt.slice(11, 16); }
