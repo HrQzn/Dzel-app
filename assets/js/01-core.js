@@ -478,6 +478,13 @@
             const btnImport = document.getElementById('btn-import-demanda');
             if (btnImport) btnImport.style.display = userData.isAdmin ? '' : 'none';
 
+            // Botões "Importar Planilha" — Recepção, Garagem, Eventos e Crachás
+            // (mesmo recurso de Demandas, exclusivo de administradores)
+            ['btn-import-visitante', 'btn-import-veiculo', 'btn-import-evento', 'btn-import-cracha'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = userData.isAdmin ? '' : 'none';
+            });
+
             if (userData.isAdmin) {
                 allTabs.forEach(t => document.getElementById('tab-' + t).classList.remove('hidden-tab'));
                 // carregarUsuarios() agora é lazy (carregado ao abrir a aba Usuários)
