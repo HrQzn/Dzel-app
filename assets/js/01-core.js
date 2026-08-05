@@ -263,6 +263,19 @@
             return `${datePart} ${timePart}`;
         }
 
+        // Como formatarDataHoraReal, mas com o ano completo (DD/MM/AAAA HH:MM) —
+        // usada onde a data sozinha (dia/mês) é ambígua entre anos, ex.: Ocorrências.
+        function formatarDataHoraCompleta(isoString) {
+            if (!isoString) return '-';
+            const d = new Date(isoString);
+            if (isNaN(d.getTime())) return '-';
+            const brtStr = d.toLocaleString("pt-BR", {
+                timeZone: "America/Sao_Paulo",
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            return brtStr.replace(',', '').trim();
+        }
+
         // Dia local (BRT) em YYYY-MM-DD — usado pelo filtro "Dia" nos campos
         // de timestamp (visitantes.entrada, frota.hora_inicial, ocorrencias.data_hora).
         // Datas puras (YYYY-MM-DD) passam direto, sem conversão de fuso.

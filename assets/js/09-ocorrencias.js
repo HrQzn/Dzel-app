@@ -105,7 +105,7 @@
                 filterKey: mes + '|' + dia + '|' + termo + '|' + stat,
                 rerender: window.renderizarApenasOcorrencias,
                 rowFn: (o) => {
-                const dataFmt = formatarDataHoraReal(o.data_hora);
+                const dataFmt = formatarDataHoraCompleta(o.data_hora);
                 const tempo   = o.status === 'Encerrada' && o.data_encerramento
                     ? `<span class="time-badge"><i class="fas fa-flag-checkered"></i> ${calcularTempoOco(o.data_hora, o.data_encerramento)}</span>`
                     : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${calcularTempoOco(o.data_hora)}</span>`;

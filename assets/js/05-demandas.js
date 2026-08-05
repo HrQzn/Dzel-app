@@ -95,6 +95,23 @@
                         DURACAO: calcularTempoDecorrido(d.data, d.hora, d.data_fim)
                     };
                 });
+            } else if (tipo === 'ocorrencias') {
+                // Mesmo formato aplicado às demandas: abertura/encerramento em
+                // colunas separadas de data e hora (BRT) + duração do atendimento.
+                data = data.map(o => {
+                    const abertura     = fmtDataHoraBRT(o.data_hora);
+                    const encerramento = fmtDataHoraBRT(o.data_encerramento);
+                    return {
+                        ID: o.id, NUMERO: o.numero, CATEGORIA: o.categoria, GRAVIDADE: o.gravidade,
+                        UNIDADE: o.unidade, LOCAL: o.local, CONTRATADA: o.contratada,
+                        RESPONSAVEL: o.responsavel, DESCRICAO: o.descricao, STATUS: o.status,
+                        DATA_ABERTURA: abertura.data, HORA_ABERTURA: abertura.hora,
+                        DATA_ENCERRAMENTO: encerramento.data, HORA_ENCERRAMENTO: encerramento.hora,
+                        // Duração (abertura → encerramento; nas abertas, tempo decorrido até
+                        // agora), mesma lógica/valor da coluna "Tempo" da tabela.
+                        DURACAO: calcularTempoOco(o.data_hora, o.data_encerramento)
+                    };
+                });
             } else {
                 // Formata datas/timestamps (entrada, saída, data_hora, etc.) em PT-BR
                 data = data.map(item => {

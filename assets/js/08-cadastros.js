@@ -397,7 +397,7 @@
         window.enviarWhatsAppOcorrencia = function(id) {
             const o = ocorrencias.find(i => i.id == id); if (!o) return;
             const ic = (o.gravidade === 'Crítica' || o.gravidade === 'Alta') ? '🚨' : o.gravidade === 'Baixa' ? 'ℹ️' : '⚠️';
-            const dtStr = o.data_hora ? formatarDataHoraReal(o.data_hora) : '';
+            const dtStr = o.data_hora ? formatarDataHoraCompleta(o.data_hora) : '';
             let t = `${ic} *REGISTRO DE OCORRÊNCIA* ${ic}\n\n`;
             if (o.numero) t += `*Nº:* ${o.numero}\n`;
             t += `*Status:* ${o.status}\n`;
