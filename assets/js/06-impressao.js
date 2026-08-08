@@ -1,17 +1,3 @@
-        // Converte um timestamp ISO (UTC, gravado pelo sistema) para a data/hora
-        // local BRT usada na O.S. — {data:'15/06/2026', hora:'09:10'} ou null.
-        // Usado para preencher automaticamente o "Termo de Encerramento" com o
-        // início do atendimento e o término que o sistema já registrou.
-        function _dataHoraBRTos(iso) {
-            if (!iso) return null;
-            const dt = new Date(iso);
-            if (isNaN(dt.getTime())) return null;
-            const s = dt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo',
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            const p = s.replace(',', '').trim().split(/\s+/);
-            return { data: p[0], hora: p[1] || '' };
-        }
-
         async function gerarPDFOS(id, descricao, materiais) {
             const btnPDF = document.getElementById('btn-acao-pdf');
             const textoOriginal = btnPDF.innerHTML;
@@ -88,7 +74,6 @@
                 // Célula centro: c1x(35) até c2x(155) → largura 120mm
                 const ctrX = (c1x + c2x) / 2;        // 95mm  ← centro real da coluna
                 // Célula direita: c2x(155) até OX+PW(205) → largura 50mm
-                const celDirX  = c2x;                 // 155mm
                 const celDirW  = (OX + PW) - c2x;    // 50mm
                 const celDirCX = c2x + celDirW / 2;  // 180mm ← centro real da coluna direita
 
@@ -316,19 +301,16 @@
                 const e1x = OX + PW * 0.25;
                 const e2x = OX + PW * 0.50;
                 linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
-                // Preenche com os horários que o sistema registrou; se não houver,
-                // mantém a linha em branco para preenchimento manual.
-                const _ini = _dataHoraBRTos(d.data_inicio_atendimento);
-                const _fim = _dataHoraBRTos(d.data_fim);
-                const _iniTxt = _ini ? `${_ini.data} AS ${_ini.hora}` : '___/___/20___ AS ___:___';
-                const _fimTxt = _fim ? `${_fim.data} AS ${_fim.hora}` : '___/___/20___ AS ___:___';
+                // Início e término do atendimento saem SEMPRE em branco: são de
+                // preenchimento físico, à mão, pela equipe que executou o serviço.
+                // (label() deixa a fonte em negrito — voltar para normal antes da linha)
+                const LINHA_MANUAL = '___/___/20___ AS ___:___';
                 label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
-                pdf.setFontSize(8); pdf.setFont('helvetica', _ini ? 'bold' : 'normal');
-                pdf.text(_iniTxt, OX+2, Y+9);
+                pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+                pdf.text(LINHA_MANUAL, OX+2, Y+9);
                 label('TERMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
-                pdf.setFontSize(8); pdf.setFont('helvetica', _fim ? 'bold' : 'normal');
-                pdf.text(_fimTxt, e1x+2, Y+9);
-                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+                pdf.text(LINHA_MANUAL, e1x+2, Y+9);
                 label('OBSERVACOES FINAIS / PENDENCIAS', e2x+1, Y+3.5);
                 linhah(Y+enc4H); Y += enc4H;
 
@@ -405,12 +387,9 @@
             const topTextHTML = logoInfo ? '' : '<div class="os-top">ORDEM DE SERVIÇO</div>';
             const osLabel = logoInfo ? 'O.S Nº ' : 'Nº ';
             const osNum = d.numero_os ? d.numero_os : d.id;
-            // Preenche o Termo de Encerramento com os horários já registrados pelo
-            // sistema (início do atendimento / término); senão, linha em branco.
-            const _iniOS = _dataHoraBRTos(d.data_inicio_atendimento);
-            const _fimOS = _dataHoraBRTos(d.data_fim);
-            const inicioAtendTxt  = _iniOS ? `<strong>${esc(_iniOS.data)} ÀS ${esc(_iniOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
-            const terminoAtendTxt = _fimOS ? `<strong>${esc(_fimOS.data)} ÀS ${esc(_fimOS.hora)}</strong>` : '___/___/20___ ÀS ___:___';
+            // Início e término do atendimento saem SEMPRE em branco no Termo de
+            // Encerramento: são de preenchimento físico, à mão, pela equipe.
+            const linhaManual = '___/___/20___ ÀS ___:___';
             // [X] marcado fica verde-negrito, como no DOCX de referência
             const ck = (m, txt) => m === '[X]'
                 ? `<span class="cbox on"></span><b class="ck-on">${txt}</b>`
@@ -537,8 +516,8 @@
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
   <tr style="height:19.5mm;">
-    <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">${inicioAtendTxt}</div></td>
-    <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">${terminoAtendTxt}</div></td>
+    <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">${linhaManual}</div></td>
+    <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">${linhaManual}</div></td>
     <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>
   </tr>
   <tr style="height:27.4mm;">
@@ -648,11 +627,17 @@
         }
 
         window.imprimirDashboard = function() {
+            // Chart.js é carregado por CDN: se não estiver disponível, imprimir o
+            // dashboard não pode quebrar com ReferenceError — imprime sem redimensionar.
+            const redimensionar = () => {
+                try { Object.values(Chart.instances || {}).forEach(c => c.resize()); } catch(e) {}
+            };
+            const restaurar = () => { document.body.classList.remove('printing-dashboard'); redimensionar(); };
             document.body.classList.add('printing-dashboard');
-            Object.values(Chart.instances).forEach(chart => chart.resize());
+            redimensionar();
             setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
-            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
+            window.onafterprint = restaurar;
+            setTimeout(restaurar, 5000);
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -695,13 +680,7 @@
                 let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
                 listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
 
-                const totalManutencao = counts['PREDIAL'] + counts['AR'];
-                const totalGeral = listaFrota.length + listaVisitantes.length + listaDemandas.length + listaEventos.length + listaCrachas.length;
                 const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
-
-                const dPend = listaDemandas.filter(d => d.status === 'Pendente').length;
-                const dAnd  = listaDemandas.filter(d => d.status === 'Em Andamento').length;
-                const dConc = listaDemandas.filter(d => d.status === 'Concluído').length;
 
                 // ─── MÉTRICAS DE SLA (mesma engine do dashboard) ──────────
                 const sla = computeDashboardSLA(listaDemandas);

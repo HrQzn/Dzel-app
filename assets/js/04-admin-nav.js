@@ -2,9 +2,18 @@
         // 1 RPC (admin_get_users) do caminho crítico de inicialização do admin.
         let _usuariosCarregados = false;
         async function carregarUsuarios() {
-            if(!currentUserData.isAdmin) return;
+            if(!currentUserData || !currentUserData.isAdmin) return;
             const { data, error } = await sb.rpc('admin_get_users');
-            if(data) { appUsers = data; _usuariosCarregados = true; renderizarTabelaUsuarios(); }
+            if (error || !data) {
+                // Sem esse retorno a tela ficava presa em "Carregando usuários…"
+                // para sempre, sem nenhuma pista do que aconteceu.
+                console.error('admin_get_users:', error);
+                const tbody = document.querySelector('#tabela-usuarios-app tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Não foi possível carregar os usuários. Tente novamente.</td></tr>';
+                showToast('Falha ao carregar usuários: ' + (error?.message || 'erro desconhecido'), 'error', 5000);
+                return;
+            }
+            appUsers = data; _usuariosCarregados = true; renderizarTabelaUsuarios();
         }
 
         async function salvarUsuario() {
@@ -21,7 +30,7 @@
             if(!email || !pass || !nome) return alert("Preencha todos os campos obrigatórios!");
             const { data, error } = await sb.rpc('admin_create_user', { email_input: email, pass_input: pass, nome_input: nome, is_admin_input: isAdmin, permissoes_input: perms });
             if(error) alert("Erro ao criar: " + error.message);
-            else { alert("Usuário criado com sucesso!"); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`); }
+            else { showToast('Usuário criado com sucesso!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`); }
         }
 
         async function editarUsuarioSalvar(id) {
@@ -30,7 +39,7 @@
             const perms = montarPermissoesJSON();
             const { error } = await sb.rpc('admin_update_user_meta', { user_id_input: id, nome_input: nome, role_input: 'custom', is_admin_input: isAdmin, permissoes_input: perms });
             if(error) alert("Erro ao atualizar: " + error.message);
-            else { alert("Usuário atualizado!"); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Edição', 'Usuários', `Atualizou permissões do usuário ID: ${id}`); }
+            else { showToast('Usuário atualizado!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Edição', 'Usuários', `Atualizou permissões do usuário ID: ${id}`); }
         }
 
         function editarUsuario(userStr) {
@@ -90,18 +99,19 @@
         async function excluirUsuario(id, email) {
             if(confirm(`Tem certeza que deseja excluir o usuário ${email}?`)) {
                 const { error } = await sb.rpc('admin_delete_user', { user_id_input: id });
-                if(error) alert("Erro: " + error.message); else { alert("Usuário removido."); carregarUsuarios(); registrarLog('Exclusão', 'Usuários', `Removeu usuário: ${email}`); }
+                if(error) alert("Erro: " + error.message); else { showToast('Usuário removido.', 'success'); carregarUsuarios(); registrarLog('Exclusão', 'Usuários', `Removeu usuário: ${email}`); }
             }
         }
 
         function renderizarTabelaUsuarios() {
             const tbody = document.querySelector('#tabela-usuarios-app tbody');
+            if (!appUsers.length) { tbody.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Nenhum usuário cadastrado.</td></tr>'; return; }
             const htmlRows = appUsers.map(u => {
                 const meta = u.usr_meta || {};
                 const tipo = meta.is_admin ? '<span class="badge bg-concluido">ADMIN</span>' : '<span class="badge bg-saiu">USUÁRIO</span>';
                 const lastLogin = u.usr_last_login ? new Date(u.usr_last_login).toLocaleString('pt-BR') : 'Nunca';
                 const userStr = encodeURIComponent(JSON.stringify(u));
-                return `<tr><td><strong>${esc(meta.nome)}</strong></td><td>${esc(u.usr_email)}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit"><i class="fas fa-pen"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete"><i class="fas fa-trash"></i></button></td></tr>`;
+                return `<tr><td><strong>${esc(meta.nome)}</strong></td><td>${esc(u.usr_email)}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button></td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
         }
@@ -125,40 +135,48 @@
             });
         }
 
+        let _realtimeCanal = null;
         function iniciarRealtime() {
-            let _rtTimers = {};
+            if (_realtimeCanal) return;   // evita canal duplicado (eventos em dobro)
+            const _rtTimers = {};
+            const _rtRecebidoEm = {};
+            // Mapa tabela → como recarregá-la. `null` devolvido por fetchAll
+            // significa falha de rede: nesse caso preserva o que já está em memória.
+            const RECARGA = {
+                demandas:   async () => { const d = await fetchAll('demandas', 'id', false);     if (d) { demandas = d; _catCache = new WeakMap(); } },
+                visitantes: async () => { const d = await fetchAll('visitantes', 'id', false);   if (d) visitantes = d; },
+                frota:      async () => { const d = await fetchAll('frota', 'id', false);        if (d) frota = d; },
+                eventos:    async () => { const d = await fetchAll('eventos', 'data', false);    if (d) eventos = d; },
+                crachas:    async () => { const d = await fetchAll('crachas', 'id', false);      if (d) crachas = d; },
+                ocorrencias:async () => { const d = await fetchAll('ocorrencias', 'data_hora', false); if (d) ocorrencias = d; },
+                logs_auditoria: async () => {
+                    const { data, error } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
+                    if (!error && data) logs = data;
+                }
+            };
             function recarregarTabela(tabela) {
+                const recarga = RECARGA[tabela];
+                if (!recarga) return;                       // tabela fora do app (ex.: profiles)
+                if (!_rtTimers[tabela]) _rtRecebidoEm[tabela] = Date.now();
                 clearTimeout(_rtTimers[tabela]);
                 _rtTimers[tabela] = setTimeout(async () => {
+                    const recebidoEm = _rtRecebidoEm[tabela];
+                    _rtTimers[tabela] = null;
+                    // A própria gravação local já chama carregarDados(). Se essa
+                    // recarga começou DEPOIS de o evento chegar, ela com certeza já
+                    // trouxe esta mudança — repetir só duplicaria o download.
+                    // (Comparar com o INÍCIO, e não com o fim, é o que garante que
+                    // nunca se descarte a alteração feita por outro usuário durante
+                    // uma recarga já em andamento.)
+                    if (_ultimaCargaIniciada >= recebidoEm) return;
+                    await recarga();
                     const activeTab = document.querySelector('.section.active')?.id || '';
-                    if (tabela === 'demandas') {
-                        const data = await fetchAll('demandas', 'id', false);
-                        if (data.length) { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
-                    } else if (tabela === 'visitantes') {
-                        const data = await fetchAll('visitantes', 'id', false);
-                        if (data.length) { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes?.(); }
-                    } else if (tabela === 'frota') {
-                        const data = await fetchAll('frota', 'id', false);
-                        if (data.length) { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota?.(); }
-                    } else if (tabela === 'eventos') {
-                        const data = await fetchAll('eventos', 'data', false);
-                        if (data.length) { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos?.(); }
-                    } else if (tabela === 'crachas') {
-                        const data = await fetchAll('crachas', 'id', false);
-                        if (data.length) { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas?.(); }
-                    } else if (tabela === 'ocorrencias') {
-                        const data = await fetchAll('ocorrencias', 'data_hora', false);
-                        if (data.length) { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias?.(); }
-                    } else if (tabela === 'logs_auditoria') {
-                        const { data } = await sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50);
-                        if (data) { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
-                    }
-                    // Sempre atualiza todos os cards após qualquer mudança
-                    atualizarTodosKPIs();
+                    if (tabela === 'logs_auditoria') { if (activeTab === 'auditoria') renderizarLogs(); return; }
+                    atualizarTodosKPIs();               // mantém todos os cards sincronizados
                     if (activeTab === 'dashboard') renderizarDashboard();
                 }, 300);
             }
-            sb.channel('mudancas-db')
+            _realtimeCanal = sb.channel('mudancas-db')
                 .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
                     recarregarTabela(payload.table);
                 })
@@ -239,8 +257,12 @@
         function formatarData(dataISO) { if(!dataISO) return ''; const [ano, mes, dia] = dataISO.split('-'); return `${dia}/${mes}/${ano}`; }
 
         function pode(modulo, acao) {
+            // Fail-closed: sem perfil carregado, nenhuma permissão (e sem TypeError
+            // caso um renderizador rode antes de verificarSessao() concluir).
+            if (!currentUserData) return false;
             if (currentUserData.isAdmin) return true;
-            return currentUserData.perms[modulo] && currentUserData.perms[modulo][acao] === true;
+            const p = currentUserData.perms || {};
+            return !!(p[modulo] && p[modulo][acao] === true);
         }
 
         // ════════════════════════════════════════════════════════════════

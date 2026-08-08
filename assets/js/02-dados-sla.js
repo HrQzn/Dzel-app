@@ -1,4 +1,6 @@
         async function carregarDados() {
+            if (!currentUserData) return;
+            _ultimaCargaIniciada = Date.now();
             const p = currentUserData.perms || {};
             const admin = currentUserData.isAdmin;
             // Skeleton apenas no 1º carregamento (não nos reloads de CRUD/realtime)
@@ -13,28 +15,36 @@
             if (admin || p.eventos?.ver) { keys.push('eventos'); promises.push(fetchAll('eventos', 'data', false)); }
             if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(fetchAll('crachas', 'id', false)); }
             if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(fetchAll('ocorrencias', 'data_hora', false)); }
-            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50).then(r => r.data || [])); }
+            if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50).then(r => r.error ? null : (r.data || []))); }
             const results = await Promise.all(promises);
             const activeTab = document.querySelector('.section.active')?.id || '';
+            let falhas = 0;
             results.forEach((data, index) => {
                 const key = keys[index];
-                if(data && data.length !== undefined) {
-                    if(key === 'demandas')    { demandas = data; _catCache = new WeakMap(); window.renderizarApenasDemandas(); window.renderizarAbasEspecificas(); }
-                    if(key === 'visitantes')  { visitantes = data; if(activeTab === 'visitantes') window.renderizarApenasVisitantes(); }
-                    if(key === 'frota')       { frota = data; if(activeTab === 'veiculos') window.renderizarApenasFrota(); }
-                    if(key === 'eventos')     { eventos = data; if(activeTab === 'eventos') window.renderizarApenasEventos(); }
-                    if(key === 'crachas')     { crachas = data; if(activeTab === 'crachas') window.renderizarApenasCrachas(); }
-                    if(key === 'ocorrencias') { ocorrencias = data; if(activeTab === 'ocorrencias') window.renderizarApenasOcorrencias(); }
-                    if(key === 'logs')        { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
-                }
+                // fetchAll devolve null quando a busca falhou (rede/RLS). Nesse caso
+                // preserva o que já estava em memória em vez de esvaziar a tela.
+                if (data === null || data === undefined) { falhas++; return; }
+                if(key === 'demandas')    { demandas = data; _catCache = new WeakMap(); }
+                if(key === 'visitantes')  { visitantes = data; }
+                if(key === 'frota')       { frota = data; }
+                if(key === 'eventos')     { eventos = data; }
+                if(key === 'crachas')     { crachas = data; }
+                if(key === 'ocorrencias') { ocorrencias = data; }
+                if(key === 'logs')        { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
             });
+            _dadosCarregados = true;
             // Atualiza TODOS os cards/KPIs sempre, independente da aba ativa
             atualizarTodosKPIs();
             if(activeTab === 'dashboard') { renderizarDashboard(); }
+            if (falhas) showToast('Não foi possível atualizar todos os dados. Verifique a conexão.', 'warning', 5000);
             // 1ª carga concluída e renderizada → revela o app já populado (some o splash
             // de boot). Idempotente: nas recargas de CRUD/realtime é no-op.
             if (typeof _esconderBootSplash === 'function') _esconderBootSplash();
         }
+        // Momento em que o último carregarDados() começou — o realtime usa isso
+        // para descartar eventos que a recarga local com certeza já trouxe
+        // (evita baixar todas as tabelas duas vezes na mesma gravação).
+        var _ultimaCargaIniciada = 0;
 
         function getCategoriaDemanda(d) {
             const texto = (d.titulo + " " + d.setor).toUpperCase();
@@ -199,107 +209,33 @@
             return meses;
         }
 
-        // Helper: atualiza KPI cards de Predial / AR / Limpeza sem recriar gráficos
-        function _atualizarKPIsAbas(lista) {
-            const fil = (cat, st) => lista.filter(d => getCategoriaCached(d) === cat && (!st || d.status === st)).length;
-            const e = id => document.getElementById(id);
-            [['predial','PREDIAL'],['ar','AR'],['limpeza','LIMPEZA']].forEach(([pfx,cat]) => {
-                if (e(`dash-${pfx}-total`))     e(`dash-${pfx}-total`).innerText     = fil(cat);
-                if (e(`dash-${pfx}-pendente`))  e(`dash-${pfx}-pendente`).innerText  = fil(cat,'Pendente');
-                if (e(`dash-${pfx}-andamento`)) e(`dash-${pfx}-andamento`).innerText = fil(cat,'Em Andamento');
-                if (e(`dash-${pfx}-concluido`)) e(`dash-${pfx}-concluido`).innerText = fil(cat,'Concluído');
-            });
-        }
-
         // ════════════════════════════════════════════════════════════════
-        // atualizarTodosKPIs — atualiza TODOS os cards/KPIs do Dashboard
-        // NÃO depende do Chart.js. Roda sempre após qualquer save/delete.
+        // atualizarTodosKPIs — mantém cards e KPIs sincronizados após
+        // qualquer gravação/exclusão/evento de realtime. NÃO depende do Chart.js.
+        //
+        // Os cards de cada aba (Demandas, Predial, AR, Limpeza, Recepção,
+        // Garagem, Eventos, Crachás, Ocorrências) pertencem à própria aba e são
+        // calculados pelo renderizador dela, respeitando os filtros daquela tela.
+        // Antes eles eram recalculados aqui usando o filtro de mês do DASHBOARD:
+        // bastava um CRUD/realtime para os números de uma aba passarem a
+        // contradizer a tabela logo abaixo deles. Cada renderizador só reconstrói
+        // o HTML da tabela quando sua aba está visível, então o custo é o mesmo.
         // ════════════════════════════════════════════════════════════════
         function atualizarTodosKPIs() {
             try {
+                window.renderizarApenasDemandas?.();
+                window.renderizarAbasEspecificas?.();
+                window.renderizarApenasVisitantes?.();
+                window.renderizarApenasFrota?.();
+                window.renderizarApenasEventos?.();
+                window.renderizarApenasCrachas?.();
+                window.renderizarApenasOcorrencias?.();
+
+                // "Total de Veículos no Período" pertence ao Dashboard e segue
+                // o filtro de mês dele (não o da aba Garagem).
                 const filtroMes = (document.getElementById('dash-filtro-mes') || {}).value || '';
-                const listaDemandas   = demandasEscopoDash().filter(d => !filtroMes || (d.data||'').startsWith(filtroMes));
-                const listaFrota      = frota.filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes));
-                const listaVisitantes = visitantes.filter(v => !filtroMes || (v.entrada||'').startsWith(filtroMes));
-                const listaEventos    = eventos.filter(e => !filtroMes || (e.data||'').startsWith(filtroMes));
-                const listaCrachas    = crachas.filter(c => !filtroMes || (c.data_solicitacao||'').startsWith(filtroMes));
-
-                const totalFrota      = listaFrota.length;
-                const totalVisitantes = listaVisitantes.length;
-                const totalEventos    = listaEventos.length;
-                const totalCrachas    = listaCrachas.length;
-                const publicoEventos  = listaEventos.reduce((s, e) => s + (parseInt(e.publico) || 0), 0);
-
-                let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
-                listaDemandas.forEach(d => { const cat = getCategoriaCached(d); counts[cat] = (counts[cat] || 0) + 1; });
-
-                const totalManutencao = counts['PREDIAL'] + counts['AR'];
-                const totalGeral = totalFrota + totalVisitantes + listaDemandas.length + totalEventos + totalCrachas;
-
-                const e = id => document.getElementById(id);
-                const set = (id, val) => { const el = e(id); if (el) el.innerText = val; };
-
-                // ── KPIs do topo do Dashboard (TMA, SLA, backlog, volume) ──
-                // são calculados em renderizarKPIsOperacionais() (precisam de SLA).
-
-                // ── Cards Demandas (Geral) ──
-                const dPend = listaDemandas.filter(d => d.status === 'Pendente').length;
-                const dAnd  = listaDemandas.filter(d => d.status === 'Em Andamento').length;
-                const dConc = listaDemandas.filter(d => d.status === 'Concluído').length;
-                set('dash-demanda-total',    listaDemandas.length);
-                set('dash-demanda-pendente', dPend);
-                set('dash-demanda-andamento',dAnd);
-                set('dash-demanda-concluido',dConc);
-
-                // ── Cards Predial ──
-                const pList = listaDemandas.filter(d => getCategoriaCached(d) === 'PREDIAL');
-                set('dash-predial-total',    pList.length);
-                set('dash-predial-pendente', pList.filter(d => d.status === 'Pendente').length);
-                set('dash-predial-andamento',pList.filter(d => d.status === 'Em Andamento').length);
-                set('dash-predial-concluido',pList.filter(d => d.status === 'Concluído').length);
-
-                // ── Cards AR ──
-                const aList = listaDemandas.filter(d => getCategoriaCached(d) === 'AR');
-                set('dash-ar-total',    aList.length);
-                set('dash-ar-pendente', aList.filter(d => d.status === 'Pendente').length);
-                set('dash-ar-andamento',aList.filter(d => d.status === 'Em Andamento').length);
-                set('dash-ar-concluido',aList.filter(d => d.status === 'Concluído').length);
-
-                // ── Cards Limpeza ──
-                const lList = listaDemandas.filter(d => getCategoriaCached(d) === 'LIMPEZA');
-                set('dash-limpeza-total',    lList.length);
-                set('dash-limpeza-pendente', lList.filter(d => d.status === 'Pendente').length);
-                set('dash-limpeza-andamento',lList.filter(d => d.status === 'Em Andamento').length);
-                set('dash-limpeza-concluido',lList.filter(d => d.status === 'Concluído').length);
-
-                // ── Cards Visitantes ──
-                set('dash-visitantes-ativos', listaVisitantes.filter(v => v.status === 'Ativo').length);
-                set('dash-visitantes-total',  listaVisitantes.length);
-
-                // ── Cards Frota ──
-                set('dash-frota-total',       totalFrota);
-                set('dash-frota-estacionados',listaFrota.filter(f => f.status === 'Aberto').length);
-                set('dash-servidor-count',    listaFrota.filter(f => f.tipo === 'servidor').length);
-                set('dash-visitante-count',   listaFrota.filter(f => f.tipo === 'visitante').length);
-                const elGar = e('total-garagem-label'); if (elGar) elGar.innerText = totalFrota;
-
-                // ── Cards Eventos ──
-                set('dash-eventos-qtd',     totalEventos);
-                set('dash-eventos-interno', listaEventos.filter(ev => ev.tipo === 'Interno').length);
-                set('dash-eventos-externo', listaEventos.filter(ev => ev.tipo === 'Externo').length);
-                set('dash-eventos-publico', publicoEventos);
-
-                // ── Cards Crachás ──
-                set('dash-cracha-solicitado',   listaCrachas.filter(c => c.status === 'Solicitado').length);
-                set('dash-cracha-confeccionado',listaCrachas.filter(c => c.status === 'Confeccionado').length);
-                set('dash-cracha-entregue',     listaCrachas.filter(c => c.status === 'Entregue').length);
-
-                // ── Cards Ocorrências ──
-                set('dash-oco-total',     ocorrencias.length);
-                set('dash-oco-abertas',   ocorrencias.filter(o => o.status === 'Aberta').length);
-                set('dash-oco-tratativa', ocorrencias.filter(o => o.status === 'Em Tratativa').length);
-                set('dash-oco-encerradas',ocorrencias.filter(o => o.status === 'Encerrada').length);
-
+                const elGar = document.getElementById('total-garagem-label');
+                if (elGar) elGar.innerText = frota.filter(f => !filtroMes || (f.hora_inicial||'').startsWith(filtroMes)).length;
             } catch(err) { console.warn('atualizarTodosKPIs:', err); }
         }
 

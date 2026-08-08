@@ -65,8 +65,16 @@
             };
         }
 
+        // A aba "Garagem" usa a tabela `frota`, mas o módulo de permissão dela
+        // chama-se `veiculos` (é assim na tela de Usuários e em pode()). Sem esse
+        // de-para, exportarExcel('frota') consultava um módulo inexistente e
+        // bloqueava a exportação para todo usuário não-admin, mesmo com a
+        // permissão "Exportar" de Frota/Veículos marcada.
+        const _MODULO_PERMISSAO = { frota: 'veiculos' };
+
         async function exportarExcel(tipo) {
-            if (!pode(tipo, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
+            const moduloPerm = _MODULO_PERMISSAO[tipo] || tipo;
+            if (!pode(moduloPerm, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
             await ensureXLSX(); // Carrega SheetJS sob demanda (~500KB)
             let data = []; let nomeArquivo = "";
             if (tipo === 'demandas') { data = demandas; nomeArquivo = "Relatorio_Demandas_Geral.xlsx"; }
@@ -181,7 +189,7 @@
                 const nomeAba = prefixo === 'predial' ? 'Predial' : prefixo === 'ar' ? 'Ar Condicionado' : 'Limpeza';
                 registrarLog('Criação', nomeAba, `Nova O.S. registrada: ${titulo} (${contratadaFixa})`);
                 syncSheets('demandas', 'insert', insertData || novaDemanda);
-                alert('Solicitação Registrada!');
+                showToast('Solicitação registrada com sucesso!', 'success');
                 document.getElementById(`form-${prefixo}`).reset();
                 const brt = DateUtils.getToInput();
                 document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10);
@@ -211,11 +219,7 @@
             const inputFim = document.getElementById(`${prefixo}-data-fim`);
             if (d.status === 'Concluído') {
                 wrapEnc.style.display = 'block';
-                if (d.data_fim) {
-                    const dtFim = new Date(d.data_fim);
-                    dtFim.setMinutes(dtFim.getMinutes() - dtFim.getTimezoneOffset());
-                    inputFim.value = dtFim.toISOString().slice(0, 16);
-                } else { inputFim.value = ''; }
+                inputFim.value = d.data_fim ? DateUtils.isoParaInputBRT(d.data_fim) : '';
             } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
             const tit = document.getElementById(`titulo-form-${prefixo}`);
             if (tit) { if (!tit.dataset.original) tit.dataset.original = tit.innerHTML; tit.innerHTML = '<i class="fas fa-edit"></i> Editando O.S. ' + d.id; }
@@ -316,13 +320,19 @@
                         // Já estava concluído — manter data_fim existente
                         novaDemanda.data_fim = itemAntigo.data_fim;
                     }
-                } else if (itemAntigo && itemAntigo.data_fim) {
-                    novaDemanda.data_fim = itemAntigo.data_fim;
                 }
-                registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
+                // Reabrir uma demanda (sair de "Concluído") limpa a conclusão —
+                // manter o data_fim antigo fazia a O.S. e a planilha exportada
+                // mostrarem data de encerramento em demanda ainda aberta.
+                // (É o mesmo comportamento já aplicado nas abas técnicas.)
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
-                // upsert no Sheets precisa do id para localizar a linha existente
-                if(!error) syncSheets('demandas', 'upsert', { ...(itemAntigo || {}), ...novaDemanda, id: Number(idEdicao) });
+                // Log só depois de confirmar a gravação — registrar antes criava
+                // entrada de auditoria para edição que podia ter falhado.
+                if(!error) {
+                    registrarLog('Edição', 'Demandas', `Alterou demanda ID: ${idEdicao}`);
+                    // upsert no Sheets precisa do id para localizar a linha existente
+                    syncSheets('demandas', 'upsert', { ...(itemAntigo || {}), ...novaDemanda, id: Number(idEdicao) });
+                }
             } else {
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
@@ -354,11 +364,7 @@
             const inputFim = document.getElementById('demanda-data-fim');
             if (d.status === 'Concluído') {
                 wrapEnc.style.display = 'block';
-                if (d.data_fim) {
-                    const dtFim = new Date(d.data_fim);
-                    dtFim.setMinutes(dtFim.getMinutes() - dtFim.getTimezoneOffset());
-                    inputFim.value = dtFim.toISOString().slice(0, 16);
-                } else { inputFim.value = ''; }
+                inputFim.value = d.data_fim ? DateUtils.isoParaInputBRT(d.data_fim) : '';
             } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
             document.getElementById('demandas').scrollIntoView({behavior: 'smooth'});
         }
