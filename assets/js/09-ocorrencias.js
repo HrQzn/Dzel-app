@@ -44,11 +44,7 @@
             document.getElementById('oco-gravidade').value   = o.gravidade;
             document.getElementById('oco-responsavel').value = o.responsavel;
             document.getElementById('oco-descricao').value   = o.descricao;
-            if (o.data_hora) {
-                const dl = new Date(o.data_hora);
-                dl.setMinutes(dl.getMinutes() - dl.getTimezoneOffset());
-                document.getElementById('oco-data').value = dl.toISOString().slice(0, 16);
-            }
+            if (o.data_hora) document.getElementById('oco-data').value = DateUtils.isoParaInputBRT(o.data_hora);
             document.getElementById('titulo-form-ocorrencia').innerHTML = '<i class="fas fa-pen"></i> Editando Ocorrência';
             const btn = document.getElementById('btn-submit-oco');
             btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
@@ -96,6 +92,7 @@
             document.getElementById('dash-oco-abertas').innerText   = lista.filter(o => o.status === 'Aberta').length;
             document.getElementById('dash-oco-tratativa').innerText = lista.filter(o => o.status === 'Em Tratativa').length;
             document.getElementById('dash-oco-encerradas').innerText= lista.filter(o => o.status === 'Encerrada').length;
+            if (!secaoVisivel('ocorrencias')) return;
 
             const gravClass = { 'Baixa':'bg-concluido', 'Média':'bg-andamento', 'Alta':'bg-pendente', 'Crítica':'bg-critica' };
             const statClass = { 'Aberta':'bg-aberta', 'Em Tratativa':'bg-tratativa', 'Encerrada':'bg-encerrada' };
@@ -111,11 +108,11 @@
                     : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${calcularTempoOco(o.data_hora)}</span>`;
                 const titulo  = o.numero ? `<strong>#${esc(o.numero)} — ${esc(o.categoria)}</strong>` : `<strong>${esc(o.categoria)}</strong>`;
                 const desc    = esc((o.descricao || '').substring(0, 55)) + ((o.descricao||'').length > 55 ? '…' : '');
-                const btnWA   = `<button onclick="enviarWhatsAppOcorrencia(${o.id})" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>`;
-                const btnPDF  = `<button onclick="gerarPDFOcorrencia(${o.id})" class="action-btn btn-print" title="Baixar PDF"><i class="fas fa-file-pdf"></i></button>`;
-                const btnPrint = `<button onclick="imprimirOcorrencia(${o.id})" class="action-btn btn-print" title="Imprimir R.O."><i class="fas fa-print"></i></button>`;
-                const btnEdit = pode('ocorrencias','editar') ? `<button onclick="editarOcorrencia(${o.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>` : '';
-                const btnDel  = pode('ocorrencias','excluir') ? `<button onclick="deletarOcorrencia(${o.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>` : '';
+                const btnWA   = `<button onclick="enviarWhatsAppOcorrencia(${o.id})" class="action-btn btn-whatsapp" title="WhatsApp" aria-label="Enviar por WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></button>`;
+                const btnPDF  = `<button onclick="gerarPDFOcorrencia(${o.id})" class="action-btn btn-print" title="Baixar PDF" aria-label="Baixar PDF do registro"><i class="fas fa-file-pdf" aria-hidden="true"></i></button>`;
+                const btnPrint = `<button onclick="imprimirOcorrencia(${o.id})" class="action-btn btn-print" title="Imprimir R.O." aria-label="Imprimir registro de ocorrência"><i class="fas fa-print" aria-hidden="true"></i></button>`;
+                const btnEdit = pode('ocorrencias','editar') ? `<button onclick="editarOcorrencia(${o.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>` : '';
+                const btnDel  = pode('ocorrencias','excluir') ? `<button onclick="deletarOcorrencia(${o.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>` : '';
                 return `<tr>
                     <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;white-space:nowrap">${dataFmt}</td>
                     <td><span class="badge ${gravClass[o.gravidade]||'bg-saiu'}">${esc(o.gravidade)}</span></td>
@@ -363,13 +360,6 @@
             // ── Construtores de linha da tabela ───────────────────────────────
             // Altura padrão: 665 twips × 25.4/1440 = 11.7mm → 12mm
             const ROW_H = 12;
-
-            const row1 = (lbl, val, y, h=ROW_H) => {
-                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
-                pdf.setLineWidth(0.25); pdf.rect(OX, y, PW, h, 'FD');
-                pintaCell(lbl, val, OX, y, PW, h);
-                return y + h;
-            };
 
             const row2 = (l1,v1,l2,v2, y, h=ROW_H) => {
                 const hw = PW/2;

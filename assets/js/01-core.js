@@ -30,18 +30,25 @@
         // fetchAll — busca TODOS os registros com paginação automática
         // O Supabase/PostgREST retorna no máximo 1000 rows por request.
         // Esta função faz múltiplas chamadas com .range() até trazer tudo.
+        //
+        // Falha de rede/RLS devolve `null` (e NÃO uma lista vazia): quem chama
+        // precisa distinguir "a tabela está vazia" de "não consegui carregar",
+        // senão um erro transitório apagaria a tela e pareceria perda de dados.
         // ════════════════════════════════════════════════════════════════
         async function fetchAll(tabela, orderCol = 'id', ascending = false) {
             const PAGE = 1000;
             let allData = [];
             let from = 0;
             while (true) {
-                const { data, error } = await sb
-                    .from(tabela)
-                    .select('*')
-                    .order(orderCol, { ascending })
-                    .range(from, from + PAGE - 1);
-                if (error) { console.error(`fetchAll(${tabela}):`, error); break; }
+                let data, error;
+                try {
+                    ({ data, error } = await sb
+                        .from(tabela)
+                        .select('*')
+                        .order(orderCol, { ascending })
+                        .range(from, from + PAGE - 1));
+                } catch (e) { error = e; }
+                if (error) { console.error(`fetchAll(${tabela}):`, error); return null; }
                 if (!data || data.length === 0) break;
                 allData = allData.concat(data);
                 if (data.length < PAGE) break; // última página
@@ -49,6 +56,39 @@
             }
             return allData;
         }
+
+        // ════════════════════════════════════════════════════════════════
+        // TOAST — aviso não bloqueante (para mensagens que não exigem decisão
+        // do usuário). Já era chamado pela geração de PDF do Dashboard, mas a
+        // função nunca fora definida: os avisos "Gerando PDF…" / "PDF gerado"
+        // e o erro simplesmente não apareciam.
+        // ════════════════════════════════════════════════════════════════
+        const _TOAST_ICONES = { success: 'fa-circle-check', error: 'fa-circle-exclamation',
+                                warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+        function showToast(mensagem, tipo = 'info', ms = 3200) {
+            let box = document.getElementById('toast-container');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'toast-container';
+                box.className = 'toast-container no-print';
+                box.setAttribute('role', 'status');
+                box.setAttribute('aria-live', 'polite');
+                document.body.appendChild(box);
+            }
+            const t = document.createElement('div');
+            t.className = 'toast toast-' + (_TOAST_ICONES[tipo] ? tipo : 'info');
+            t.innerHTML = `<i class="fas ${_TOAST_ICONES[tipo] || _TOAST_ICONES.info}"></i><span>${esc(mensagem)}</span>`;
+            box.appendChild(t);
+            const sair = () => {
+                if (t.dataset.saindo) return;
+                t.dataset.saindo = '1';
+                t.classList.add('toast-out');
+                setTimeout(() => t.remove(), 250);
+            };
+            t.addEventListener('click', sair);
+            setTimeout(sair, ms);
+        }
+        window.showToast = showToast;
 
         // ================================================================
         // SINCRONIZAÇÃO COM GOOGLE SHEETS
@@ -138,6 +178,13 @@
             'tabela-crachas': 6, 'tabela-ocorrencias': 7
         };
 
+        // A seção informada é a que está visível? (usado para só reconstruir o
+        // HTML da tabela da aba em foco — os contadores são sempre atualizados)
+        function secaoVisivel(id) {
+            const ativa = document.querySelector('.section.active')?.id || '';
+            return !ativa || ativa === id;
+        }
+
         // opts: { tableId, items, rowFn, colspan, emptyMsg, filterKey, rerender }
         function renderPaginated(opts) {
             const { tableId, items, rowFn, colspan, emptyMsg, filterKey, rerender } = opts;
@@ -155,6 +202,10 @@
             let   page       = _pgState[tableId] || 1;
             if (page > totalPages) { page = totalPages; _pgState[tableId] = page; }
             if (total === 0) {
+                // Antes da 1ª carga terminar, mantém o skeleton: trocar por
+                // "nenhum registro" enquanto os dados ainda estão vindo passa a
+                // impressão errada de base vazia.
+                if (!_dadosCarregados) return;
                 tbody.innerHTML = `<tr><td colspan="${colspan}" class="tabela-vazia">${emptyMsg}</td></tr>`;
                 _renderPager(tableId, 1, 1, 0, 0, 0);
                 return;
@@ -214,6 +265,9 @@
 
         // Skeleton loader — feedback visual durante o 1º carregamento
         let _skeletonMostrado = false;
+        // Vira true quando o 1º carregarDados() termina. Enquanto for false as
+        // tabelas continuam exibindo o skeleton em vez de "nenhum registro".
+        let _dadosCarregados = false;
         function mostrarSkeleton(tableId, colspan, linhas = 8) {
             const tbody = document.querySelector(`#${tableId} tbody`);
             if (!tbody) return;
@@ -247,7 +301,22 @@
                 const utcDate = new Date(Date.UTC(ano, mes - 1, dia, hora + 3, min, 0));
                 return utcDate.toISOString();
             },
-            getNowDatabaseISO: () => { return DateUtils.toDatabaseISO(DateUtils.getToInput()); }
+            getNowDatabaseISO: () => { return DateUtils.toDatabaseISO(DateUtils.getToInput()); },
+            // Timestamp ISO (UTC, como está no banco) → valor de <input type="datetime-local">
+            // no horário de Brasília. É o inverso exato de toDatabaseISO(), que grava
+            // sempre em BRT (+3). A conversão anterior usava getTimezoneOffset() — o fuso
+            // da MÁQUINA — então em um celular/PC configurado fora de Brasília a hora
+            // aparecia deslocada na edição e era regravada deslocada.
+            isoParaInputBRT: (iso) => {
+                if (!iso) return '';
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return '';
+                const data = d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); // YYYY-MM-DD
+                const hora = d.toLocaleTimeString('pt-BR', {
+                    timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false
+                });
+                return `${data}T${hora}`;
+            }
         };
 
         function getDataHoraLocalParaInput() { return DateUtils.getToInput(); }
@@ -288,7 +357,7 @@
         }
 
         let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [];
-        let currentUserRole = null, currentUserData = null;
+        let currentUserData = null;
         let streamGeral = null;
         let osPrintAtualId = null;
 
@@ -417,6 +486,30 @@
             });
         });
 
+        // ESC fecha o modal aberto (todos já fechavam no clique fora / botão
+        // Cancelar, mas ficavam presos para quem navega pelo teclado).
+        // A importação em andamento é preservada: durante a etapa de gravação o
+        // próprio modal esconde o botão Cancelar, e aqui respeitamos isso.
+        const _FECHAR_MODAL = {
+            'modal-print':            () => window.fecharModalImpressao?.(),
+            'modal-saida-veiculo':    () => window.fecharModalSaida?.(),
+            'modal-saida-visitante':  () => window.fecharModalSaidaVisitante?.(),
+            'modal-concluir-demanda': () => window.fecharModalConcluir?.(),
+            'modal-import-demanda':   () => window.fecharModalImport?.(),
+            'modal-import-generico':  () => window.fecharImportGenerico?.()
+        };
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            for (const [id, fechar] of Object.entries(_FECHAR_MODAL)) {
+                const el = document.getElementById(id);
+                if (!el || el.style.display !== 'flex') continue;
+                const btnCancel = el.querySelector('.btn-container .btn-cancel:last-of-type');
+                if (btnCancel && btnCancel.style.display === 'none') return; // gravação em curso
+                fechar();
+                return;
+            }
+        });
+
         window.checkEnter = function(e) { if(e.key === 'Enter') window.fazerLogin(); }
         window.toggleLoginPass = function() {
             const inp = document.getElementById('login-pass');
@@ -522,7 +615,12 @@
             else { container.style.opacity = '1'; container.style.pointerEvents = 'auto'; }
         }
 
-        window.logout = async function() { await sb.auth.signOut(); location.reload(); }
+        window.logout = async function() {
+            // Mesmo que o signOut falhe (rede fora), a sessão local precisa ser
+            // encerrada — senão o clique em "Sair" simplesmente não faz nada.
+            try { await sb.auth.signOut(); } catch (e) { console.warn('signOut:', e?.message); }
+            location.reload();
+        }
 
         async function registrarLog(acao, secao, detalhes) {
             if (!currentUserData) return;

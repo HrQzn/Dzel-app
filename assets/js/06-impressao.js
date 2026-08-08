@@ -88,7 +88,6 @@
                 // Célula centro: c1x(35) até c2x(155) → largura 120mm
                 const ctrX = (c1x + c2x) / 2;        // 95mm  ← centro real da coluna
                 // Célula direita: c2x(155) até OX+PW(205) → largura 50mm
-                const celDirX  = c2x;                 // 155mm
                 const celDirW  = (OX + PW) - c2x;    // 50mm
                 const celDirCX = c2x + celDirW / 2;  // 180mm ← centro real da coluna direita
 
@@ -648,11 +647,17 @@
         }
 
         window.imprimirDashboard = function() {
+            // Chart.js é carregado por CDN: se não estiver disponível, imprimir o
+            // dashboard não pode quebrar com ReferenceError — imprime sem redimensionar.
+            const redimensionar = () => {
+                try { Object.values(Chart.instances || {}).forEach(c => c.resize()); } catch(e) {}
+            };
+            const restaurar = () => { document.body.classList.remove('printing-dashboard'); redimensionar(); };
             document.body.classList.add('printing-dashboard');
-            Object.values(Chart.instances).forEach(chart => chart.resize());
+            redimensionar();
             setTimeout(function() { window.print(); }, 500);
-            window.onafterprint = function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); };
-            setTimeout(function() { document.body.classList.remove('printing-dashboard'); Object.values(Chart.instances).forEach(chart => chart.resize()); }, 5000);
+            window.onafterprint = restaurar;
+            setTimeout(restaurar, 5000);
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -695,13 +700,7 @@
                 let counts = { 'AR': 0, 'PREDIAL': 0, 'LIMPEZA': 0, 'RAMAL': 0, 'OUTROS': 0 };
                 listaDemandas.forEach(d => { const cat = getCategoriaDemanda(d); counts[cat] = (counts[cat] || 0) + 1; });
 
-                const totalManutencao = counts['PREDIAL'] + counts['AR'];
-                const totalGeral = listaFrota.length + listaVisitantes.length + listaDemandas.length + listaEventos.length + listaCrachas.length;
                 const publicoEventos = listaEventos.reduce((sum, e) => sum + (parseInt(e.publico) || 0), 0);
-
-                const dPend = listaDemandas.filter(d => d.status === 'Pendente').length;
-                const dAnd  = listaDemandas.filter(d => d.status === 'Em Andamento').length;
-                const dConc = listaDemandas.filter(d => d.status === 'Concluído').length;
 
                 // ─── MÉTRICAS DE SLA (mesma engine do dashboard) ──────────
                 const sla = computeDashboardSLA(listaDemandas);

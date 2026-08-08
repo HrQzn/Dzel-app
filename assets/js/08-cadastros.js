@@ -20,7 +20,7 @@
             document.getElementById('vis-contato').value = v.contato;
             document.getElementById('vis-responsavel').value = v.responsavel;
             document.getElementById('vis-finalidade').value = v.finalidade;
-            if(v.entrada) { const dataLocal = new Date(v.entrada); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('vis-entrada').value = dataLocal.toISOString().slice(0,16); }
+            if(v.entrada) document.getElementById('vis-entrada').value = DateUtils.isoParaInputBRT(v.entrada);
             const preview = document.getElementById('vis-preview');
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             if (v.foto) { preview.src = v.foto; document.getElementById('vis-foto-base64').value = v.foto; } else { preview.src = defaultIcon; document.getElementById('vis-foto-base64').value = ""; }
@@ -52,9 +52,9 @@
             const lista = visitantes.filter(v => { const bateMes = !mes || (v.entrada||'').startsWith(mes); const bateDia = !dia || diaLocalISO(v.entrada) === dia; const bateTermo = !termo || (v.nome||'').toUpperCase().includes(termo) || (v.doc||'').toUpperCase().includes(termo) || (v.empresa||'').toUpperCase().includes(termo); return bateMes && bateDia && bateTermo; });
             document.getElementById('dash-visitantes-ativos').innerText = lista.filter(v => v.status === 'Ativo').length;
             document.getElementById('dash-visitantes-total').innerText = lista.length;
-            const tbody = document.querySelector('#tabela-visitantes tbody');
             const btnExport = document.getElementById('btn-export-visitantes');
             if (pode('visitantes', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
+            if (!secaoVisivel('visitantes')) return;
             const defaultIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23eee'/%3E%3Cpath fill='%23ccc' d='M50 50c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0 10c16.7 0 50 8.3 50 25v15H0v-15c0-16.7 33.3-25 50-25z'/%3E%3C/svg%3E";
             renderPaginated({
                 tableId: 'tabela-visitantes', items: lista, colspan: 6,
@@ -65,10 +65,10 @@
                     const badge = v.status === 'Ativo' ? '<span class="badge bg-visitante-ativo">NA EMPRESA</span>' : '<span class="badge bg-saiu">SAIU</span>';
                     const dataEnt = formatarDataHoraReal(v.entrada);
                     const dataSai = v.saida ? formatarDataHoraReal(v.saida) : '-';
-                    const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
+                    const btnBaixa = (v.status === 'Ativo' && pode('visitantes', 'editar')) ? `<button onclick="baixaVisitante(${v.id})" class="action-btn btn-baixa" title="Registrar saída" aria-label="Registrar saída"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
                     let buttons = '';
-                    if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
-                    if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+                    if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
+                    if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     const imgTag = `<img src="${esc(v.foto || defaultIcon)}" class="avatar-table">`;
                     return `<tr><td>${badge}</td><td>${imgTag}<strong>${esc(v.nome)}</strong><br><small style="color:var(--text-muted)">${esc(v.contato)}</small></td><td>${esc(v.empresa) || '-'}<br><small style="color:var(--text-muted)">${esc(v.doc)}</small></td><td>${esc(v.responsavel)}<br><small style="color:var(--text-muted)">${esc(v.finalidade)}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }
@@ -132,7 +132,7 @@
             document.getElementById('veiculo-setor').value = f.setor || '';
             document.getElementById('veiculo-contato').value = f.contato || '';
             document.getElementById('veiculo-destino').value = f.destino;
-            if(f.hora_inicial) { const dataLocal = new Date(f.hora_inicial); dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset()); document.getElementById('veiculo-hora-saida').value = dataLocal.toISOString().slice(0,16); }
+            if(f.hora_inicial) document.getElementById('veiculo-hora-saida').value = DateUtils.isoParaInputBRT(f.hora_inicial);
             if (f.tipo === 'servidor') document.getElementById('radio-servidor').checked = true; else document.getElementById('radio-visitante').checked = true;
             document.getElementById('titulo-form-veiculo').innerHTML = '<i class="fas fa-edit"></i> Editando';
             const btn = document.getElementById('btn-submit-veiculo'); btn.innerText = "Salvar"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
@@ -165,9 +165,9 @@
             document.getElementById('dash-frota-estacionados').innerText = lista.filter(f => f.status === 'Aberto').length;
             document.getElementById('dash-servidor-count').innerText = lista.filter(f => f.tipo === 'servidor').length;
             document.getElementById('dash-visitante-count').innerText = lista.filter(f => f.tipo === 'visitante').length;
-            const tbody = document.querySelector('#tabela-veiculos tbody');
             const btnExport = document.getElementById('btn-export-veiculos');
             if (pode('veiculos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
+            if (!secaoVisivel('veiculos')) return;
             renderPaginated({
                 tableId: 'tabela-veiculos', items: lista, colspan: 8,
                 emptyMsg: 'Nenhum veículo encontrado.',
@@ -187,10 +187,10 @@
                     const tempoDisplay = (f.status === 'Fechado')
                         ? `<span class="time-badge"><i class="fas fa-stopwatch"></i> ${tempoStr}</span>`
                         : `<span class="time-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><i class="fas fa-hourglass-half"></i> ${tempoStr}</span>`;
-                    const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa"><i class="fas fa-sign-out-alt"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
+                    const btnBaixa = (f.status === 'Aberto' && pode('veiculos', 'editar')) ? `<button onclick="baixaVeiculo(${f.id})" class="action-btn btn-baixa" title="Registrar saída" aria-label="Registrar saída"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Saída</button>` : '<i class="fas fa-check" style="color:var(--success);"></i>';
                     let buttons = '';
-                    if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
-                    if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+                    if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
+                    if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${esc(f.motorista)}</strong><br><small style="color:var(--text-muted)">${esc(f.contato)}</small></td><td>${esc(f.carro)}</td><td>${esc(f.setor) || '-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
                 }
             });
@@ -277,9 +277,9 @@
             document.getElementById('dash-eventos-interno').innerText = lista.filter(e => e.tipo === 'Interno').length;
             document.getElementById('dash-eventos-externo').innerText = lista.filter(e => e.tipo === 'Externo').length;
             document.getElementById('dash-eventos-publico').innerText = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0);
-            const tbody = document.querySelector('#tabela-eventos tbody');
             const btnExport = document.getElementById('btn-export-eventos');
             if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
+            if (!secaoVisivel('eventos')) return;
             renderPaginated({
                 tableId: 'tabela-eventos', items: lista, colspan: 6,
                 emptyMsg: 'Nenhum evento encontrado.',
@@ -290,8 +290,8 @@
                     const iconCoffee = ev.coffee ? '<i class="fas fa-coffee" style="color:#92400e;margin-left:6px;" title="Coffee Break"></i>' : '';
                     const obsText = ev.obs ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;margin-top:3px;border-top:1px dashed var(--border);padding-top:3px">${esc(ev.obs)}</div>` : '';
                     let buttons = '';
-                    if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
-                    if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+                    if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
+                    if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${esc(ev.tipo)}</span></td><td><strong>${esc(ev.nome)}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${esc(ev.local)}</small>${obsText}</td><td>${esc(ev.organizador)}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${esc(ev.publico)}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
                 }
             });
@@ -303,10 +303,22 @@
             e.preventDefault();
             const idEdicao = document.getElementById('cracha-id-edit').value;
             const id = idEdicao || Date.now();
-            const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status: document.getElementById('cracha-status').value, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: (document.getElementById('cracha-status').value === 'Entregue') ? new Date().toISOString() : null };
-            if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`); else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
+            const status = document.getElementById('cracha-status').value;
+            const novoCracha = { id, nome: document.getElementById('cracha-nome').value.toUpperCase(), doc_identidade: document.getElementById('cracha-doc').value.toUpperCase(), setor: document.getElementById('cracha-setor').value.toUpperCase(), cargo: document.getElementById('cracha-cargo').value.toUpperCase(), sala: document.getElementById('cracha-sala').value.toUpperCase(), ramal: document.getElementById('cracha-ramal').value.toUpperCase(), tipo: document.getElementById('cracha-tipo').value, status, data_solicitacao: document.getElementById('cracha-data').value, data_entrega: null };
+            if (status === 'Entregue') {
+                // Preserva a data real da entrega. Antes ela era reescrita com
+                // "agora" a cada save: bastava reabrir o crachá e salvar de novo
+                // (para corrigir um ramal, por exemplo) para perder o histórico.
+                const ant = idEdicao ? crachas.find(c => c.id == id) : null;
+                novoCracha.data_entrega = (ant && ant.data_entrega) ? ant.data_entrega : new Date().toISOString();
+            }
             const { error } = await sb.from('crachas').upsert(novoCracha);
-            if(error) alert('Erro ao salvar crachá: ' + error.message); else { syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); }
+            if(error) alert('Erro ao salvar crachá: ' + error.message);
+            else {
+                if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`);
+                else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
+                syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados();
+            }
         });
 
         window.editarCracha = function(id) {
@@ -346,9 +358,9 @@
             document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length;
             document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length;
             document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length;
-            const tbody = document.querySelector('#tabela-crachas tbody');
             const btnExport = document.getElementById('btn-export-crachas');
             if (pode('crachas', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
+            if (!secaoVisivel('crachas')) return;
             renderPaginated({
                 tableId: 'tabela-crachas', items: lista, colspan: 6,
                 emptyMsg: 'Nenhum crachá encontrado.',
@@ -358,8 +370,8 @@
                     let badgeClass = c.status === 'Solicitado' ? 'bg-cracha-solicitado' : c.status === 'Confeccionado' ? 'bg-cracha-confeccionado' : 'bg-cracha-entregue';
                     const dataEnt = c.data_entrega ? `<br><small style="color:var(--success);font-weight:600;"><i class="fas fa-check"></i> ${new Date(c.data_entrega).toLocaleDateString('pt-BR')}</small>` : '';
                     let buttons = '';
-                    if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit"><i class="fas fa-pen"></i></button>`;
-                    if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete"><i class="fas fa-trash"></i></button>`;
+                    if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
+                    if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${esc(c.nome)}</strong><br><small style="color:var(--text-muted)">DOC: ${esc(c.doc_identidade) || '-'}</small></td><td>${esc(c.setor)}<br><small style="color:var(--text-muted)">${esc(c.cargo) || '-'}</small></td><td>Sala: <strong>${esc(c.sala) || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${esc(c.ramal) || '-'}</small></td><td><span class="badge ${badgeClass}">${esc(c.status)}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
                 }
             });

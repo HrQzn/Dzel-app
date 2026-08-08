@@ -37,7 +37,7 @@
     </div>
     <noscript><style>#boot-splash{display:none!important;}</style></noscript>
 
-    <div id="modal-print" class="modal-overlay no-print">
+    <div id="modal-print" class="modal-overlay no-print" onclick="if(event.target===this)fecharModalImpressao()">
         <div class="modal-box">
             <h3 style="color:var(--text-primary); margin-bottom: 0.5rem;"><i class="fas fa-file-alt" style="color:var(--accent);"></i> Preencher O.S.</h3>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Preencha os campos abaixo. Se preferir preencher à mão, deixe em branco.</p>
@@ -130,108 +130,6 @@
         </div>
     </div>
 
-    <!-- Área de impressão (desktop fallback) -->
-    <div id="area-impressao">
-        <div class="os-container">
-            <div class="os-grid-row border-thick">
-                <div class="os-logo-box"><img src="brasao.jpg" alt="Logo SP"></div>
-                <div class="os-header-center">
-                    <h3>GOVERNO DO ESTADO DE SÃO PAULO</h3>
-                    <h4>SECRETARIA DA EDUCAÇÃO</h4>
-                    <p>COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVISÃO DE ZELADORIA</p>
-                </div>
-                <div class="os-header-right">
-                    <p id="print-top-text">ORDEM DE SERVIÇO</p>
-                    <img id="print-logo-empresa" src="">
-                    <h3 class="os-numero"><span id="print-os-label">Nº </span><span id="print-id"></span></h3>
-                </div>
-            </div>
-            <div class="os-secao-titulo">1. IDENTIFICAÇÃO DA SOLICITAÇÃO</div>
-            <div class="os-grid-row">
-                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;">
-                    <div class="os-label">DATA E HORA DE ABERTURA</div><div class="os-value" id="print-data-hora"></div>
-                </div>
-                <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-                    <div class="os-label">SOLICITANTE / CONTATO</div><div class="os-value" id="print-solicitante"></div>
-                </div>
-                <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
-                    <div class="os-label">PRIORIDADE NO SISTEMA</div><div class="os-value" id="print-prioridade"></div>
-                </div>
-            </div>
-            <div class="os-grid-row border-thick">
-                <div class="os-cell" style="flex:0 0 75%;max-width:75%;border-right:1px solid #000;">
-                    <div class="os-label">UNIDADE / SETOR DE ORIGEM</div><div class="os-value" id="print-setor"></div>
-                </div>
-                <div class="os-cell" style="flex:0 0 25%;max-width:25%;">
-                    <div class="os-label">STATUS ATUAL</div><div class="os-value" id="print-status"></div>
-                </div>
-            </div>
-            <div class="os-secao-titulo">2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)</div>
-            <div class="os-grid-row border-thick" style="min-height:80px;">
-                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-                    <div class="os-value destaque" id="print-titulo"></div>
-                </div>
-            </div>
-            <div class="os-secao-titulo">3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)</div>
-            <div class="os-grid-row">
-                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-                    <div class="os-label">EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA</div>
-                    <div class="os-checkbox-grid">
-                        <div><span id="chk-limpeza">☐</span> LIMPEZA PREDIAL</div>
-                        <div><span id="chk-ar">☐</span> AR CONDICIONADO</div>
-                        <div><span id="chk-manut">☐</span> MANUTENÇÃO PREDIAL</div>
-                        <div><span id="chk-elevador">☐</span> MANUT. DE ELEVADORES</div>
-                        <div><span id="chk-ti">☐</span> SUPORTE TI</div>
-                        <div><span id="chk-telefonia">☐</span> TELEFONIA</div>
-                        <div><span id="chk-extintores">☐</span> MANUT. E RECARGA EXTINTORES</div>
-                        <div>☐ OUTROS: ______________________</div>
-                    </div>
-                </div>
-            </div>
-            <div class="os-grid-row border-thick">
-                <div class="os-cell" style="flex:0 0 100%;max-width:100%;">
-                    <div class="os-label">LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO</div>
-                    <div class="os-checkbox-grid locais">
-                        <div>☐ SEDE</div><div>☐ AROUCHE</div><div>☐ EFAPE</div><div>☐ ARMÊNIA</div>
-                        <div>☐ CASA VERDE</div><div>☐ SÃO DOMINGOS</div><div>☐ CAJAMAR</div><div>☐ TENENTE PENA</div>
-                        <div>☐ CENTRO OESTE</div><div>☐ CAPE</div>
-                        <div style="grid-column:span 2;">☐ OUTRO: ___________________________</div>
-                    </div>
-                </div>
-            </div>
-            <div class="os-grid-row row-expand">
-                <div class="os-cell" style="flex:0 0 50%;max-width:50%;border-right:1px solid #000;">
-                    <div class="os-label">DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS</div>
-                    <div class="os-value" id="print-val-descricao" style="text-transform:none;white-space:pre-wrap;margin-top:5px;font-size:12px;font-weight:normal;"></div>
-                </div>
-                <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
-                    <div class="os-label">MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)</div>
-                    <div class="os-value" id="print-val-materiais" style="text-transform:none;white-space:pre-wrap;margin-top:5px;font-size:12px;font-weight:normal;"></div>
-                </div>
-            </div>
-            <div class="os-secao-titulo top-border">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</div>
-            <div class="os-grid-row">
-                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
-                    <div class="os-label" style="text-align:center;">INÍCIO DO ATENDIMENTO</div>
-                    <div style="margin-top:15px;font-size:13px;">___/___/20___ ÀS ___:___</div>
-                </div>
-                <div class="os-cell" style="flex:0 0 25%;max-width:25%;border-right:1px solid #000;text-align:center;justify-content:center;">
-                    <div class="os-label" style="text-align:center;">TÉRMINO DO ATENDIMENTO</div>
-                    <div style="margin-top:15px;font-size:13px;">___/___/20___ ÀS ___:___</div>
-                </div>
-                <div class="os-cell" style="flex:0 0 50%;max-width:50%;">
-                    <div class="os-label">OBSERVAÇÕES FINAIS / PENDÊNCIAS</div>
-                </div>
-            </div>
-            <div class="os-grid-row os-signatures">
-                <div class="os-sig-box"><div class="os-sig-line">TÉCNICO EXECUTOR<span>Nome legível / Matrícula / Empresa</span></div></div>
-                <div class="os-sig-box"><div class="os-sig-line">FISCAL<span>Carimbo e Assinatura</span></div></div>
-                <div class="os-sig-box"><div class="os-sig-line">SOLICITANTE / RECEBEDOR<span>Atesto a conformidade do serviço</span></div></div>
-            </div>
-        </div>
-        <div class="os-footer-print">Documento impresso em <span id="print-hoje"></span></div>
-    </div>
-
     <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
@@ -240,7 +138,7 @@
             <p>Divisão de Zeladoria — COGESPA</p>
             <div class="login-field">
                 <i class="fas fa-envelope login-ic"></i>
-                <input type="text" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email">
+                <input type="email" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-label="E-mail institucional">
             </div>
             <div class="login-field">
                 <i class="fas fa-lock login-ic"></i>
@@ -907,7 +805,6 @@
                         <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>
                         <input type="password" id="novo-user-pass" placeholder="Senha" required>
                         <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>
-                        <select id="novo-user-role" style="display:none"><option value="custom">Personalizado</option></select>
                         <div class="checkbox-wrapper" style="grid-column:1/-1;background:#f0fdf4;border-color:var(--success);">
                             <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">
                             <label for="novo-user-admin" style="color:#065f46;"><i class="fas fa-crown"></i> É Administrador Geral? (Acesso Total)</label>
