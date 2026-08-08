@@ -196,12 +196,14 @@ paginação/filtros, impressão de O.S./R.O., XSS, responsividade e acessibilida
 - **Corrigido (bug):** `gerarHTMLOS` fazia `d.data.split('-')` sem proteção — uma O.S.
   de registro importado/legado com data nula abria a janela de impressão **em branco**.
   Agora é tolerante a data nula (igual à versão PDF, que já era protegida).
-- **Melhorado (campos e informações):** a Seção 4 "Termo de Encerramento" mostrava
-  sempre linhas em branco (`___/___/20___`). Agora, quando o sistema já registrou o
-  **início do atendimento** (`data_inicio_atendimento`) e o **término** (`data_fim`),
-  a O.S. os imprime preenchidos em BRT (ex.: "15/06/2026 ÀS 09:10"), em negrito — tanto
-  no HTML quanto no PDF. O.S. ainda pendente mantém a linha em branco para preenchimento
-  manual. Menos preenchimento à mão, registro mais profissional.
+- **Seção 4 "Termo de Encerramento" — preenchimento físico (decisão de 2026-08-08):**
+  "Início do atendimento" e "Término do atendimento" saem **sempre em branco**
+  (`___/___/20___ ÀS ___:___`), no HTML e no PDF, para serem preenchidos à mão pela
+  equipe que executou o serviço. O preenchimento automático a partir de
+  `data_inicio_atendimento`/`data_fim`, introduzido na rodada de julho, foi removido.
+  Os dois campos continuam sendo registrados pelo sistema e usados normalmente no KPI
+  "Tempo de 1ª Resposta", no cálculo de SLA e nas colunas da planilha exportada —
+  a mudança vale apenas para o documento impresso.
 - **Corrigido:** o rodapé do **Relatório Consolidado (PDF)** lia `sessionStorage`
   (`dzel_user`, nunca gravado) e sempre saía "por Sistema". Agora usa o usuário logado
   (`currentUserData`).
