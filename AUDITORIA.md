@@ -207,6 +207,24 @@ paginação/filtros, impressão de O.S./R.O., XSS, responsividade e acessibilida
   a faixa ficou mais alta (HTML 19,5 → 26mm; PDF 14 → 20mm, agora na constante única
   `ENC4_H`, de onde a caixa de descrição também calcula sua altura), sobrando espaço
   acima dela para a escrita à mão.
+- **PDF da O.S. reescrito como espelho do HTML de impressão:** as duas saídas
+  (Imprimir/PC e Baixar PDF/celular) eram implementações independentes, com
+  margens (5mm × 10mm), larguras (200mm × 190mm) e alturas de linha diferentes —
+  daí o "leve desajuste" percebido ao baixar o PDF. A geometria do PDF passou a
+  ser a **medida real do HTML renderizado** (constante `OS_LAY`: bordas das 7
+  colunas, topo e altura de cada linha, linhas de base do texto em mm). Conferido
+  extraindo a posição de cada texto do PDF gerado e comparando com o HTML:
+  **diferença vertical de 0,00–0,01mm** nos 19 pontos medidos.
+- **Acentos no PDF:** o sanitizador removia todos os diacríticos ("SÃO PAULO" saía
+  "SAO PAULO"), por supor que a `helvetica` do jsPDF não os suportava. Ela usa
+  WinAnsi (cp1252), que cobre todo o português — verificado gerando um PDF real e
+  reextraindo o texto. Agora só normalizamos aspas/travessões tipográficos, que de
+  fato ficam fora do cp1252. **A O.S. em PDF sai acentuada, igual à impressa.**
+- **Corrigido (bug do PDF):** na grade "Local de Atuação", o item "OUTRO: ___" era
+  desenhado numa linha própria e caía **sobre** "CENTRO OESTE". No HTML ele ocupa a
+  3ª coluna da mesma linha; agora o PDF faz o mesmo.
+- **Assinatura central:** voltou a ser **"FISCAL"** (era "GESTOR / FISCAL (DZEL)"),
+  no HTML e no PDF, a pedido do usuário.
 - **Corrigido (bug de CSS):** as três células do cabeçalho da O.S. declaravam
   `vertical-align: middle`, mas a regra genérica `table.os td { vertical-align: top }`
   tem especificidade maior e vencia — o bloco institucional colava no topo da faixa

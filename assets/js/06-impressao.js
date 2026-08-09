@@ -1,3 +1,45 @@
+        /* ════════════════════════════════════════════════════════════════
+           PDF DA O.S. — espelho exato do HTML de impressão (gerarHTMLOS)
+           ────────────────────────────────────────────────────────────────
+           As duas saídas (Imprimir/PC e Baixar PDF/celular) precisam sair
+           idênticas. Por isso a geometria abaixo NÃO é "parecida": são as
+           medidas reais do HTML renderizado, em mm, relativas ao canto da
+           tabela. Se o HTML mudar, remeça e atualize LAY.
+
+           Folha: @page A4 margem 10mm → tabela de 190×271mm em (10,10).
+           ════════════════════════════════════════════════════════════════ */
+        const OS_LAY = {
+            M: 10, W: 190, H: 271,
+            // Bordas verticais das 7 colunas (colgroup 15/10/8.35/16.65/16.65/8.35/25 %)
+            col: [0, 28.5, 47.5, 63.365, 95, 126.635, 142.5, 190],
+            padX: 2.26,                 // recuo do texto dentro da célula
+            linhas: {                   // topo + altura de cada linha da tabela
+                hdr:     { y: 0.265,   h: 24.817 },
+                sec1:    { y: 25.082,  h: 5.432  },
+                ident1:  { y: 30.514,  h: 10.662 },
+                ident2:  { y: 41.176,  h: 10.662 },
+                sec2:    { y: 51.838,  h: 5.432  },
+                titulo:  { y: 57.270,  h: 13.498 },
+                sec3:    { y: 70.768,  h: 5.432  },
+                equipes: { y: 76.200,  h: 27.099 },
+                locais:  { y: 103.299, h: 31.597 },
+                campos:  { y: 134.896, h: 76.613 },   // flexível (absorve sobras)
+                sec4:    { y: 211.510, h: 5.432  },
+                encerra: { y: 216.942, h: 25.999 },
+                assina:  { y: 242.941, h: 27.794 }
+            },
+            // Deslocamentos do texto dentro da célula (do topo da linha até a base da letra)
+            base: { lbl: 3.364, val: 8.438, tituloVal: 4.851, grid: 7.726, fill: 13.327,
+                    sigNome: 21.269, sigSub: 24.621, sigLinha: 17.252 },
+            grid3: { x0: 2.526, dx: 62.313, dy: 4.973 },
+            grid4: { x0: 2.526, dx: 46.736, dy: 5.172 },
+            cbox:  { lado: 2.7, gap: 4, dy: 0.343 },
+            rodapeY: 275.890,
+            cor: { lbl: [80,80,80], sec: [229,229,229], num: [192,57,43],
+                   marcado: [0,120,0], borda: [51,51,51], rodape: [85,85,85] },
+            traco: { externo: 0.529, celula: 0.176 }   // 1.5pt e 0.5pt
+        };
+
         async function gerarPDFOS(id, descricao, materiais) {
             const btnPDF = document.getElementById('btn-acao-pdf');
             const textoOriginal = btnPDF.innerHTML;
@@ -12,345 +54,249 @@
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-                // ── Dimensões da página ──────────────────────────────────────
-                const PW = 200;   // largura útil (210 - 5mm cada lado)
-                const OX = 5;     // origem X
-                let   Y  = 8;     // cursor Y (avança linha a linha)
+                const L = OS_LAY, M = L.M, W = L.W;
+                const cx = i => M + L.col[i];              // borda vertical da coluna i
+                const linha = k => ({ y: M + L.linhas[k].y, h: L.linhas[k].h });
 
-                // ── Sanitize: remove acentos para compatibilidade com helvetica ──
-                const s = (str) => String(str || '')
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')  // remove diacritics
-                    .replace(/[^\x00-\x7F]/g, '');    // remove qualquer não-ASCII restante
+                // Acentos: as fontes padrão do jsPDF usam WinAnsi (cp1252), que cobre
+                // todo o português. Só normalizamos aspas/travessões tipográficos, que
+                // ficam fora dessa tabela, para não virarem caractere errado.
+                const s = (v) => String(v == null ? '' : v)
+                    .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+                    .replace(/[–—]/g, '-').replace(/…/g, '...');
+                // Base da letra a partir do topo do texto (Helvetica: ascent ≈ 0.905em)
+                const baseDe = (topo, pt) => topo + 0.905 * pt * 0.352778;
 
-                // ── Helpers de desenho ───────────────────────────────────────
-                const linhah  = (y, x1, x2) => { pdf.line(x1 ?? OX, y, x2 ?? OX+PW, y); };
-                const linhav  = (x, y1, y2) => { pdf.line(x, y1, x, y2); };
-                const rect    = (x, y, w, h) => { pdf.rect(x, y, w, h); };
-                const txt = (t, x, y, sz, bold, color, maxW) => {
-                    pdf.setFontSize(sz || 9);
-                    pdf.setFont('helvetica', bold ? 'bold' : 'normal');
-                    if (color) pdf.setTextColor(...color); else pdf.setTextColor(0,0,0);
-                    const str = s(t);
-                    if (maxW) {
-                        const lines = pdf.splitTextToSize(str, maxW);
-                        pdf.text(lines, x, y);
-                        return lines.length;
-                    }
-                    pdf.text(str, x, y);
-                    return 1;
+                const fonte = (pt, bold, cor, italico) => {
+                    pdf.setFontSize(pt);
+                    pdf.setFont('helvetica', italico ? 'italic' : (bold ? 'bold' : 'normal'));
+                    pdf.setTextColor(...(cor || [0, 0, 0]));
                 };
-                const label = (t, x, y) => txt(t, x, y, 7, true,  [80,80,80]);
-                const valor = (t, x, y, maxW) => txt(s(t).toUpperCase(), x, y, 9, false, [0,0,0], maxW);
-                const secao = (t, y, h) => {
-                    pdf.setFillColor(230,230,230);
-                    pdf.rect(OX, y, PW, h, 'F');
-                    pdf.setDrawColor(0); pdf.rect(OX, y, PW, h);
-                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                    pdf.text(s(t), OX + PW/2, y + h - 1.5, {align:'center'});
-                    pdf.setTextColor(0,0,0);
-                    return y + h;
+                const txt = (t, x, y, opts) => pdf.text(s(t), x, y, opts);
+                const vline = (x, y1, y2) => { pdf.setLineWidth(L.traco.celula); pdf.setDrawColor(0); pdf.line(x, y1, x, y2); };
+                const hline = (y, x1, x2) => { pdf.setLineWidth(L.traco.celula); pdf.setDrawColor(0); pdf.line(x1 ?? M, y, x2 ?? M + W, y); };
+
+                // Rótulo cinza 7pt + valor 9pt, ancorados no topo da linha (como o HTML)
+                const rotulo = (t, colIni, topo) => {
+                    fonte(7, true, L.cor.lbl);
+                    txt(t, cx(colIni) + L.padX, topo + L.base.lbl);
                 };
-
-                // Garante cor e fonte padrão
-                pdf.setDrawColor(0,0,0);
-                pdf.setLineWidth(0.3);
-
-                // ══════════════════════════════════════════════════════════════
-                // CABEÇALHO
-                // ══════════════════════════════════════════════════════════════
-                const hdrH = 24;  // altura ligeiramente maior para melhor respiro
-                rect(OX, Y, PW, hdrH);
-
-                // Divisores verticais: célula esquerda 15% | centro 60% | direita 25%
-                const c1x = OX + PW * 0.15;          // x = 35mm
-                const c2x = OX + PW * 0.75;          // x = 155mm
-                linhav(c1x, Y, Y + hdrH);
-                linhav(c2x, Y, Y + hdrH);
-
-                // ── Centros exatos de cada célula ──────────────────────────
-                // Célula esquerda: OX(5) até c1x(35) → largura 30mm
-                const celEsqW = c1x - OX;            // 30mm
-                // Célula centro: c1x(35) até c2x(155) → largura 120mm
-                const ctrX = (c1x + c2x) / 2;        // 95mm  ← centro real da coluna
-                // Célula direita: c2x(155) até OX+PW(205) → largura 50mm
-                const celDirW  = (OX + PW) - c2x;    // 50mm
-                const celDirCX = c2x + celDirW / 2;  // 180mm ← centro real da coluna direita
-
-                // ── Brasão: centralizado na célula esquerda ────────────────
-                const brasaoW = 15, brasaoH = 15;
-                const brasaoX = OX + (celEsqW - brasaoW) / 2;        // centro H
-                const brasaoY = Y  + (hdrH    - brasaoH) / 2;        // centro V
-                try {
-                    await new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width  = img.naturalWidth  || img.width;
-                            canvas.height = img.naturalHeight || img.height;
-                            canvas.getContext('2d').drawImage(img, 0, 0);
-                            pdf.addImage(canvas.toDataURL('image/png'), 'PNG',
-                                brasaoX, brasaoY, brasaoW, brasaoH);
-                            resolve();
-                        };
-                        img.onerror = resolve;
-                        img.src = 'brasao.jpg';
-                    });
-                } catch(e) {}
-
-                // ── Logo da contratada: centralizada na célula direita ─────
-                const cat = getCategoriaDemanda(d);
-                const logoSrc = cat === 'PREDIAL' ? 'epura.jpg' : (cat === 'AR' ? 'igm2.jpg' : null);
-                const logoW = 24, logoH = 9;
-                const logoX = celDirCX - logoW / 2;   // centro H
-                const logoY = Y + 3;                   // margem superior
-                if (logoSrc) {
-                    try {
-                        await new Promise((resolve) => {
-                            const img = new Image();
-                            img.crossOrigin = 'anonymous';
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                canvas.width  = img.naturalWidth  || img.width;
-                                canvas.height = img.naturalHeight || img.height;
-                                canvas.getContext('2d').drawImage(img, 0, 0);
-                                pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG',
-                                    logoX, logoY, logoW, logoH);
-                                resolve();
-                            };
-                            img.onerror = resolve;
-                            img.src = logoSrc;
-                        });
-                    } catch(e) {}
-                }
-
-                // ── Texto central institucional ────────────────────────────
-                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', ctrX, Y + 5, {align:'center'});
-                pdf.setFontSize(9); pdf.text('SECRETARIA DA EDUCACAO', ctrX, Y + 10, {align:'center'});
-                pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
-                pdf.text('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', ctrX, Y + 14, {align:'center'});
-                pdf.text('DIVISAO DE ZELADORIA', ctrX, Y + 18, {align:'center'});
-
-                // ── Nº O.S. na célula direita (abaixo do logo, se houver) ───
-                const osNum = d.numero_os ? d.numero_os : d.id;
-                if (!logoSrc) {
-                    pdf.setFontSize(7.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                    pdf.text('ORDEM DE SERVICO', celDirCX, Y + 10, {align:'center'});
-                }
-                const numY = logoSrc ? logoY + logoH + 5 : Y + 17;
-                pdf.setFontSize(13); pdf.setFont('helvetica','bold'); pdf.setTextColor(192,57,43);
-                pdf.text(`${logoSrc ? 'O.S No ' : 'No '}${osNum}`, celDirCX, numY, {align:'center'});
-                pdf.setTextColor(0,0,0);
-
-                pdf.setLineWidth(0.5); linhah(Y + hdrH); pdf.setLineWidth(0.3);
-                Y += hdrH;
-
-                // ══════════════════════════════════════════════════════════════
-                // SEÇÃO 1 — IDENTIFICAÇÃO
-                // ══════════════════════════════════════════════════════════════
-                Y = secao('1. IDENTIFICAÇÃO DA SOLICITAÇÃO', Y, 5);
-
-                const dataParts = (d.data || '').split('-');
-                const dataBr = dataParts.length === 3 ? `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}` : (d.data || '');
-
-                // Linha: Data | Solicitante | Prioridade
-                const r1h = 11;
-                const r1c1 = OX + PW * 0.25;
-                const r1c2 = OX + PW * 0.75;
-                linhav(r1c1, Y, Y+r1h); linhav(r1c2, Y, Y+r1h);
-                label('DATA E HORA DE ABERTURA', OX+1, Y+3.5);
-                valor(`${dataBr}  ${d.hora||''}`, OX+1, Y+8, r1c1-OX-2);
-                label('SOLICITANTE / CONTATO', r1c1+1, Y+3.5);
-                valor(d.solicitante||'', r1c1+1, Y+8, r1c2-r1c1-2);
-                label('PRIORIDADE NO SISTEMA', r1c2+1, Y+3.5);
-                valor(d.prioridade||'', r1c2+1, Y+8);                linhah(Y+r1h); Y += r1h;
-
-                // Linha: Setor | Status
-                const r2h = 11;
-                const r2c1 = OX + PW * 0.75;
-                linhav(r2c1, Y, Y+r2h);
-                label('UNIDADE / SETOR DE ORIGEM', OX+1, Y+3.5);
-                valor(d.setor||'', OX+1, Y+8, r2c1-OX-2);
-                label('STATUS ATUAL', r2c1+1, Y+3.5);
-                valor(d.status||'', r2c1+1, Y+8);
-                pdf.setLineWidth(0.5); linhah(Y+r2h); pdf.setLineWidth(0.3);
-                Y += r2h;
-
-                // ══════════════════════════════════════════════════════════════
-                // SEÇÃO 2 — DESCRIÇÃO DA DEMANDA
-                // ══════════════════════════════════════════════════════════════
-                Y = secao('2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)', Y, 5);
-
-                const titulo = s((d.titulo||'').toUpperCase());
-                pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                const tLines = pdf.splitTextToSize(titulo, PW - 4);
-                const descH  = Math.max(14, tLines.length * 5 + 5);
-                pdf.text(tLines, OX+2, Y+6);
-                pdf.setLineWidth(0.5); linhah(Y+descH); pdf.setLineWidth(0.3);
-                Y += descH;
-
-                // ══════════════════════════════════════════════════════════════
-                // SEÇÃO 3 — EQUIPES E LOCAIS
-                // ══════════════════════════════════════════════════════════════
-                Y = secao('3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)', Y, 5);
-
-                // Checkbox desenhado (quadrado) — igual ao modelo oficial, sem
-                // depender de glifo. Verde com "check" branco quando marcado.
-                const caixa = (x, yBaseline, on) => {
-                    const sz = 2.6, top = yBaseline - 2.3;
-                    pdf.setLineWidth(0.2);
-                    if (on) {
-                        pdf.setFillColor(0,120,0); pdf.setDrawColor(0,120,0);
-                        pdf.rect(x, top, sz, sz, 'FD');
-                        pdf.setDrawColor(255,255,255); pdf.setLineWidth(0.4);
-                        pdf.line(x+0.6, top+1.4, x+1.1, top+2.0);
-                        pdf.line(x+1.1, top+2.0, x+2.1, top+0.7);
+                const valor = (t, colIni, colFim, topo, pt, bold) => {
+                    fonte(pt || 9, !!bold);
+                    const largura = cx(colFim) - cx(colIni) - 2 * L.padX;
+                    const linhas = pdf.splitTextToSize(s(String(t || '').toUpperCase()), largura);
+                    txt(linhas[0] || '', cx(colIni) + L.padX, topo + L.base.val);
+                };
+                // Faixa cinza de seção, texto centralizado na vertical
+                const secao = (t, k) => {
+                    const r = linha(k);
+                    pdf.setFillColor(...L.cor.sec);
+                    pdf.rect(M, r.y, W, r.h, 'F');
+                    hline(r.y); hline(r.y + r.h);
+                    fonte(8, true);
+                    txt(t, M + W / 2, r.y + 3.704, { align: 'center' });
+                };
+                // Caixinha de seleção 2.7mm — igual ao .cbox do HTML
+                const caixa = (x, topoTexto, marcado) => {
+                    const y = topoTexto + L.cbox.dy, lado = L.cbox.lado;
+                    pdf.setLineWidth(0.176);
+                    if (marcado) {
+                        pdf.setFillColor(...L.cor.marcado); pdf.setDrawColor(...L.cor.marcado);
+                        pdf.rect(x, y, lado, lado, 'FD');
+                        pdf.setDrawColor(255, 255, 255); pdf.setLineWidth(0.35);
+                        pdf.line(x + 0.65, y + 1.45, x + 1.15, y + 2.05);
+                        pdf.line(x + 1.15, y + 2.05, x + 2.15, y + 0.7);
                     } else {
-                        pdf.setDrawColor(60,60,60);
-                        pdf.rect(x, top, sz, sz, 'D');
+                        pdf.setDrawColor(...L.cor.borda);
+                        pdf.rect(x, y, lado, lado, 'D');
                     }
-                    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3);
+                    pdf.setDrawColor(0); pdf.setLineWidth(L.traco.celula);
                 };
+                const itemGrid = (x, topoTexto, rot, marcado) => {
+                    caixa(x, topoTexto, marcado);
+                    fonte(8, !!marcado, marcado ? L.cor.marcado : L.cor.lbl);
+                    txt(rot, x + L.cbox.gap, baseDe(topoTexto, 8));
+                };
+                const carregarImagem = (src) => new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        try {
+                            const cv = document.createElement('canvas');
+                            cv.width = img.naturalWidth || img.width;
+                            cv.height = img.naturalHeight || img.height;
+                            cv.getContext('2d').drawImage(img, 0, 0);
+                            resolve(cv.toDataURL('image/png'));
+                        } catch (e) { resolve(null); }
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = src;
+                });
 
-                // Checkboxes equipes (3 colunas)
-                label('EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA', OX+1, Y+4);
+                // ── Dados (mesmas regras do HTML) ──────────────────────────
+                const partes = (d.data || '').split('-');
+                const dataBr = partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : (d.data || '');
                 const chks = montarCheckboxes(d);
+                const logoInfo = getLogoInfoParaOS(d);
+                const osNum = d.numero_os ? d.numero_os : d.id;
+
+                // ══════════ CABEÇALHO ══════════
+                const rH = linha('hdr');
+                const brasao = await carregarImagem('brasao.jpg');
+                if (brasao) { try { pdf.addImage(brasao, 'PNG', M + 7.169, M + 3.708, 14.742, 16.999); } catch (e) {} }
+
+                const cCentro = (cx(1) + cx(6)) / 2;
+                fonte(10, true); txt('GOVERNO DO ESTADO DE SÃO PAULO', cCentro, M + baseDe(5.321, 10), { align: 'center' });
+                fonte(9, true);  txt('SECRETARIA DA EDUCAÇÃO', cCentro, M + baseDe(9.289, 9), { align: 'center' });
+                fonte(7, false); txt('COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO', cCentro, M + baseDe(13.490, 7), { align: 'center' });
+                fonte(7, false); txt('DIVISÃO DE ZELADORIA', cCentro, M + baseDe(17.070, 7), { align: 'center' });
+
+                const cDir = (cx(6) + cx(7)) / 2;
+                if (logoInfo) {
+                    const px2mm = v => parseFloat(v) / (96 / 25.4);
+                    const lw = px2mm(logoInfo.width), lh = px2mm(logoInfo.height);
+                    const logo = await carregarImagem(logoInfo.src);
+                    if (logo) { try { pdf.addImage(logo, 'PNG', cDir - lw / 2, M + 1.525, lw, lh); } catch (e) {} }
+                } else {
+                    fonte(8, true, [51, 51, 51]);
+                    txt('ORDEM DE SERVIÇO', cDir, M + baseDe(6.5, 8), { align: 'center' });
+                }
+                fonte(13, true, L.cor.num);
+                txt(`${logoInfo ? 'O.S Nº ' : 'Nº '}${osNum}`, cDir, M + baseDe(18.397, 13), { align: 'center' });
+
+                vline(cx(1), rH.y, rH.y + rH.h);
+                vline(cx(6), rH.y, rH.y + rH.h);
+
+                // ══════════ 1. IDENTIFICAÇÃO ══════════
+                secao('1. IDENTIFICAÇÃO DA SOLICITAÇÃO', 'sec1');
+
+                const r1 = linha('ident1');
+                vline(cx(2), r1.y, r1.y + r1.h); vline(cx(6), r1.y, r1.y + r1.h);
+                rotulo('DATA E HORA DE ABERTURA', 0, r1.y);
+                valor(`${dataBr}  ${d.hora || '--:--'}`, 0, 2, r1.y);
+                rotulo('SOLICITANTE / CONTATO', 2, r1.y);
+                valor(d.solicitante, 2, 6, r1.y);
+                rotulo('PRIORIDADE NO SISTEMA', 6, r1.y);
+                valor(d.prioridade, 6, 7, r1.y);
+                hline(r1.y + r1.h);
+
+                const r2 = linha('ident2');
+                vline(cx(6), r2.y, r2.y + r2.h);
+                rotulo('UNIDADE / SETOR DE ORIGEM', 0, r2.y);
+                valor(d.setor, 0, 6, r2.y);
+                rotulo('STATUS ATUAL', 6, r2.y);
+                valor(d.status, 6, 7, r2.y);
+
+                // ══════════ 2. DESCRIÇÃO DA DEMANDA ══════════
+                secao('2. DESCRIÇÃO DA DEMANDA (PREENCHIMENTO PELO SISTEMA)', 'sec2');
+                const rT = linha('titulo');
+                fonte(10, true);
+                const linhasTitulo = pdf.splitTextToSize(s((d.titulo || '').toUpperCase()), W - 2 * L.padX);
+                linhasTitulo.slice(0, 3).forEach((ln, i) => txt(ln, M + L.padX, rT.y + L.base.tituloVal + i * 4.4));
+                hline(rT.y + rT.h);
+
+                // ══════════ 3. PARECER TÉCNICO ══════════
+                secao('3. PARECER TÉCNICO E EXECUÇÃO (PREENCHIMENTO PELA EQUIPE)', 'sec3');
+
+                const rE = linha('equipes');
+                rotulo('EQUIPE RESPONSÁVEL / CONTRATADA ATRIBUÍDA', 0, rE.y);
                 const equipes = [
-                    [chks.limpeza,    'LIMPEZA PREDIAL'],
-                    [chks.ar,         'AR CONDICIONADO'],
-                    [chks.manut,      'MANUTENÇÃO PREDIAL'],
-                    [chks.elevador,   'MANUT. DE ELEVADORES'],
-                    [chks.ti,         'SUPORTE TI'],
-                    [chks.telefonia,  'TELEFONIA'],
-                    [chks.extintores, 'MANUT. E RECARGA EXTINTORES'],
-                    ['[ ]',           'OUTROS: _______________________'],
+                    [chks.limpeza, 'LIMPEZA PREDIAL'], [chks.ar, 'AR CONDICIONADO'], [chks.manut, 'MANUTENÇÃO PREDIAL'],
+                    [chks.elevador, 'MANUT. DE ELEVADORES'], [chks.ti, 'SUPORTE TI'], [chks.telefonia, 'TELEFONIA'],
+                    [chks.extintores, 'MANUT. E RECARGA EXTINTORES'], ['[ ]', 'OUTROS: __________________________________']
                 ];
-                const colW3 = PW / 3;
                 equipes.forEach((eq, i) => {
-                    const col = i % 3;
-                    const row = Math.floor(i / 3);
-                    const ex  = OX + 2 + col * colW3;
-                    const ey  = Y + 8 + row * 5.5;
-                    const marcado = eq[0] === '[X]';
-                    caixa(ex, ey, marcado);
-                    pdf.setFontSize(8); pdf.setFont('helvetica', marcado ? 'bold' : 'normal');
-                    pdf.setTextColor(marcado ? 0 : 80, marcado ? 120 : 80, marcado ? 0 : 80);
-                    pdf.text(s(eq[1]), ex + 3.6, ey);
+                    const col = i % 3, lin = Math.floor(i / 3);
+                    itemGrid(M + L.grid3.x0 + col * L.grid3.dx,
+                             rE.y + (L.base.grid - 2.554) + lin * L.grid3.dy, eq[1], eq[0] === '[X]');
                 });
-                pdf.setTextColor(0,0,0);
-                const eqH = Math.ceil(equipes.length / 3) * 5.5 + 11;
-                linhah(Y+eqH); Y += eqH;
+                hline(rE.y + rE.h);
 
-                // Checkboxes locais (4 colunas)
-                label('LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO', OX+1, Y+4);
-                const locais = ['SEDE','AROUCHE','EFAPE','ARMENIA','CASA VERDE','SAO DOMINGOS','CAJAMAR','TENENTE PENA','CENTRO OESTE','CAPE'];
-                pdf.setFontSize(8); pdf.setFont('helvetica','normal');
-                const colW4 = PW / 4;
+                const rL = linha('locais');
+                rotulo('LOCAL DE ATUAÇÃO / PRÉDIO VINCULADO', 0, rL.y);
+                // O "OUTRO" entra como 11º item da grade (3ª linha, 3ª coluna) — no
+                // HTML ele ocupa 2 colunas ao lado de CENTRO OESTE e CAPE, e não uma
+                // linha própria.
+                const locais = ['SEDE', 'AROUCHE', 'EFAPE', 'ARMÊNIA', 'CASA VERDE', 'SÃO DOMINGOS',
+                                'CAJAMAR', 'TENENTE PENA', 'CENTRO OESTE', 'CAPE',
+                                'OUTRO: ______________________________________'];
                 locais.forEach((loc, i) => {
-                    const col = i % 4;
-                    const row = Math.floor(i / 4);
-                    const lx = OX + 2 + col * colW4;
-                    const ly = Y + 8 + row * 5.5;
-                    caixa(lx, ly, false);
-                    pdf.setTextColor(80,80,80);
-                    pdf.text(s(loc), lx + 3.6, ly);
+                    const col = i % 4, lin = Math.floor(i / 4);
+                    itemGrid(M + L.grid4.x0 + col * L.grid4.dx,
+                             rL.y + (L.base.grid - 2.554) + lin * L.grid4.dy, loc, false);
                 });
-                const rowsLoc = Math.ceil(locais.length / 4);
-                const outroY = Y + 8 + rowsLoc * 5.5;
-                caixa(OX + 2, outroY, false);
-                pdf.setTextColor(80,80,80);
-                pdf.text('OUTRO: ______________________________', OX + 2 + 3.6, outroY);
-                pdf.setTextColor(0,0,0);
-                const locH = (rowsLoc + 1) * 5.5 + 10;
-                pdf.setLineWidth(0.5); linhah(Y+locH); pdf.setLineWidth(0.3);
-                Y += locH;
+                hline(rL.y + rL.h);
 
-                // Campos de texto livres (Descrição serviços | Materiais).
-                // A caixa se estende para preencher o restante da folha A4: as
-                // seções seguintes ocupam (título 5 + termo ENC4_H + assinaturas 28) e
-                // queremos as assinaturas terminando ~283mm (rodapé logo abaixo), então
-                // a descrição absorve todo o espaço sobrando — sem vão em branco.
-                // ENC4_H: altura do "4. Termo de Encerramento" — folgada de propósito,
-                // para caber a escrita à mão do início/término do atendimento.
-                const ENC4_H = 20;
-                const camposMH = Math.max(35, 283 - Y - (5 + ENC4_H + 28));
-                const midX = OX + PW / 2;
-                linhav(midX, Y, Y + camposMH);
+                // ══════════ CAMPOS LIVRES (descrição / materiais) ══════════
+                const rC = linha('campos');
+                vline(cx(4), rC.y, rC.y + rC.h);
+                rotulo('DESCRIÇÃO DETALHADA DOS SERVIÇOS EXECUTADOS', 0, rC.y);
+                rotulo('MATERIAIS E PEÇAS UTILIZADOS (REPOSIÇÃO)', 4, rC.y);
+                // Texto exatamente como digitado (sem forçar maiúsculas), respeitando
+                // as quebras de linha do usuário — igual ao white-space:pre-wrap do HTML.
+                const blocoLivre = (texto, colIni, colFim) => {
+                    if (!texto || !texto.trim()) return;
+                    fonte(9, false);
+                    const largura = cx(colFim) - cx(colIni) - 2 * L.padX;
+                    const linhasTxt = [];
+                    String(texto).split('\n').forEach(par => {
+                        if (!par.trim()) { linhasTxt.push(''); return; }
+                        pdf.splitTextToSize(s(par), largura).forEach(l => linhasTxt.push(l));
+                    });
+                    const maxLinhas = Math.floor((rC.h - 8) / 4.2);
+                    linhasTxt.slice(0, maxLinhas).forEach((l, i) => {
+                        if (l) txt(l, cx(colIni) + L.padX, rC.y + 8.4 + i * 4.2);
+                    });
+                };
+                blocoLivre(descricao, 0, 4);
+                blocoLivre(materiais, 4, 7);
+                hline(rC.y + rC.h);
 
-                label('DESCRICAO DETALHADA DOS SERVICOS EXECUTADOS', OX+1, Y+4);
-                if (descricao && descricao.trim()) {
-                    pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const dLines = pdf.splitTextToSize(s(descricao||''), midX - OX - 4);
-                    pdf.text(dLines, OX+2, Y+9);
-                }
+                // ══════════ 4. TERMO DE ENCERRAMENTO ══════════
+                secao('4. TERMO DE ENCERRAMENTO E ACEITE FISCAL', 'sec4');
 
-                label('MATERIAIS E PECAS UTILIZADOS (REPOSICAO)', midX+1, Y+4);
-                if (materiais && materiais.trim()) {
-                    pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const mLines = pdf.splitTextToSize(s(materiais||''), OX + PW - midX - 4);
-                    pdf.text(mLines, midX+2, Y+9);
-                }
-                pdf.setLineWidth(0.5); linhah(Y+camposMH); pdf.setLineWidth(0.3);
-                Y += camposMH;
+                const rN = linha('encerra');
+                vline(cx(2), rN.y, rN.y + rN.h); vline(cx(4), rN.y, rN.y + rN.h);
+                rotulo('INÍCIO DO ATENDIMENTO', 0, rN.y);
+                rotulo('TÉRMINO DO ATENDIMENTO', 2, rN.y);
+                rotulo('OBSERVAÇÕES FINAIS / PENDÊNCIAS', 4, rN.y);
+                // Sempre em branco: preenchimento físico, à mão, pela equipe.
+                fonte(8, true, L.cor.lbl);
+                const LINHA_MANUAL = '___/___/20___ ÀS ___:___';
+                txt(LINHA_MANUAL, cx(0) + L.padX, rN.y + L.base.fill);
+                txt(LINHA_MANUAL, cx(2) + L.padX, rN.y + L.base.fill);
+                hline(rN.y + rN.h);
 
-                // ══════════════════════════════════════════════════════════════
-                // SEÇÃO 4 — ENCERRAMENTO
-                // ══════════════════════════════════════════════════════════════
-                Y = secao('4. TERMO DE ENCERRAMENTO E ACEITE FISCAL', Y, 5);
-
-                const e1x = OX + PW * 0.25;
-                const e2x = OX + PW * 0.50;
-                linhav(e1x, Y, Y+ENC4_H); linhav(e2x, Y, Y+ENC4_H);
-                // Início e término do atendimento saem SEMPRE em branco: são de
-                // preenchimento físico, à mão, pela equipe que executou o serviço.
-                // (label() deixa a fonte em negrito — voltar para normal antes da linha)
-                const LINHA_MANUAL = '___/___/20___ AS ___:___';
-                label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
-                pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
-                pdf.text(LINHA_MANUAL, OX+2, Y+ENC4_H-3);
-                label('TERMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
-                pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
-                pdf.text(LINHA_MANUAL, e1x+2, Y+ENC4_H-3);
-                label('OBSERVACOES FINAIS / PENDENCIAS', e2x+1, Y+3.5);
-                linhah(Y+ENC4_H); Y += ENC4_H;
-
-                // ══════════════════════════════════════════════════════════════
-                // ASSINATURAS
-                // ══════════════════════════════════════════════════════════════
-                const sigH = 28;
-                const sigW = PW / 3;
-                linhav(OX + sigW,     Y, Y + sigH);
-                linhav(OX + sigW * 2, Y, Y + sigH);
-
-                const sigs = [
-                    ['TECNICO EXECUTOR',         'Nome legivel / Matricula / Empresa'],
-                    ['GESTOR / FISCAL (DZEL)',   'Carimbo e Assinatura'],
-                    ['SOLICITANTE / RECEBEDOR',  'Atesto a conformidade do servico'],
+                // ══════════ ASSINATURAS ══════════
+                const rA = linha('assina');
+                const sigW = W / 3;
+                vline(M + sigW, rA.y, rA.y + rA.h);
+                vline(M + sigW * 2, rA.y, rA.y + rA.h);
+                const assinaturas = [
+                    ['TÉCNICO EXECUTOR', 'Nome legível / Matrícula / Empresa'],
+                    ['FISCAL', 'Carimbo e Assinatura'],
+                    ['SOLICITANTE / RECEBEDOR', 'Atesto a conformidade do serviço']
                 ];
-                sigs.forEach((sig, i) => {
-                    const sx = OX + 3 + i * sigW;
-                    pdf.setLineWidth(0.2);
-                    pdf.line(sx, Y + sigH - 10, sx + sigW - 6, Y + sigH - 10);
-                    pdf.setLineWidth(0.3);
-                    pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(0,0,0);
-                    pdf.text(sig[0], sx + (sigW-6)/2, Y + sigH - 6, {align:'center'});
-                    pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80);
-                    pdf.text(sig[1], sx + (sigW-6)/2, Y + sigH - 2.5, {align:'center'});
-                    pdf.setTextColor(0,0,0);
+                assinaturas.forEach((sig, i) => {
+                    const centro = M + sigW * i + sigW / 2;
+                    const larguraLinha = sigW * 0.88;
+                    pdf.setLineWidth(0.265); pdf.setDrawColor(0);
+                    pdf.line(centro - larguraLinha / 2, rA.y + L.base.sigLinha,
+                             centro + larguraLinha / 2, rA.y + L.base.sigLinha);
+                    fonte(8, true);
+                    txt(sig[0], centro, rA.y + L.base.sigNome, { align: 'center' });
+                    fonte(7, false, L.cor.lbl);
+                    txt(sig[1], centro, rA.y + L.base.sigSub, { align: 'center' });
                 });
-                linhah(Y + sigH); Y += sigH;
 
-                // Borda externa da OS inteira
-                pdf.setLineWidth(0.7);
-                pdf.rect(OX, 8, PW, Y - 8);
-                pdf.setLineWidth(0.3);
+                // Borda externa da tabela (1.5pt, como no HTML)
+                pdf.setLineWidth(L.traco.externo); pdf.setDrawColor(0);
+                pdf.rect(M, M, W, L.H);
 
                 // Rodapé
-                const dataGeracao = new Date().toLocaleString('pt-BR');
-                pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(100,100,100);
-                pdf.text(`Documento gerado em ${dataGeracao}`, OX + PW/2, Y + 4, {align:'center'});
+                fonte(7.5, false, L.cor.rodape, true);
+                txt(`Documento gerado em ${new Date().toLocaleString('pt-BR')}`,
+                    M + W / 2, M + L.rodapeY, { align: 'center' });
 
                 // ── Salva ────────────────────────────────────────────────────
                 const nomeArq = d.numero_os ? String(d.numero_os).replace(/[^a-zA-Z0-9]/g,'_') : d.id;
@@ -533,7 +479,7 @@
     <td colspan="7" style="padding:0;">
       <div class="sig-row">
         <div class="sig-col"><div class="sig-line"></div><div class="sig-name">T\u00C9CNICO EXECUTOR</div><div class="sig-sub">Nome leg\u00EDvel / Matr\u00EDcula / Empresa</div></div>
-        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">GESTOR / FISCAL (DZEL)</div><div class="sig-sub">Carimbo e Assinatura</div></div>
+        <div class="sig-col"><div class="sig-line"></div><div class="sig-name">FISCAL</div><div class="sig-sub">Carimbo e Assinatura</div></div>
         <div class="sig-col"><div class="sig-line"></div><div class="sig-name">SOLICITANTE / RECEBEDOR</div><div class="sig-sub">Atesto a conformidade do servi\u00E7o</div></div>
       </div>
     </td>
