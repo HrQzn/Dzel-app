@@ -269,24 +269,27 @@
 
                 // Campos de texto livres (Descrição serviços | Materiais).
                 // A caixa se estende para preencher o restante da folha A4: as
-                // seções seguintes ocupam ~47mm (seção 4 = 5 + termo 14 + assinaturas
-                // 28) e queremos as assinaturas terminando ~283mm (rodapé logo abaixo),
-                // então a descrição absorve todo o espaço sobrando — sem vão em branco.
-                const camposMH = Math.max(35, 283 - Y - (5 + 14 + 28));
+                // seções seguintes ocupam (título 5 + termo ENC4_H + assinaturas 28) e
+                // queremos as assinaturas terminando ~283mm (rodapé logo abaixo), então
+                // a descrição absorve todo o espaço sobrando — sem vão em branco.
+                // ENC4_H: altura do "4. Termo de Encerramento" — folgada de propósito,
+                // para caber a escrita à mão do início/término do atendimento.
+                const ENC4_H = 20;
+                const camposMH = Math.max(35, 283 - Y - (5 + ENC4_H + 28));
                 const midX = OX + PW / 2;
                 linhav(midX, Y, Y + camposMH);
 
                 label('DESCRICAO DETALHADA DOS SERVICOS EXECUTADOS', OX+1, Y+4);
                 if (descricao && descricao.trim()) {
                     pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const dLines = pdf.splitTextToSize(s((descricao||'').toUpperCase()), midX - OX - 4);
+                    const dLines = pdf.splitTextToSize(s(descricao||''), midX - OX - 4);
                     pdf.text(dLines, OX+2, Y+9);
                 }
 
                 label('MATERIAIS E PECAS UTILIZADOS (REPOSICAO)', midX+1, Y+4);
                 if (materiais && materiais.trim()) {
                     pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
-                    const mLines = pdf.splitTextToSize(s((materiais||'').toUpperCase()), OX + PW - midX - 4);
+                    const mLines = pdf.splitTextToSize(s(materiais||''), OX + PW - midX - 4);
                     pdf.text(mLines, midX+2, Y+9);
                 }
                 pdf.setLineWidth(0.5); linhah(Y+camposMH); pdf.setLineWidth(0.3);
@@ -297,22 +300,21 @@
                 // ══════════════════════════════════════════════════════════════
                 Y = secao('4. TERMO DE ENCERRAMENTO E ACEITE FISCAL', Y, 5);
 
-                const enc4H = 14;
                 const e1x = OX + PW * 0.25;
                 const e2x = OX + PW * 0.50;
-                linhav(e1x, Y, Y+enc4H); linhav(e2x, Y, Y+enc4H);
+                linhav(e1x, Y, Y+ENC4_H); linhav(e2x, Y, Y+ENC4_H);
                 // Início e término do atendimento saem SEMPRE em branco: são de
                 // preenchimento físico, à mão, pela equipe que executou o serviço.
                 // (label() deixa a fonte em negrito — voltar para normal antes da linha)
                 const LINHA_MANUAL = '___/___/20___ AS ___:___';
                 label('INICIO DO ATENDIMENTO',   OX+1,  Y+3.5);
                 pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
-                pdf.text(LINHA_MANUAL, OX+2, Y+9);
+                pdf.text(LINHA_MANUAL, OX+2, Y+ENC4_H-3);
                 label('TERMINO DO ATENDIMENTO',  e1x+1, Y+3.5);
                 pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
-                pdf.text(LINHA_MANUAL, e1x+2, Y+9);
+                pdf.text(LINHA_MANUAL, e1x+2, Y+ENC4_H-3);
                 label('OBSERVACOES FINAIS / PENDENCIAS', e2x+1, Y+3.5);
-                linhah(Y+enc4H); Y += enc4H;
+                linhah(Y+ENC4_H); Y += ENC4_H;
 
                 // ══════════════════════════════════════════════════════════════
                 // ASSINATURAS
@@ -420,13 +422,17 @@
   .lbl { display: block; font-size: 7pt; font-weight: bold; color: #505050; margin-bottom: 1mm; }
   .val { font-size: 9pt; text-transform: uppercase; }
   .val.big { font-size: 10pt; font-weight: bold; }
-  td.hdr-brasao { text-align: center; vertical-align: middle; }
+  /* As 3 células do cabeçalho ficam centradas na vertical. Precisam do prefixo
+     "table.os" porque a regra genérica acima (table.os td) tem especificidade
+     maior e vinha vencendo — por isso o bloco institucional colava no topo,
+     com todo o espaço sobrando embaixo. */
+  table.os td.hdr-brasao { text-align: center; vertical-align: middle; }
   td.hdr-brasao img { height: 17mm; width: auto; }
-  td.hdr-centro { text-align: center; vertical-align: middle; }
+  table.os td.hdr-centro { text-align: center; vertical-align: middle; }
   .h-gov { font-size: 10pt; font-weight: bold; }
   .h-sec { font-size: 9pt; font-weight: bold; }
-  .h-coord { font-size: 7pt; margin-top: 0.5mm; }
-  td.hdr-num { text-align: center; vertical-align: middle; }
+  .h-coord { font-size: 7pt; margin-top: 0.5mm; line-height: 1.25; }
+  table.os td.hdr-num { text-align: center; vertical-align: middle; }
   td.hdr-num img { max-width: 44mm; }
   .os-top { font-size: 8pt; font-weight: bold; color: #333; text-transform: uppercase; letter-spacing: 0.2px; }
   .os-num { color: #C0392B; font-size: 13pt; font-weight: bold; margin-top: 1mm; }
@@ -440,7 +446,9 @@
   .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm 2mm; font-size: 8pt; color: #505050; margin-top: 1.4mm; }
   .ck-on { color: #007800; font-weight: bold; }
-  .fill-lines { font-size: 8pt; font-weight: bold; color: #505050; margin-top: 1.6mm; }
+  /* margin-top generoso: a linha pontilhada desce dentro da célula, sobrando
+     espaço acima dela para escrever à mão (o campo é de preenchimento físico). */
+  .fill-lines { font-size: 8pt; font-weight: bold; color: #505050; margin-top: 7mm; }
   /* Assinaturas: flex com 3 colunas iguais, linhas no mesmo nível,
      texto centralizado — alinhamento idêntico em tela, impressão e PDF. */
   .sig-row { display: flex; width: 100%; height: 27.4mm; }
@@ -467,7 +475,8 @@
     <td class="hdr-centro" colspan="5">
       <div class="h-gov">GOVERNO DO ESTADO DE S\u00C3O PAULO</div>
       <div class="h-sec">SECRETARIA DA EDUCA\u00C7\u00C3O</div>
-      <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO - DIVIS\u00C3O DE ZELADORIA</div>
+      <div class="h-coord">COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO</div>
+      <div class="h-coord">DIVIS\u00C3O DE ZELADORIA</div>
     </td>
     <td class="hdr-num">${topTextHTML}${logoHTML}<div class="os-num">${osLabel}${esc(osNum)}</div></td>
   </tr>
@@ -511,11 +520,11 @@
     </td>
   </tr>
   <tr>
-    <td colspan="4" style="height:100%;"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc((descricao||'').toUpperCase())}</div></td>
-    <td colspan="3" style="height:100%;"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc((materiais||'').toUpperCase())}</div></td>
+    <td colspan="4" style="height:100%;"><span class="lbl">DESCRI\u00C7\u00C3O DETALHADA DOS SERVI\u00C7OS EXECUTADOS</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc(descricao||'')}</div></td>
+    <td colspan="3" style="height:100%;"><span class="lbl">MATERIAIS E PE\u00C7AS UTILIZADOS (REPOSI\u00C7\u00C3O)</span><div style="font-size:9pt;white-space:pre-wrap;margin-top:1mm;">${esc(materiais||'')}</div></td>
   </tr>
   <tr style="height:4.6mm;"><td class="sec" colspan="7">4. TERMO DE ENCERRAMENTO E ACEITE FISCAL</td></tr>
-  <tr style="height:19.5mm;">
+  <tr style="height:26mm;">
     <td colspan="2"><span class="lbl">IN\u00CDCIO DO ATENDIMENTO</span><div class="fill-lines">${linhaManual}</div></td>
     <td colspan="2"><span class="lbl">T\u00C9RMINO DO ATENDIMENTO</span><div class="fill-lines">${linhaManual}</div></td>
     <td colspan="3"><span class="lbl">OBSERVA\u00C7\u00D5ES FINAIS / PEND\u00CANCIAS</span></td>

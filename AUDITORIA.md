@@ -203,7 +203,24 @@ paginação/filtros, impressão de O.S./R.O., XSS, responsividade e acessibilida
   `data_inicio_atendimento`/`data_fim`, introduzido na rodada de julho, foi removido.
   Os dois campos continuam sendo registrados pelo sistema e usados normalmente no KPI
   "Tempo de 1ª Resposta", no cálculo de SLA e nas colunas da planilha exportada —
-  a mudança vale apenas para o documento impresso.
+  a mudança vale apenas para o documento impresso. A linha pontilhada foi mantida e
+  a faixa ficou mais alta (HTML 19,5 → 26mm; PDF 14 → 20mm, agora na constante única
+  `ENC4_H`, de onde a caixa de descrição também calcula sua altura), sobrando espaço
+  acima dela para a escrita à mão.
+- **Corrigido (bug de CSS):** as três células do cabeçalho da O.S. declaravam
+  `vertical-align: middle`, mas a regra genérica `table.os td { vertical-align: top }`
+  tem especificidade maior e vencia — o bloco institucional colava no topo da faixa
+  (5px acima × 42px sobrando embaixo). Com o seletor prefixado por `table.os`, o
+  cabeçalho ficou centrado (16 × 29px), como no modelo oficial.
+- **Cabeçalho em duas linhas (HTML):** "COORDENADORIA GERAL DE SUPORTE ADMINISTRATIVO"
+  e "DIVISÃO DE ZELADORIA" deixaram de sair numa linha única separada por hífen,
+  igualando-se ao PDF, que já usava duas linhas.
+- **Campos livres na caixa original:** "Descrição Detalhada dos Serviços Executados" e
+  "Materiais e Peças Utilizados" deixaram de ser forçados a MAIÚSCULAS e são impressos
+  exatamente como digitados no modal. Vale só para esses dois campos — o restante do
+  documento e dos formulários mantém a convenção de caixa alta do sistema.
+  (No PDF os acentos continuam sendo removidos: é limitação da fonte `helvetica` do
+  jsPDF, que vale para todo o documento; no HTML de impressão eles são preservados.)
 - **Corrigido:** o rodapé do **Relatório Consolidado (PDF)** lia `sessionStorage`
   (`dzel_user`, nunca gravado) e sempre saía "por Sistema". Agora usa o usuário logado
   (`currentUserData`).
