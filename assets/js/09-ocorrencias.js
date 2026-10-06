@@ -142,7 +142,109 @@
         //   - Gap 4mm entre tabela e seção 2
         //   - Caixa descrição preenche resto da página (sem assinatura)
         //   - Rodapé "Documento gerado" no fim
+        //   - Descrição longa: continua na(s) página(s) seguinte(s) repetindo o
+        //     cabeçalho + barra "2 - Descrição (continuação)" (ver paginarDescricaoRO)
         // ═══════════════════════════════════════════════════════════════════════
+
+        // Roda DENTRO da janela de impressão (injetada via toString) — por isso
+        // não pode usar nada deste escopo. Mede em quantas linhas o texto quebra
+        // na caixa de descrição e, se passar da capacidade da página 1, distribui
+        // as linhas restantes em páginas de continuação com cabeçalho repetido.
+        function paginarDescricaoRO() {
+            var NL      = String.fromCharCode(10);
+            var MM      = 96 / 25.4;              // px por mm (CSS)
+            var PAGINA  = 277 * MM;               // A4 297mm − margens @page de 10mm
+            var FOLGA   = 3 * MM;                 // folga de segurança no fim da página
+            var RESPIRO = 3 * MM;                 // mín. entre a última linha e a borda da caixa
+            var box     = document.getElementById('desc-box');
+            var wrap    = document.querySelector('.wrap');
+            var cab     = document.querySelector('td.hdr');
+            var rodape  = document.querySelector('.footer');
+            if (!box || !wrap || !cab || !rodape) return;
+
+            var csB   = getComputedStyle(box);
+            var lh    = parseFloat(csB.lineHeight);
+            var util  = parseFloat(csB.paddingTop) + parseFloat(csB.borderTopWidth) + parseFloat(csB.borderBottomWidth) + RESPIRO;
+            var capac = function (h) { return Math.max(1, Math.floor((h - util) / lh + 0.001)); };
+            var rodapeH = rodape.getBoundingClientRect().height + parseFloat(getComputedStyle(rodape).marginTop);
+
+            // Página 1: mantém a altura do modelo; só encolhe se o cabeçalho cresceu
+            // (ex.: campo longo quebrando linha) e a caixa não caberia mais na folha.
+            var fixo   = box.getBoundingClientRect().height;
+            var topo1  = box.getBoundingClientRect().top - wrap.getBoundingClientRect().top;
+            var altura1 = Math.min(fixo, PAGINA - topo1 - rodapeH - FOLGA);
+            if (altura1 < fixo) box.style.height = altura1 + 'px';
+
+            var texto = box.textContent || '';
+            if (!texto.trim()) return;
+
+            // Mede as quebras de linha por parágrafo (mesma largura/fonte da caixa)
+            var med = box.cloneNode(false);
+            med.removeAttribute('id');
+            med.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;height:auto;';
+            wrap.appendChild(med);
+            var linhas = [];                       // { p: parágrafo, t: texto, vazia }
+            texto.split(NL).forEach(function (par, pi) {
+                if (!par.trim()) { linhas.push({ p: pi, t: par, vazia: true }); return; }
+                var d = document.createElement('div');
+                d.appendChild(document.createTextNode(par));
+                med.appendChild(d);
+                var tn = d.firstChild, r = document.createRange();
+                var inicios = [0], topAnt = null;
+                for (var i = 0; i < par.length; i++) {
+                    if (/\s/.test(par.charAt(i))) continue;   // espaços pendurados ficam na linha anterior
+                    r.setStart(tn, i); r.setEnd(tn, i + 1);
+                    var rc = r.getClientRects();
+                    if (!rc.length) continue;
+                    if (topAnt !== null && rc[0].top > topAnt + lh / 2) inicios.push(i);
+                    topAnt = rc[0].top;
+                }
+                inicios.forEach(function (ini, k) {
+                    linhas.push({ p: pi, t: par.slice(ini, k + 1 < inicios.length ? inicios[k + 1] : par.length) });
+                });
+            });
+            wrap.removeChild(med);
+
+            var cap1 = capac(altura1);
+            if (linhas.length <= cap1) return;     // cabe na página 1: nada muda
+
+            var juntar = function (ls) {
+                while (ls.length && ls[ls.length - 1].vazia) ls = ls.slice(0, -1);
+                var s = '';
+                ls.forEach(function (l, i) { s += (i && l.p !== ls[i - 1].p ? NL : '') + l.t; });
+                return s;
+            };
+            var restantes = linhas.slice();
+            box.textContent = juntar(restantes.splice(0, cap1));
+
+            // Páginas de continuação: cabeçalho (cópia) + barra da seção + caixa
+            var cabLinha = cab.parentNode;
+            var ultima = null, cap2 = 0, altura2 = 0, guarda = 0;
+            while (restantes.length && guarda++ < 200) {
+                while (restantes.length && restantes[0].vazia) restantes.shift();   // sem linha em branco no topo
+                if (!restantes.length) break;
+
+                var pg  = document.createElement('div');   pg.className = 'pg-cont';
+                var tab = document.createElement('table'); tab.className = 'ro';
+                var tb  = document.createElement('tbody'); tb.appendChild(cabLinha.cloneNode(true)); tab.appendChild(tb);
+                var barra = document.createElement('div'); barra.className = 'sec-bar';
+                barra.textContent = '2 - Descrição (continuação)';
+                var bx = document.createElement('div');    bx.className = 'desc-box';
+                pg.appendChild(tab); pg.appendChild(barra); pg.appendChild(bx);
+                wrap.appendChild(pg);
+
+                if (!cap2) {   // geometria é a mesma em todas as continuações
+                    var topo2 = bx.getBoundingClientRect().top - pg.getBoundingClientRect().top;
+                    altura2 = PAGINA - topo2 - rodapeH - FOLGA;
+                    cap2 = capac(altura2);
+                }
+                bx.style.height = altura2 + 'px';
+                bx.textContent = juntar(restantes.splice(0, cap2));
+                ultima = pg;
+            }
+            if (ultima) ultima.appendChild(rodape);   // rodapé só no fim do documento
+        }
+
         function gerarHTMLOcorrencia(id) {
             const o = ocorrencias.find(i => i.id == id);
             if (!o) return '<html><body><p>Erro: Ocorrência não encontrada.</p></body></html>';
@@ -221,6 +323,9 @@
 
   .footer { text-align: center; font-size: 7.5pt; font-style: italic; color: #8a8a8a; margin-top: 2.5mm; }
 
+  /* Continuação da descrição: nova folha, cabeçalho repetido (ver paginarDescricaoRO) */
+  .pg-cont { width: 190mm; break-before: page; page-break-before: always; }
+
   /* Botão fechar (só tela) */
   #btn-fechar { position: fixed; top: 10px; right: 10px; background: #ef4444; color: white;
     border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px;
@@ -270,7 +375,7 @@
 
   <div class="sec-bar">2 - Descri\u00E7\u00E3o</div>
 
-  <div class="desc-box" style="height:${descMM}mm;">${descSentence}</div>
+  <div class="desc-box" id="desc-box" style="height:${descMM}mm;">${descSentence}</div>
 
   <div class="footer">Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
 
@@ -278,6 +383,8 @@
 
 <script>
   window.addEventListener('load', function() {
+    // Descrição maior que a caixa: continua em novas páginas (se falhar, imprime como antes)
+    try { (${paginarDescricaoRO.toString()})(); } catch(e) {}
     var imgs = document.querySelectorAll('img');
     var loaded = 0;
     var total = imgs.length;
@@ -404,38 +511,43 @@
             // ════════════════════════════════════════════════════════════════
             const HDR_H = 32;   // 1794/1440*25.4 = 31.6mm ≈ 32mm
 
-            pdf.setFillColor(...W); pdf.setDrawColor(...BD);
-            pdf.setLineWidth(0.3); pdf.rect(OX, Y, PW, HDR_H, 'FD');
+            // Desenhado na pág. 1 e repetido no topo das páginas de continuação
+            const desenhaCabecalho = async (Y) => {
+                pdf.setFillColor(...W); pdf.setDrawColor(...BD);
+                pdf.setLineWidth(0.3); pdf.rect(OX, Y, PW, HDR_H, 'FD');
 
-            // Brasão: 19×21mm, centrado verticalmente em 32mm → Y+(32-21)/2 = Y+5.5
-            try {
-                const bd = await getBrasaoDataURL();
-                if (bd) pdf.addImage(bd,'PNG', OX+4, Y+5.5, 19, 21);
-            } catch(e){}
+                // Brasão: 19×21mm, centrado verticalmente em 32mm → Y+(32-21)/2 = Y+5.5
+                try {
+                    const bd = await getBrasaoDataURL();
+                    if (bd) pdf.addImage(bd,'PNG', OX+4, Y+5.5, 19, 21);
+                } catch(e){}
 
-            // Textos centrados sobre toda a largura PW
-            // "GOVERNO DO ESTADO DE SAO PAULO" — 16pt bold
-            const cX = OX + PW/2;
-            pdf.setFontSize(16); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('GOVERNO DO ESTADO DE SAO PAULO', cX, Y+10, {align:'center'});
+                // Textos centrados sobre toda a largura PW
+                // "GOVERNO DO ESTADO DE SAO PAULO" — 16pt bold
+                const cX = OX + PW/2;
+                pdf.setFontSize(16); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+                pdf.text('GOVERNO DO ESTADO DE SAO PAULO', cX, Y+10, {align:'center'});
 
-            // "Coordenadoria Geral de Suporte Administrativo" — 10.5pt normal cinza
-            pdf.setFontSize(10); pdf.setFont('helvetica','normal'); pdf.setTextColor(85,85,85);
-            pdf.text('Coordenadoria Geral de Suporte Administrativo', cX, Y+16, {align:'center'});
+                // "Coordenadoria Geral de Suporte Administrativo" — 10.5pt normal cinza
+                pdf.setFontSize(10); pdf.setFont('helvetica','normal'); pdf.setTextColor(85,85,85);
+                pdf.text('Coordenadoria Geral de Suporte Administrativo', cX, Y+16, {align:'center'});
 
-            // "Divisao de Zeladoria (DZEL)" — 9pt bold preto
-            pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('Divisao de Zeladoria (DZEL)', cX, Y+21.5, {align:'center'});
+                // "Divisao de Zeladoria (DZEL)" — 9pt bold preto
+                pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+                pdf.text('Divisao de Zeladoria (DZEL)', cX, Y+21.5, {align:'center'});
 
-            // Linha separadora fina #BFBFBF
-            pdf.setLineWidth(0.3); pdf.setDrawColor(...BD);
-            pdf.line(OX+50, Y+24, RX-50, Y+24);
+                // Linha separadora fina #BFBFBF
+                pdf.setLineWidth(0.3); pdf.setDrawColor(...BD);
+                pdf.line(OX+50, Y+24, RX-50, Y+24);
 
-            // "REGISTRO DE OCORRENCIA" — 9pt bold
-            pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
-            pdf.text('REGISTRO DE OCORRENCIA', cX, Y+29.5, {align:'center'});
+                // "REGISTRO DE OCORRENCIA" — 9pt bold
+                pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...K);
+                pdf.text('REGISTRO DE OCORRENCIA', cX, Y+29.5, {align:'center'});
 
-            Y += HDR_H;
+                return Y + HDR_H;
+            };
+
+            Y = await desenhaCabecalho(Y);
 
             // ════════════════════════════════════════════════════════════════
             // ROW 1 — Seção "1 - Dados do Registro"
@@ -520,6 +632,8 @@
 
                 if (restantes.length > 0) {
                     pdf.addPage(); Y = 9;
+                    Y = await desenhaCabecalho(Y);
+                    Y += 4;   // mesmo espaço entre cabeçalho/tabela e seção 2 da pág. 1
                     Y = secHeader('2 - Descricao (continuacao)', Y);
                     pdf.setFontSize(10.5); pdf.setFont('helvetica','normal');
                 }
