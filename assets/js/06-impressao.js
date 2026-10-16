@@ -313,7 +313,7 @@
         }
 
         /* Gera o HTML completo da O.S. com URL base absoluta para que
-           imagens (brasao.jpg, epura.jpg, igm2.jpg) carreguem corretamente
+           imagens (brasao.jpg, epura.jpg, qualiar.jpg) carreguem corretamente
            em nova aba/janela sem contexto de origem. */
         function gerarHTMLOS(id, descricao, materiais) {
             const d = montarDadosOS(id);
