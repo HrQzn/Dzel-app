@@ -365,7 +365,7 @@
         function getLogoInfoParaOS(d) {
             const cat = getCategoriaDemanda(d);
             if (cat === 'PREDIAL') return { src: 'epura.jpg', width: '140px', height: '60px', fit: 'cover' };
-            if (cat === 'AR')      return { src: 'igm2.jpg',  width: '145px', height: '55px', fit: 'contain' };
+            if (cat === 'AR')      return { src: 'qualiar.jpg', width: '60px', height: '60px', fit: 'contain' };
             return null;
         }
         function montarCheckboxes(d) {
