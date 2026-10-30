@@ -352,9 +352,11 @@
         }
 
         window.renderizarApenasCrachas = function() {
+            const mes = document.getElementById('filtro-mes-cracha').value;
+            const dia = document.getElementById('filtro-dia-cracha').value;
             const busca = document.getElementById('filtro-busca-cracha').value.toUpperCase();
             const statusFiltro = document.getElementById('filtro-status-cracha').value;
-            const lista = crachas.filter(c => { const termo = ((c.nome||'') + (c.setor||'') + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bateTexto && bateStatus; });
+            const lista = crachas.filter(c => { const bData = !mes || (c.data_solicitacao||'').startsWith(mes); const bDia = !dia || (c.data_solicitacao||'').slice(0, 10) === dia; const termo = ((c.nome||'') + (c.setor||'') + (c.doc_identidade||'')).toUpperCase(); const bateTexto = !busca || termo.includes(busca); const bateStatus = !statusFiltro || c.status === statusFiltro; return bData && bDia && bateTexto && bateStatus; });
             document.getElementById('dash-cracha-solicitado').innerText = lista.filter(c => c.status === 'Solicitado').length;
             document.getElementById('dash-cracha-confeccionado').innerText = lista.filter(c => c.status === 'Confeccionado').length;
             document.getElementById('dash-cracha-entregue').innerText = lista.filter(c => c.status === 'Entregue').length;
@@ -364,7 +366,7 @@
             renderPaginated({
                 tableId: 'tabela-crachas', items: lista, colspan: 6,
                 emptyMsg: 'Nenhum crachá encontrado.',
-                filterKey: busca + '|' + statusFiltro,
+                filterKey: mes + '|' + dia + '|' + busca + '|' + statusFiltro,
                 rerender: window.renderizarApenasCrachas,
                 rowFn: (c) => {
                     let badgeClass = c.status === 'Solicitado' ? 'bg-cracha-solicitado' : c.status === 'Confeccionado' ? 'bg-cracha-confeccionado' : 'bg-cracha-entregue';
