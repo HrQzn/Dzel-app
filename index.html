@@ -5,6 +5,8 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- iOS: não transformar RG/CPF/ramal em link de telefone (quebrava o layout das listagens) -->
+    <meta name="format-detection" content="telephone=no">
     <title>Divisão de Zeladoria | Dzel</title>
     <!-- Preconnect — reduz DNS+TLS em ~100-200ms por domínio -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -160,7 +162,7 @@
 
         <header class="no-print">
             <div class="header-left">
-                <button id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
+                <button type="button" id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu" aria-controls="menu-lateral" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                 <h1>
                     <i class="fas fa-building"></i>
                     <span>COGESPA — DIV. ZELADORIA</span>
@@ -168,19 +170,19 @@
                 </h1>
             </div>
             <div class="header-right">
-                <span id="date-display" class="hide-mobile" style="font-size:0.78rem; color:var(--text-muted);"></span>
+                <span id="date-display" class="hide-mobile hide-compacto"></span>
                 <div class="header-user">
                     <div class="header-avatar" id="avatar-initials">U</div>
-                    <div class="hide-mobile">
+                    <div class="header-user-texto hide-celular">
                         <small id="user-display"></small>
                         <small id="user-role-display"></small>
                     </div>
                 </div>
-                <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> <span class="hide-mobile">Sair</span></a>
+                <a href="#" onclick="logout()" class="logout-btn" aria-label="Sair do sistema"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> <span class="hide-celular">Sair</span></a>
             </div>
         </header>
 
-        <nav class="nav-tabs no-print">
+        <nav class="nav-tabs no-print" id="menu-lateral" aria-label="Menu principal">
             <div class="sidebar-brand">
                 <div class="sidebar-brand-logo">
                     <div class="sidebar-brand-icon"><i class="fas fa-building"></i></div>
@@ -188,6 +190,8 @@
                         <strong>Divisão de Zeladoria</strong>
                         <span>Cogespa</span>
                     </div>
+                    <!-- Só aparece no menu recolhível (celular/tablet) -->
+                    <button type="button" class="sidebar-close" onclick="toggleSidebar(false)" aria-label="Fechar menu"><i class="fas fa-times" aria-hidden="true"></i></button>
                 </div>
             </div>
             <div class="sidebar-section-label">Visão Geral</div>
@@ -206,6 +210,16 @@
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> Auditoria</button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
+            <!-- Identificação do usuário e data: no celular o cabeçalho só tem espaço
+                 para as iniciais, então o nome/perfil/data ficam aqui, no menu. -->
+            <div class="sidebar-user">
+                <div class="header-avatar" id="avatar-initials-menu" aria-hidden="true">U</div>
+                <div class="sidebar-user-texto">
+                    <strong id="user-display-menu"></strong>
+                    <span id="user-role-display-menu"></span>
+                    <span id="date-display-menu"></span>
+                </div>
+            </div>
         </nav>
 
         <main class="no-print">
@@ -216,16 +230,16 @@
                         <h2><i class="fas fa-chart-line" style="color:var(--accent); margin-right:8px;"></i>Relatório Consolidado</h2>
                         <p>Divisão de Zeladoria — Dados em Tempo Real</p>
                     </div>
-                    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-                        <div>
-                            <label style="font-size:0.72rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Filtrar Período:</label>
-                            <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;height:38px;font-size:0.85rem;">
+                    <div class="page-header-acoes">
+                        <div class="page-header-filtro">
+                            <label for="dash-filtro-mes">Filtrar Período:</label>
+                            <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()">
                         </div>
-                        <button onclick="imprimirDashboard()" title="Imprimir (PC)" class="btn-primary" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:var(--secondary);">
-                            <i class="fas fa-print"></i><span class="hide-mobile" style="margin-left:6px;">Imprimir</span>
+                        <button onclick="imprimirDashboard()" title="Imprimir (PC)" aria-label="Imprimir relatório" class="btn-primary btn-header" style="background:var(--secondary);">
+                            <i class="fas fa-print" aria-hidden="true"></i><span class="hide-celular">Imprimir</span>
                         </button>
-                        <button id="btn-pdf-dash" onclick="gerarPDFDashboard()" title="Baixar PDF" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:linear-gradient(135deg,#dc2626,#991b1b);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fas fa-file-pdf"></i><span class="hide-mobile">PDF</span>
+                        <button id="btn-pdf-dash" onclick="gerarPDFDashboard()" title="Baixar PDF" aria-label="Baixar relatório em PDF" class="btn-primary btn-header" style="background:linear-gradient(135deg,#dc2626,#991b1b);">
+                            <i class="fas fa-file-pdf" aria-hidden="true"></i><span class="hide-celular">PDF</span>
                         </button>
                     </div>
                 </div>
@@ -255,9 +269,9 @@
                 <!-- ═══ PERFORMANCE POR CONTRATADA ═══ -->
                 <div class="chart-card" style="margin-bottom:1.5rem;">
                     <h3><i class="fas fa-building" style="color:var(--accent);margin-right:6px;"></i>Performance por Contratada</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="dash-table" id="tabela-contratadas">
-                            <thead><tr><th>Contratada</th><th style="text-align:center;">Total</th><th style="text-align:center;">Em Aberto</th><th style="text-align:center;">TMA</th><th style="text-align:center;">% SLA</th></tr></thead>
+                    <div class="table-scroll">
+                        <table class="dash-table tabela-cartoes cartoes-4" id="tabela-contratadas">
+                            <thead><tr><th data-card="titulo">Contratada</th><th style="text-align:center;">Total</th><th style="text-align:center;">Em Aberto</th><th style="text-align:center;">TMA</th><th style="text-align:center;">% SLA</th></tr></thead>
                             <tbody><tr><td colspan="5" class="dash-empty">Carregando…</td></tr></tbody>
                         </table>
                     </div>
@@ -266,9 +280,9 @@
                 <!-- ═══ DEMANDAS MAIS ANTIGAS EM ABERTO ═══ -->
                 <div class="chart-card" style="margin-bottom:1.5rem;">
                     <h3><i class="fas fa-hourglass-half" style="color:var(--danger);margin-right:6px;"></i>Demandas Mais Antigas em Aberto</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="dash-table" id="tabela-antigas">
-                            <thead><tr><th>O.S.</th><th>Descrição</th><th>Setor</th><th style="text-align:center;">Prioridade</th><th style="text-align:center;">Dias úteis</th></tr></thead>
+                    <div class="table-scroll">
+                        <table class="dash-table tabela-cartoes" id="tabela-antigas">
+                            <thead><tr><th>O.S.</th><th data-card="titulo">Descrição</th><th>Setor</th><th style="text-align:center;">Prioridade</th><th style="text-align:center;">Dias úteis</th></tr></thead>
                             <tbody><tr><td colspan="5" class="dash-empty">Carregando…</td></tr></tbody>
                         </table>
                     </div>
@@ -318,32 +332,32 @@
                                 <option value="Média">Prioridade Média</option>
                                 <option value="Alta">Prioridade Alta</option>
                             </select>
-                            <div><label style="font-size:0.8rem">Data</label><input type="date" id="demanda-data" required></div>
-                            <div><label style="font-size:0.8rem">Horário</label><input type="time" id="demanda-hora" required></div>
+                            <div class="campo"><label for="demanda-data">Data</label><input type="date" id="demanda-data" required></div>
+                            <div class="campo"><label for="demanda-hora">Horário</label><input type="time" id="demanda-hora" required></div>
                             <select id="demanda-status-edit" style="display:none" onchange="toggleEncerramento()">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option>
                                 <option value="Concluído">Concluído</option>
                             </select>
-                            <div id="demanda-encerramento-wrap" style="display:none">
-                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
-                                <input type="datetime-local" id="demanda-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
-                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            <div id="demanda-encerramento-wrap" class="campo" style="display:none">
+                                <label for="demanda-data-fim"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <small class="campo-dica">Deixe vazio para usar horário automático</small>
+                                <input type="datetime-local" id="demanda-data-fim" class="campo-encerramento">
                             </div>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-demanda">Registrar Demanda</button>
-                            <button type="button" class="btn-primary" id="btn-import-demanda" onclick="abrirModalImport()" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary btn-import" id="btn-import-demanda" onclick="abrirModalImport()" title="Disponível apenas para administradores" style="display:none;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-demanda" onclick="cancelarEdicaoDemanda()">Cancelar</button>
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-demanda">Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
+                        <div class="filter-group"><label for="filtro-dia-demanda">Dia:</label><input type="date" id="filtro-dia-demanda" onchange="window.renderizarApenasDemandas()"></div>
+                        <div class="filter-group"><label for="filtro-texto-demanda">Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
+                        <div class="filter-group"><label for="filtro-status-demanda">Status:</label>
                             <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option>
                                 <option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
@@ -352,8 +366,8 @@
                         <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-demandas">
-                            <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço / Contratada</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+                        <table id="tabela-demandas" class="tabela-cartoes">
+                            <thead><tr><th>Data</th><th>Prioridade</th><th data-card="titulo">Serviço / Contratada</th><th>Status</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -378,32 +392,34 @@
                             <input type="text" id="predial-setor" placeholder="Local / Setor" required>
                             <input type="text" id="predial-solicitante" placeholder="Nome do Solicitante" required>
                             <select id="predial-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
-                            <div><label style="font-size:0.8rem">Data</label><input type="date" id="predial-data" required></div>
-                            <div><label style="font-size:0.8rem">Horário</label><input type="time" id="predial-hora" required></div>
+                            <div class="campo"><label for="predial-data">Data</label><input type="date" id="predial-data" required></div>
+                            <div class="campo"><label for="predial-hora">Horário</label><input type="time" id="predial-hora" required></div>
                             <select id="predial-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('predial')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
-                            <div id="predial-encerramento-wrap" style="display:none">
-                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
-                                <input type="datetime-local" id="predial-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
-                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            <div id="predial-encerramento-wrap" class="campo" style="display:none">
+                                <label for="predial-data-fim"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <small class="campo-dica">Deixe vazio para usar horário automático</small>
+                                <input type="datetime-local" id="predial-data-fim" class="campo-encerramento">
                             </div>
                         </div>
-                        <button type="submit" id="btn-submit-predial" class="btn-primary" style="background:linear-gradient(135deg,var(--predial),#dc2626);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Manutenção</button>
-                        <button type="button" id="btn-cancel-predial" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('predial')">Cancelar Edição</button>
+                        <div class="btn-container">
+                            <button type="submit" id="btn-submit-predial" class="btn-primary" style="background:linear-gradient(135deg,var(--predial),#dc2626);">Registrar Manutenção</button>
+                            <button type="button" id="btn-cancel-predial" class="btn-cancel" onclick="cancelarEdicaoDemandaEspecifica('predial')">Cancelar Edição</button>
+                        </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-predial" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-predial">Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-dia-predial">Dia:</label><input type="date" id="filtro-dia-predial" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-busca-predial">Buscar:</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label for="filtro-status-predial">Status:</label>
                             <select id="filtro-status-predial" onchange="window.renderizarAbasEspecificas()">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
                         <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container"><table id="tabela-predial"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-container"><table id="tabela-predial" class="tabela-cartoes"><thead><tr><th>Data</th><th data-card="titulo">Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
@@ -425,32 +441,34 @@
                             <input type="text" id="ar-setor" placeholder="Local / Setor" required>
                             <input type="text" id="ar-solicitante" placeholder="Nome do Solicitante" required>
                             <select id="ar-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
-                            <div><label style="font-size:0.8rem">Data</label><input type="date" id="ar-data" required></div>
-                            <div><label style="font-size:0.8rem">Horário</label><input type="time" id="ar-hora" required></div>
+                            <div class="campo"><label for="ar-data">Data</label><input type="date" id="ar-data" required></div>
+                            <div class="campo"><label for="ar-hora">Horário</label><input type="time" id="ar-hora" required></div>
                             <select id="ar-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('ar')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
-                            <div id="ar-encerramento-wrap" style="display:none">
-                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
-                                <input type="datetime-local" id="ar-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
-                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            <div id="ar-encerramento-wrap" class="campo" style="display:none">
+                                <label for="ar-data-fim"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <small class="campo-dica">Deixe vazio para usar horário automático</small>
+                                <input type="datetime-local" id="ar-data-fim" class="campo-encerramento">
                             </div>
                         </div>
-                        <button type="submit" id="btn-submit-ar" class="btn-primary" style="background:linear-gradient(135deg,var(--ar),#1d4ed8);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Ar Condicionado</button>
-                        <button type="button" id="btn-cancel-ar" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('ar')">Cancelar Edição</button>
+                        <div class="btn-container">
+                            <button type="submit" id="btn-submit-ar" class="btn-primary" style="background:linear-gradient(135deg,var(--ar),#1d4ed8);">Registrar Ar Condicionado</button>
+                            <button type="button" id="btn-cancel-ar" class="btn-cancel" onclick="cancelarEdicaoDemandaEspecifica('ar')">Cancelar Edição</button>
+                        </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-ar" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-ar">Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-dia-ar">Dia:</label><input type="date" id="filtro-dia-ar" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-busca-ar">Buscar:</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label for="filtro-status-ar">Status:</label>
                             <select id="filtro-status-ar" onchange="window.renderizarAbasEspecificas()">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
                         <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container"><table id="tabela-ar"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-container"><table id="tabela-ar" class="tabela-cartoes"><thead><tr><th>Data</th><th data-card="titulo">Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
@@ -472,32 +490,34 @@
                             <input type="text" id="limpeza-setor" placeholder="Local / Setor" required>
                             <input type="text" id="limpeza-solicitante" placeholder="Nome do Solicitante" required>
                             <select id="limpeza-prioridade"><option value="Baixa">Prioridade Baixa</option><option value="Média">Prioridade Média</option><option value="Alta">Prioridade Alta</option></select>
-                            <div><label style="font-size:0.8rem">Data</label><input type="date" id="limpeza-data" required></div>
-                            <div><label style="font-size:0.8rem">Horário</label><input type="time" id="limpeza-hora" required></div>
+                            <div class="campo"><label for="limpeza-data">Data</label><input type="date" id="limpeza-data" required></div>
+                            <div class="campo"><label for="limpeza-hora">Horário</label><input type="time" id="limpeza-hora" required></div>
                             <select id="limpeza-status-edit" style="display:none" onchange="toggleEncerramentoEspecifico('limpeza')"><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option></select>
-                            <div id="limpeza-encerramento-wrap" style="display:none">
-                                <label style="font-size:0.8rem;color:var(--success);font-weight:600"><i class="fas fa-clock"></i> Hora de Encerramento</label>
-                                <input type="datetime-local" id="limpeza-data-fim" style="border:2px solid var(--success);border-radius:var(--radius-sm);">
-                                <small style="color:var(--text-muted);font-size:0.72rem;">Deixe vazio para usar horário automático</small>
+                            <div id="limpeza-encerramento-wrap" class="campo" style="display:none">
+                                <label for="limpeza-data-fim"><i class="fas fa-clock"></i> Hora de Encerramento</label>
+                                <small class="campo-dica">Deixe vazio para usar horário automático</small>
+                                <input type="datetime-local" id="limpeza-data-fim" class="campo-encerramento">
                             </div>
                         </div>
-                        <button type="submit" id="btn-submit-limpeza" class="btn-primary" style="background:linear-gradient(135deg,var(--limpeza),#059669);flex:unset;width:auto;padding:0.75rem 1.75rem;">Registrar Limpeza</button>
-                        <button type="button" id="btn-cancel-limpeza" class="btn-cancel" style="display:none;flex:unset;width:auto;padding:0.75rem 1.75rem;margin-left:8px;" onclick="cancelarEdicaoDemandaEspecifica('limpeza')">Cancelar Edição</button>
+                        <div class="btn-container">
+                            <button type="submit" id="btn-submit-limpeza" class="btn-primary" style="background:linear-gradient(135deg,var(--limpeza),#059669);">Registrar Limpeza</button>
+                            <button type="button" id="btn-cancel-limpeza" class="btn-cancel" onclick="cancelarEdicaoDemandaEspecifica('limpeza')">Cancelar Edição</button>
+                        </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-limpeza">Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-dia-limpeza">Dia:</label><input type="date" id="filtro-dia-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
+                        <div class="filter-group"><label for="filtro-busca-limpeza">Buscar:</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
+                        <div class="filter-group"><label for="filtro-status-limpeza">Status:</label>
                             <select id="filtro-status-limpeza" onchange="window.renderizarAbasEspecificas()">
                                 <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
                             </select>
                         </div>
                         <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
-                    <div class="table-container"><table id="tabela-limpeza"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-container"><table id="tabela-limpeza" class="tabela-cartoes"><thead><tr><th>Data</th><th data-card="titulo">Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
             </section>
 
@@ -530,26 +550,26 @@
                             <input type="text" id="vis-contato" placeholder="E-mail / Telefone">
                             <input type="text" id="vis-responsavel" placeholder="Pessoa Responsável (Anfitrião)" required>
                             <input type="text" id="vis-finalidade" placeholder="Finalidade da Visita" required>
-                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="vis-entrada" required></div>
+                            <div class="campo"><label for="vis-entrada">Hora Entrada (Automático)</label><input type="datetime-local" id="vis-entrada" required></div>
                             <select id="vis-status-edit" style="display:none"><option value="Ativo">Na Empresa</option><option value="Saiu">Saiu</option></select>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-vis">Registrar Entrada</button>
-                            <button type="button" class="btn-primary" id="btn-import-visitante" onclick="abrirImportGenerico('visitantes')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary btn-import" id="btn-import-visitante" onclick="abrirImportGenerico('visitantes')" title="Disponível apenas para administradores" style="display:none;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-vis" onclick="cancelarEdicaoVisitante()">Cancelar</button>
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-vis" onchange="window.renderizarApenasVisitantes()"></div>
-                        <div class="filter-group"><label>Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
+                        <div class="filter-group"><label for="filtro-mes-vis">Mês de Referência:</label><input type="month" id="filtro-mes-vis" onchange="window.renderizarApenasVisitantes()"></div>
+                        <div class="filter-group"><label for="filtro-dia-vis">Dia:</label><input type="date" id="filtro-dia-vis" onchange="window.renderizarApenasVisitantes()"></div>
+                        <div class="filter-group"><label for="filtro-busca-vis">Buscar (Nome/Doc/Empresa):</label><input type="text" id="filtro-busca-vis" onkeyup="window.renderizarApenasVisitantes()" placeholder="Digite para filtrar..."></div>
                         <button id="btn-export-visitantes" class="btn-excel" onclick="exportarExcel('visitantes')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-visitantes">
-                            <thead><tr><th>Status</th><th>Visitante</th><th>Empresa/Doc</th><th>Responsável/Finalidade</th><th>Entrada/Saída</th><th>Ação</th></tr></thead>
+                        <table id="tabela-visitantes" class="tabela-cartoes">
+                            <thead><tr><th>Status</th><th data-card="titulo">Visitante</th><th>Empresa/Doc</th><th>Responsável/Finalidade</th><th>Entrada/Saída</th><th data-card="acoes">Ação</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -578,26 +598,26 @@
                             <input type="text" id="veiculo-setor" placeholder="Setor" required>
                             <input type="text" id="veiculo-contato" placeholder="Ramal / Contato">
                             <input type="text" id="veiculo-destino" placeholder="Obs / Destino">
-                            <div><label style="font-size:0.8rem">Hora Entrada (Automático)</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
-                            <div id="container-status-veiculo" style="display:none"><label style="font-size:0.8rem;color:var(--edit)">Status</label><select id="veiculo-status-edit"><option value="Aberto">Estacionado</option><option value="Fechado">Finalizado</option></select></div>
+                            <div class="campo"><label for="veiculo-hora-saida">Hora Entrada (Automático)</label><input type="datetime-local" id="veiculo-hora-saida" required></div>
+                            <div id="container-status-veiculo" class="campo" style="display:none"><label for="veiculo-status-edit">Status</label><select id="veiculo-status-edit"><option value="Aberto">Estacionado</option><option value="Fechado">Finalizado</option></select></div>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-veiculo">Registrar Entrada</button>
-                            <button type="button" class="btn-primary" id="btn-import-veiculo" onclick="abrirImportGenerico('frota')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary btn-import" id="btn-import-veiculo" onclick="abrirImportGenerico('frota')" title="Disponível apenas para administradores" style="display:none;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-veiculo" onclick="cancelarEdicaoVeiculo()">Cancelar</button>
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-frota" onchange="window.renderizarApenasFrota()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
+                        <div class="filter-group"><label for="filtro-mes-frota">Mês Ref:</label><input type="month" id="filtro-mes-frota" onchange="window.renderizarApenasFrota()"></div>
+                        <div class="filter-group"><label for="filtro-dia-frota">Dia:</label><input type="date" id="filtro-dia-frota" onchange="window.renderizarApenasFrota()"></div>
+                        <div class="filter-group"><label for="filtro-busca-frota">Buscar:</label><input type="text" id="filtro-busca-frota" onkeyup="window.renderizarApenasFrota()" placeholder="Nome/Placa..."></div>
                         <button id="btn-export-veiculos" class="btn-excel" onclick="exportarExcel('frota')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-veiculos">
-                            <thead><tr><th>Status</th><th>Tipo</th><th>Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Tempo</th><th>Ações</th></tr></thead>
+                        <table id="tabela-veiculos" class="tabela-cartoes">
+                            <thead><tr><th>Status</th><th>Tipo</th><th data-card="titulo">Condutor</th><th>Veículo</th><th>Setor</th><th>Entrada/Saída</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead>
                             <tbody><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -623,32 +643,32 @@
                         <div class="form-grid">
                             <input type="text" id="evento-nome" placeholder="Nome do Evento / Reunião" required>
                             <input type="text" id="evento-organizador" placeholder="Organizador / Responsável" required>
-                            <div><label style="font-size:0.8rem">Data do Evento</label><input type="date" id="evento-data" required></div>
-                            <div><label style="font-size:0.8rem">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>
+                            <div class="campo"><label for="evento-data">Data do Evento</label><input type="date" id="evento-data" required></div>
+                            <div class="campo"><label for="evento-publico">Público Estimado</label><input type="number" id="evento-publico" placeholder="Qtd. Pessoas" required></div>
                             <input type="text" id="evento-local" placeholder="Local (Ex: Auditório, Sala 2)" required>
                             <div class="checkbox-wrapper">
                                 <input type="checkbox" id="evento-coffee">
                                 <label for="evento-coffee"><i class="fas fa-coffee"></i> Servir Coffee Break?</label>
                             </div>
-                            <textarea id="evento-obs" placeholder="Observações e Solicitações..." style="grid-column:1/-1;height:80px;resize:vertical;"></textarea>
+                            <textarea id="evento-obs" class="span-full" placeholder="Observações e Solicitações..."></textarea>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-evento" style="background:linear-gradient(135deg,var(--evento),#be185d);">Salvar Evento</button>
-                            <button type="button" class="btn-primary" id="btn-import-evento" onclick="abrirImportGenerico('eventos')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary btn-import" id="btn-import-evento" onclick="abrirImportGenerico('eventos')" title="Disponível apenas para administradores" style="display:none;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-evento" onclick="cancelarEdicaoEvento()">Cancelar</button>
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-evento" onchange="window.renderizarApenasEventos()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
+                        <div class="filter-group"><label for="filtro-mes-evento">Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
+                        <div class="filter-group"><label for="filtro-dia-evento">Dia:</label><input type="date" id="filtro-dia-evento" onchange="window.renderizarApenasEventos()"></div>
+                        <div class="filter-group"><label for="filtro-busca-evento">Buscar:</label><input type="text" id="filtro-busca-evento" onkeyup="window.renderizarApenasEventos()" placeholder="Nome do evento..."></div>
                         <button id="btn-export-eventos" class="btn-excel" onclick="exportarExcel('eventos')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-eventos">
-                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local / Obs</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
+                        <table id="tabela-eventos" class="tabela-cartoes">
+                            <thead><tr><th>Data</th><th>Tipo</th><th data-card="titulo">Evento / Local / Obs</th><th>Organizador</th><th>Público</th><th data-card="acoes">Ações</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando dados...</td></tr></tbody>
                         </table>
                     </div>
@@ -666,30 +686,30 @@
                     <h2 id="titulo-form-cracha"><i class="fas fa-id-card" style="color:var(--cracha)"></i> Novo Crachá</h2>
                     <form id="form-cracha">
                         <input type="hidden" id="cracha-id-edit" value="">
-                        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
-                            <input type="text" id="cracha-nome" placeholder="Nome do Colaborador" required style="grid-column:span 2;">
+                        <div class="form-grid">
+                            <input type="text" id="cracha-nome" class="span-2" placeholder="Nome do Colaborador" required>
                             <input type="text" id="cracha-doc" placeholder="RG ou CPF" required>
                             <input type="text" id="cracha-setor" placeholder="Setor (Ex: Financeiro)" required>
                             <input type="text" id="cracha-cargo" placeholder="Cargo (Ex: Analista)" required>
                             <input type="text" id="cracha-sala" placeholder="Sala (Ex: 65)" required>
                             <input type="text" id="cracha-ramal" placeholder="Ramal">
                             <select id="cracha-tipo"><option value="Definitivo">Crachá Definitivo</option><option value="Provisório">Crachá Provisório</option><option value="Cordão">Apenas Cordão/Presilha</option></select>
-                            <div><label style="font-size:0.8rem">Data Solicitação</label><input type="date" id="cracha-data" required></div>
+                            <div class="campo"><label for="cracha-data">Data Solicitação</label><input type="date" id="cracha-data" required></div>
                             <select id="cracha-status"><option value="Solicitado">Solicitado (Pendente)</option><option value="Confeccionado">Confeccionado (Pronto)</option><option value="Entregue">Entregue ao Usuário</option></select>
                         </div>
                         <div class="btn-container">
                             <button type="submit" class="btn-primary" id="btn-submit-cracha" style="background:linear-gradient(135deg,var(--cracha),#5b21b6);">Salvar Crachá</button>
-                            <button type="button" class="btn-primary" id="btn-import-cracha" onclick="abrirImportGenerico('crachas')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button>
+                            <button type="button" class="btn-primary btn-import" id="btn-import-cracha" onclick="abrirImportGenerico('crachas')" title="Disponível apenas para administradores" style="display:none;"><i class="fas fa-file-import"></i> Importar Planilha</button>
                             <button type="button" class="btn-cancel" id="btn-cancel-cracha" onclick="cancelarEdicaoCracha()">Cancelar</button>
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-cracha" onchange="window.renderizarApenasCrachas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-cracha" onchange="window.renderizarApenasCrachas()"></div>
-                        <div class="filter-group"><label>Buscar (Nome/Setor/RG):</label><input type="text" id="filtro-busca-cracha" onkeyup="window.renderizarApenasCrachas()" placeholder="Digite para buscar..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-cracha">Filtrar Mês:</label><input type="month" id="filtro-mes-cracha" onchange="window.renderizarApenasCrachas()"></div>
+                        <div class="filter-group"><label for="filtro-dia-cracha">Dia:</label><input type="date" id="filtro-dia-cracha" onchange="window.renderizarApenasCrachas()"></div>
+                        <div class="filter-group"><label for="filtro-busca-cracha">Buscar (Nome/Setor/RG):</label><input type="text" id="filtro-busca-cracha" onkeyup="window.renderizarApenasCrachas()" placeholder="Digite para buscar..."></div>
+                        <div class="filter-group"><label for="filtro-status-cracha">Status:</label>
                             <select id="filtro-status-cracha" onchange="window.renderizarApenasCrachas()">
                                 <option value="">Todos</option><option value="Solicitado">Solicitados</option><option value="Confeccionado">Prontos</option><option value="Entregue">Entregues</option>
                             </select>
@@ -697,8 +717,8 @@
                         <button id="btn-export-crachas" class="btn-excel" onclick="exportarExcel('crachas')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-crachas">
-                            <thead><tr><th>Data</th><th>Colaborador / Doc</th><th>Setor / Cargo</th><th>Localização</th><th>Status</th><th>Ações</th></tr></thead>
+                        <table id="tabela-crachas" class="tabela-cartoes">
+                            <thead><tr><th>Data</th><th data-card="titulo">Colaborador / Doc</th><th>Setor / Cargo</th><th>Localização</th><th>Status</th><th data-card="acoes">Ações</th></tr></thead>
                             <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -727,6 +747,7 @@
                             <input type="text" id="oco-unidade" placeholder="Unidade / Prédio (Ex: SEDE)" required>
                             <input type="text" id="oco-local" placeholder="Local / Setor" required>
                             <input type="text" id="oco-contratada" placeholder="Contratada (Opcional)">
+                            <div class="campo"><label for="oco-categoria">Categoria</label>
                             <select id="oco-categoria">
                                 <option value="Segurança">Segurança</option>
                                 <option value="Manutenção">Manutenção</option>
@@ -738,16 +759,17 @@
                                 <option value="Bombeiro">Bombeiro</option>
                                 <option value="Dedetização">Dedetização</option>
                                 <option value="Outros">Outros</option>
-                            </select>
+                            </select></div>
+                            <div class="campo"><label for="oco-gravidade">Gravidade</label>
                             <select id="oco-gravidade">
                                 <option value="Baixa">Baixa</option>
                                 <option value="Média">Média</option>
                                 <option value="Alta">Alta</option>
                                 <option value="Crítica">Crítica</option>
-                            </select>
-                            <div><label style="font-size:0.8rem">Data / Hora</label><input type="datetime-local" id="oco-data" required></div>
+                            </select></div>
+                            <div class="campo"><label for="oco-data">Data / Hora</label><input type="datetime-local" id="oco-data" required></div>
                             <input type="text" id="oco-responsavel" placeholder="Responsável pelo Registro" required>
-                            <textarea id="oco-descricao" rows="3" placeholder="Descreva a ocorrência com detalhes... (o texto fica exatamente como você digitar)" required style="grid-column:1/-1; height:80px; resize:vertical; text-transform:none;"></textarea>
+                            <textarea id="oco-descricao" class="span-full" rows="3" placeholder="Descreva a ocorrência com detalhes... (o texto fica exatamente como você digitar)" required style="text-transform:none;"></textarea>
                             <select id="oco-status-edit" style="display:none">
                                 <option value="Aberta">Aberta</option>
                                 <option value="Em Tratativa">Em Tratativa</option>
@@ -762,12 +784,12 @@
                         </div>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-oco" onchange="window.renderizarApenasOcorrencias()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-oco" onchange="window.renderizarApenasOcorrencias()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-oco" onkeyup="window.renderizarApenasOcorrencias()" placeholder="Local, descrição..."></div>
-                        <div class="filter-group"><label>Status:</label>
+                        <div class="filter-group"><label for="filtro-mes-oco">Mês Ref:</label><input type="month" id="filtro-mes-oco" onchange="window.renderizarApenasOcorrencias()"></div>
+                        <div class="filter-group"><label for="filtro-dia-oco">Dia:</label><input type="date" id="filtro-dia-oco" onchange="window.renderizarApenasOcorrencias()"></div>
+                        <div class="filter-group"><label for="filtro-busca-oco">Buscar:</label><input type="text" id="filtro-busca-oco" onkeyup="window.renderizarApenasOcorrencias()" placeholder="Local, descrição..."></div>
+                        <div class="filter-group"><label for="filtro-status-oco">Status:</label>
                             <select id="filtro-status-oco" onchange="window.renderizarApenasOcorrencias()">
                                 <option value="">Todos</option>
                                 <option value="Aberta">Aberta</option>
@@ -778,8 +800,8 @@
                         <button class="btn-excel" onclick="exportarExcel('ocorrencias')"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-ocorrencias">
-                            <thead><tr><th>Data/Hora</th><th>Gravidade</th><th>Categoria / Local</th><th>Descrição</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
+                        <table id="tabela-ocorrencias" class="tabela-cartoes">
+                            <thead><tr><th>Data/Hora</th><th>Gravidade</th><th data-card="titulo">Categoria / Local</th><th data-card="larga">Descrição</th><th>Status</th><th>Tempo</th><th data-card="acoes">Ações</th></tr></thead>
                             <tbody><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
@@ -788,10 +810,10 @@
 
             <section id="auditoria" class="section">
                 <div class="page-header"><div class="page-header-left"><h2>Logs de Auditoria</h2><p>Histórico das últimas ações no sistema</p></div></div>
-                <div class="card">
+                <div class="card card-lista">
                     <div class="table-container">
-                        <table id="tabela-logs">
-                            <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Seção</th><th>Ação</th><th>Detalhes</th></tr></thead>
+                        <table id="tabela-logs" class="tabela-cartoes">
+                            <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Seção</th><th>Ação</th><th data-card="larga">Detalhes</th></tr></thead>
                             <tbody><tr><td colspan="5" class="loading">Carregando histórico...</td></tr></tbody>
                         </table>
                     </div>
@@ -802,20 +824,20 @@
                 <div class="page-header"><div class="page-header-left"><h2>Gestão de Usuários</h2><p>Criação e permissões de acesso ao sistema</p></div></div>
                 <div class="card">
                     <h2 id="titulo-user-form"><i class="fas fa-user-shield"></i> Criar Novo Usuário</h2>
-                    <div class="form-grid" style="background:#f8fafc;padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:1.25rem;">
+                    <div class="form-grid form-painel">
                         <input type="hidden" id="edit-user-id">
                         <input type="text" id="novo-user-email" placeholder="E-mail do usuário" required>
                         <input type="password" id="novo-user-pass" placeholder="Senha" required>
                         <input type="text" id="novo-user-nome" placeholder="Nome de Exibição (Ex: Zeladoria)" required>
-                        <div class="checkbox-wrapper" style="grid-column:1/-1;background:#f0fdf4;border-color:var(--success);">
+                        <div class="checkbox-wrapper span-full" style="background:#f0fdf4;border-color:var(--success);">
                             <input type="checkbox" id="novo-user-admin" onchange="togglePermissoes(this)">
                             <label for="novo-user-admin" style="color:#065f46;"><i class="fas fa-crown"></i> É Administrador Geral? (Acesso Total)</label>
                         </div>
-                        <div id="container-permissoes" style="grid-column:1/-1;margin-top:10px;">
+                        <div id="container-permissoes" class="span-full">
                             <h4 style="margin-bottom:10px;color:var(--text-secondary);font-size:0.875rem;">Permissões Específicas:</h4>
                             <div class="table-container">
-                                <table class="perm-table">
-                                    <thead><tr><th>Módulo</th><th>Visualizar</th><th>Editar</th><th>Excluir</th><th>Exportar</th></tr></thead>
+                                <table class="perm-table tabela-cartoes cartoes-4">
+                                    <thead><tr><th data-card="titulo">Módulo</th><th>Visualizar</th><th>Editar</th><th>Excluir</th><th>Exportar</th></tr></thead>
                                     <tbody>
                                         <tr><td style="color:var(--accent)">Dashboard / Relatório <small style="display:block;font-weight:400;color:var(--text-muted)">restrito à(s) área(s) com "Visualizar" abaixo</small></td><td><input type="checkbox" id="perm-dashboard-ver"></td><td>—</td><td>—</td><td><input type="checkbox" id="perm-dashboard-exp"></td></tr>
                                         <tr><td>Demandas (Geral)</td><td><input type="checkbox" id="perm-demandas-ver" checked></td><td><input type="checkbox" id="perm-demandas-edit"></td><td><input type="checkbox" id="perm-demandas-del"></td><td><input type="checkbox" id="perm-demandas-exp"></td></tr>
@@ -831,14 +853,14 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="btn-container" style="grid-column:1/-1;">
+                        <div class="btn-container span-full">
                             <button onclick="salvarUsuario()" class="btn-primary" id="btn-save-user">Criar Usuário</button>
                             <button onclick="cancelarEdicaoUsuario()" class="btn-cancel" id="btn-cancel-user" style="display:none">Cancelar</button>
                         </div>
                     </div>
                     <div class="table-container">
-                        <table id="tabela-usuarios-app">
-                            <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Último Login</th><th>Ação</th></tr></thead>
+                        <table id="tabela-usuarios-app" class="tabela-cartoes">
+                            <thead><tr><th data-card="titulo">Nome</th><th data-card="larga">E-mail</th><th>Tipo</th><th>Último Login</th><th data-card="acoes">Ação</th></tr></thead>
                             <tbody><tr><td colspan="5" class="loading">Carregando usuários...</td></tr></tbody>
                         </table>
                     </div>

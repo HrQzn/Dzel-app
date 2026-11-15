@@ -11,6 +11,34 @@ Sheets via Apps Script. Sem etapa de build.
 
 ---
 
+## 0-B. Rodada 2026-11-15 — revisão completa de responsividade
+
+Auditoria medida em Chromium (Playwright, emulação de toque, Supabase simulado) nas
+12 abas e nas larguras 320/375/390/430/768/1024/1366/1920. Não foi testado em
+Safari/iOS real nem em aparelho Android físico.
+
+**Causas encontradas**
+
+| Problema | Causa | Correção |
+|---|---|---|
+| Rolagem "travada" / deslizando de lado no celular (percebida em Crachás) | O app ocupava `100dvh` e só o `<main>` rolava; dentro dele cada tabela (`min-width:600px`) era outra área rolável. Um arrasto que começava levemente de lado era capturado pela tabela: ela deslizava e a página não subia (0 de 5 gestos rolavam; desvio de até 187px) | Até 900px quem rola é a própria página (cabeçalho `sticky`), e as listagens viram cartões — não sobra área rolável interna. Depois: 5 de 5 gestos rolam, desvio lateral 0 |
+| Formulário de Crachás espremido (campos de 36–51px) | `grid-template-columns` e `grid-column:span 2` embutidos no HTML criavam uma coluna implícita no celular, que as regras mobile não conseguiam sobrescrever | Padrão único `.form-grid` + `.span-2` (vira `1 / -1` no celular) |
+| Campos com alturas diferentes no computador (44 a 66px) | Campo sem rótulo esticava até a altura do vizinho com rótulo | Altura única `--control-h` (46px) e alinhamento pela base da linha |
+| Rádios e checkboxes sem marcação visível | `appearance:none` global nos `<input>` | Desenho nativo restaurado |
+| Tabelas cortando ações em notebook (1024–1366px) | Larguras mínimas e espaçamentos fixos | Faixa compacta 901–1279px e células mais justas até 1439px |
+| Cabeçalho quebrando linha em 1024px | Sem limite de largura para título/usuário | Reticências; data oculta na faixa compacta |
+
+**Padrões compartilhados** (em `assets/styles.css`): breakpoints 600 / 900 / 1280;
+formulário 1 coluna (celular), 2 (tablet), até 4 (computador); filtros empilhados →
+2 colunas → linha; botões em `.btn-container` em todas as abas; cartões via
+`.tabela-cartoes` + `data-card` no `<th>` (rótulos aplicados por `rotularTabela()`).
+Menu recolhível com botão fechar, ESC, trava da página e identificação do usuário.
+
+**Limitação conhecida:** a tabela da Garagem (8 colunas) ainda usa rolagem horizontal
+dentro da própria caixa entre 901 e ~1100px.
+
+---
+
 ## 0. Rodada 2026-08-08 — revisão completa de código
 
 Revisão linha a linha dos 11 módulos JS, do `index.html` e do CSS, seguida da
