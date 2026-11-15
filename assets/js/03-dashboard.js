@@ -86,6 +86,7 @@
                             </tr>`;
                         }).join('');
                     }
+                    rotularTabela('tabela-contratadas');   // rótulos do modo cartão (celular)
                 }
 
                 // ── Tabela: Demandas mais antigas em aberto ──
@@ -109,6 +110,7 @@
                             </tr>`;
                         }).join('');
                     }
+                    rotularTabela('tabela-antigas');
                 }
             } catch(err) { console.warn('renderizarKPIsOperacionais:', err); }
         }

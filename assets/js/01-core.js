@@ -215,8 +215,40 @@
             let html = '';
             for (let i = start; i < end; i++) html += rowFn(items[i]);
             tbody.innerHTML = html;
+            rotularTabela(tableId);
             _renderPager(tableId, page, totalPages, total, start, end);
         }
+
+        // ════════════════════════════════════════════════════════════════
+        // CARTÕES NO CELULAR — até 900px o CSS redesenha cada <tr> como um
+        // cartão (ver "Listagens em cartões" em styles.css). Para isso cada
+        // célula precisa saber o título da sua coluna (data-label) e o papel
+        // que tem no cartão (data-card: titulo | larga | acoes). Os dois são
+        // declarados UMA vez, no <th> da coluna (index.html), e copiados aqui
+        // para as células — assim os renderizadores de cada aba não mudam.
+        // ════════════════════════════════════════════════════════════════
+        const _colunasTabela = new WeakMap();
+        function rotularTabela(tabela) {
+            if (typeof tabela === 'string') tabela = document.getElementById(tabela);
+            if (!tabela || !tabela.tHead || !tabela.tHead.rows[0] || !tabela.tBodies[0]) return;
+            let colunas = _colunasTabela.get(tabela);
+            if (!colunas) {
+                colunas = Array.from(tabela.tHead.rows[0].cells, th => ({
+                    rotulo: th.textContent.trim(), papel: th.dataset.card || ''
+                }));
+                _colunasTabela.set(tabela, colunas);
+            }
+            for (const tr of tabela.tBodies[0].rows) {
+                // "Nenhum registro", skeleton e "Carregando…" usam uma célula com colspan
+                if (tr.cells.length !== colunas.length) continue;
+                for (let i = 0; i < colunas.length; i++) {
+                    const td = tr.cells[i];
+                    td.setAttribute('data-label', colunas[i].rotulo);
+                    if (colunas[i].papel) td.setAttribute('data-card', colunas[i].papel);
+                }
+            }
+        }
+        window.rotularTabela = rotularTabela;
 
         // Controles de navegação — criados dinamicamente após a .table-container
         function _pagerEl(tableId) {
@@ -256,11 +288,24 @@
             if (_pgRerender[tableId]) _pgRerender[tableId]();
             _scrollTopoTabela(tableId);
         };
+        // Ao trocar de página, leva ao INÍCIO da listagem. Com block:'nearest' uma
+        // lista mais alta que a tela não se movia: quem tocava em "próxima" no fim
+        // da lista continuava no fim e precisava subir tudo à mão (pior no celular,
+        // onde 50 registros em cartões somam vários metros de rolagem).
         function _scrollTopoTabela(tableId) {
             const t = document.getElementById(tableId);
             if (!t) return;
             const c = t.closest('.table-container');
-            if (c) c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Volta ao topo da tela (usado na troca de aba). No computador quem rola
+        // é o <main>; no celular/tablet é a própria página.
+        function rolarParaTopo() {
+            const m = document.querySelector('main');
+            if (m) m.scrollTop = 0;
+            try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }
+            catch (e) { window.scrollTo(0, 0); }
         }
 
         // Skeleton loader — feedback visual durante o 1º carregamento
@@ -508,7 +553,34 @@
                 fechar();
                 return;
             }
+            // Nenhum modal aberto: ESC fecha o menu lateral recolhível (celular/tablet)
+            fecharSidebarMobile();
         });
+
+        // ════════════════════════════════════════════════════════════════
+        // TRAVA DE ROLAGEM — no celular/tablet quem rola é a própria página.
+        // Com um modal aberto, arrastar o dedo sobre o fundo escurecido rolaria a
+        // tela de trás; a classe abaixo trava a página enquanto houver modal aberto.
+        // Os modais são abertos/fechados em vários pontos (style.display), então
+        // um único observador centraliza a regra em vez de repetir em cada função.
+        // ════════════════════════════════════════════════════════════════
+        (function () {
+            const modais = Array.from(document.querySelectorAll('.modal-overlay'));
+            if (!modais.length || typeof MutationObserver === 'undefined') return;
+            const atualizar = () => document.body.classList.toggle(
+                'modal-aberto', modais.some(m => m.style.display === 'flex'));
+            const obs = new MutationObserver(atualizar);
+            modais.forEach(m => obs.observe(m, { attributes: true, attributeFilter: ['style'] }));
+        })();
+
+        // A matriz de permissões (aba Usuários) é HTML estático: rotula uma vez.
+        document.addEventListener('DOMContentLoaded', () => {
+            rotularTabela(document.querySelector('.perm-table'));
+        });
+
+        // O app sempre reabre na primeira aba: não faz sentido o navegador restaurar
+        // a posição de rolagem da aba em que o usuário estava antes de recarregar.
+        try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
 
         window.checkEnter = function(e) { if(e.key === 'Enter') window.fazerLogin(); }
         window.toggleLoginPass = function() {
@@ -561,6 +633,12 @@
             document.getElementById('user-role-display').innerText = userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão';
             const initials = userData.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
             document.getElementById('avatar-initials').innerText = initials;
+            // Mesma identificação no rodapé do menu recolhível: no celular o cabeçalho
+            // só tem espaço para as iniciais.
+            const preencher = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+            preencher('avatar-initials-menu', initials);
+            preencher('user-display-menu', userData.nome);
+            preencher('user-role-display-menu', userData.isAdmin ? 'Administrador Geral' : 'Usuário Padrão');
             carregarDados();
             iniciarRealtime();
 
@@ -602,12 +680,30 @@
             aplicarEscopoDashboardUI();
         }
 
-        window.toggleSidebar = function() {
-            document.body.classList.toggle('sidebar-open');
+        // Menu lateral recolhível (celular/tablet). Sem argumento alterna; com
+        // true/false força abrir/fechar. Mantém o botão do cabeçalho acessível
+        // (aria-expanded) em sincronia com o estado.
+        window.toggleSidebar = function(abrir) {
+            const aberto = typeof abrir === 'boolean'
+                ? document.body.classList.toggle('sidebar-open', abrir)
+                : document.body.classList.toggle('sidebar-open');
+            const btn = document.getElementById('mobile-menu-btn');
+            if (btn) {
+                btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+                btn.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+            }
         }
         function fecharSidebarMobile() {
-            if (window.innerWidth <= 900) { document.body.classList.remove('sidebar-open'); }
+            if (document.body.classList.contains('sidebar-open')) window.toggleSidebar(false);
         }
+        // Girou o aparelho / alargou a janela para o layout de computador com o
+        // menu aberto: fecha, senão a página continuaria travada (overflow:hidden).
+        try {
+            const mqDesktop = window.matchMedia('(min-width: 901px)');
+            const aoMudar = (e) => { if (e.matches) fecharSidebarMobile(); };
+            if (mqDesktop.addEventListener) mqDesktop.addEventListener('change', aoMudar);
+            else if (mqDesktop.addListener) mqDesktop.addListener(aoMudar);
+        } catch (e) {}
 
         function togglePermissoes(checkbox) {
             const container = document.getElementById('container-permissoes');

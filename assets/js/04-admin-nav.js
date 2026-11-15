@@ -114,6 +114,7 @@
                 return `<tr><td><strong>${esc(meta.nome)}</strong></td><td>${esc(u.usr_email)}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button></td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
+            rotularTabela('tabela-usuarios-app');
         }
 
         // Cache do dataURL do brasao -- evita recriar Image+Canvas a cada PDF gerado
@@ -192,9 +193,12 @@
                 return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">${data}</td><td><strong>${esc(l.usuario)}</strong></td><td>${esc(l.secao)}</td><td class="${classAcao}">${esc(l.acao)}</td><td>${esc(l.detalhes)}</td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
+            rotularTabela('tabela-logs');
         }
 
         document.getElementById('date-display').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+        // A mesma data aparece no rodapé do menu recolhível (no celular ela não cabe no cabeçalho)
+        { const elDataMenu = document.getElementById('date-display-menu'); if (elDataMenu) elDataMenu.innerText = document.getElementById('date-display').innerText; }
         document.getElementById('demanda-data').value = DateUtils.getToInput().slice(0, 10);
         document.getElementById('demanda-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         document.getElementById('evento-data').value = DateUtils.getToInput().slice(0, 10);
@@ -205,6 +209,10 @@
         window.switchTab = function(tabId) {
             fecharSidebarMobile();
             if (document.getElementById('visitantes').classList.contains('active')) { pararCamera(); }
+            // Trocou de aba → começa do topo. Sem isso a nova aba abria na altura em
+            // que a anterior estava rolada (no meio ou no fim da listagem).
+            const abaAnterior = document.querySelector('.section.active')?.id || '';
+            if (abaAnterior !== tabId) rolarParaTopo();
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
