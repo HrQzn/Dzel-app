@@ -299,30 +299,49 @@
             </section>
 
             <section id="demandas" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Demandas — Geral</h2><p>Controle de ordens de serviço e solicitações</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-demanda" onclick="abrirModalImport()" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('demandas')"><i class="fas fa-plus" aria-hidden="true"></i> Nova demanda</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Demandas</h2><p>Controle de ordens de serviço e solicitações</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-demanda" onclick="abrirModalImport()" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('demandas')"><i class="fas fa-plus" aria-hidden="true"></i> Nova demanda</button></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total</h3><p id="dash-demanda-total">...</p></div><i class="fas fa-folder-open metric-icon"></i></div>
                     <div class="metric-card card-pendente"><div class="metric-info"><h3>Pendentes</h3><p id="dash-demanda-pendente">...</p></div><i class="fas fa-clock metric-icon"></i></div>
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-demanda-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-demanda-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card">
-                    <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-demanda" onchange="window.renderizarApenasDemandas()"></div>
-                        <div class="filter-group"><label>Buscar (Serviço/Setor):</label><input type="text" id="filtro-texto-demanda" placeholder="Ex: Lâmpada, Copa..."></div>
-                        <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-demanda" onchange="window.renderizarApenasDemandas()">
-                                <option value="">Todos</option><option value="Pendente">Pendente</option>
-                                <option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
+                <div class="card lista-card">
+                    <div class="lista-visoes" data-lista="demandas" role="tablist" aria-label="Visualizações da lista"></div>
+                    <div class="lista-barra">
+                        <div class="lista-filtros">
+                            <label class="lista-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="filtro-texto-demanda" placeholder="Buscar serviço, local ou solicitante" aria-label="Buscar"></label>
+                            <div class="lista-chips">
+                            <select id="filtro-servico-demanda" class="lista-chip lista-filtro" aria-label="Serviço" onchange="window.renderizarApenasDemandas()">
+                                <option value="">Serviço: todos</option><option value="PREDIAL">Predial</option><option value="AR">Ar condicionado</option><option value="LIMPEZA">Limpeza</option><option value="RAMAL">Telefonia</option><option value="OUTROS">Outros</option>
                             </select>
+                            <select id="filtro-prioridade-demanda" class="lista-chip lista-filtro" aria-label="Prioridade" onchange="window.renderizarApenasDemandas()">
+                                <option value="">Prioridade: todas</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
+                            </select>
+                            <select id="filtro-status-demanda" class="lista-chip lista-filtro" aria-label="Status" onchange="window.renderizarApenasDemandas()">
+                                <option value="">Status: todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em andamento</option><option value="Concluído">Concluído</option>
+                            </select>
+                            <input type="month" id="filtro-mes-demanda" class="lista-chip lista-filtro" aria-label="Mês de referência" onchange="window.renderizarApenasDemandas()">
+                            <input type="date" id="filtro-dia-demanda" class="lista-chip lista-filtro" aria-label="Dia" onchange="window.renderizarApenasDemandas()">
+                            </div>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <div class="lista-ferramentas">
+                            <label class="lista-rotulo" for="ordem-demanda">Ordenar por</label>
+                            <select id="ordem-demanda" class="lista-chip lista-ordem" onchange="window.renderizarApenasDemandas()">
+                                <option value="prioridade">Prioridade, depois atraso</option><option value="atraso">Maior atraso</option><option value="recentes">Mais recentes</option>
+                            </select>
+                            <div class="lista-densidade" role="group" aria-label="Densidade da lista">
+                                <button type="button" data-dens="compacta" aria-pressed="true" aria-label="Lista compacta" title="Lista compacta"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                                <button type="button" data-dens="confortavel" aria-pressed="false" aria-label="Lista confortável" title="Lista confortável"><i class="fas fa-grip-lines" aria-hidden="true"></i></button>
+                            </div>
+                            <button class="btn-excel" onclick="exportarExcel('demandas')"><i class="fas fa-file-excel" aria-hidden="true"></i> Exportar</button>
+                        </div>
                     </div>
+                    <div class="lista-lote" data-lista="demandas" role="region" aria-label="Ações para as demandas selecionadas" hidden></div>
                     <div class="table-container">
-                        <table id="tabela-demandas">
-                            <thead><tr><th>Data</th><th>Prioridade</th><th>Serviço / Contratada</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead>
-                            <tbody><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+                        <table id="tabela-demandas" class="tabela-refinada">
+                            <thead><tr><th class="col-sel"><input type="checkbox" class="sel-todas" aria-label="Selecionar todas as linhas desta página"></th><th>Nº</th><th>Demanda</th><th>Serviço</th><th>Prioridade</th><th>Atraso no SLA</th><th>Aberta</th><th>Status</th><th class="col-mais"><span class="sr-only">Ações</span></th></tr></thead>
+                            <tbody><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -336,19 +355,41 @@
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-predial-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-predial-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card">
-                    <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-predial" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-predial" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-predial" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-predial" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
+                <div class="card lista-card">
+                    <div class="lista-visoes" data-lista="predial" role="tablist" aria-label="Visualizações da lista"></div>
+                    <div class="lista-barra">
+                        <div class="lista-filtros">
+                            <label class="lista-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="filtro-busca-predial" placeholder="Buscar serviço, local ou solicitante" aria-label="Buscar"></label>
+                            <div class="lista-chips">
+                            <select id="filtro-prioridade-predial" class="lista-chip lista-filtro" aria-label="Prioridade" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Prioridade: todas</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
                             </select>
+                            <select id="filtro-status-predial" class="lista-chip lista-filtro" aria-label="Status" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Status: todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em andamento</option><option value="Concluído">Concluído</option>
+                            </select>
+                            <input type="month" id="filtro-mes-predial" class="lista-chip lista-filtro" aria-label="Mês de referência" onchange="window.renderizarAbasEspecificas()">
+                            <input type="date" id="filtro-dia-predial" class="lista-chip lista-filtro" aria-label="Dia" onchange="window.renderizarAbasEspecificas()">
+                            </div>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <div class="lista-ferramentas">
+                            <label class="lista-rotulo" for="ordem-predial">Ordenar por</label>
+                            <select id="ordem-predial" class="lista-chip lista-ordem" onchange="window.renderizarAbasEspecificas()">
+                                <option value="prioridade">Prioridade, depois atraso</option><option value="atraso">Maior atraso</option><option value="recentes">Mais recentes</option>
+                            </select>
+                            <div class="lista-densidade" role="group" aria-label="Densidade da lista">
+                                <button type="button" data-dens="compacta" aria-pressed="true" aria-label="Lista compacta" title="Lista compacta"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                                <button type="button" data-dens="confortavel" aria-pressed="false" aria-label="Lista confortável" title="Lista confortável"><i class="fas fa-grip-lines" aria-hidden="true"></i></button>
+                            </div>
+                            <button class="btn-excel" onclick="exportarExcel('predial')"><i class="fas fa-file-excel" aria-hidden="true"></i> Exportar</button>
+                        </div>
                     </div>
-                    <div class="table-container"><table id="tabela-predial"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="lista-lote" data-lista="predial" role="region" aria-label="Ações para as demandas selecionadas" hidden></div>
+                    <div class="table-container">
+                        <table id="tabela-predial" class="tabela-refinada">
+                            <thead><tr><th class="col-sel"><input type="checkbox" class="sel-todas" aria-label="Selecionar todas as linhas desta página"></th><th>Nº</th><th>Demanda</th><th>Prioridade</th><th>Atraso no SLA</th><th>Aberta</th><th>Status</th><th class="col-mais"><span class="sr-only">Ações</span></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -360,19 +401,41 @@
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-ar-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-ar-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card">
-                    <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-ar" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-ar" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-ar" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-ar" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
+                <div class="card lista-card">
+                    <div class="lista-visoes" data-lista="ar" role="tablist" aria-label="Visualizações da lista"></div>
+                    <div class="lista-barra">
+                        <div class="lista-filtros">
+                            <label class="lista-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="filtro-busca-ar" placeholder="Buscar serviço, local ou solicitante" aria-label="Buscar"></label>
+                            <div class="lista-chips">
+                            <select id="filtro-prioridade-ar" class="lista-chip lista-filtro" aria-label="Prioridade" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Prioridade: todas</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
                             </select>
+                            <select id="filtro-status-ar" class="lista-chip lista-filtro" aria-label="Status" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Status: todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em andamento</option><option value="Concluído">Concluído</option>
+                            </select>
+                            <input type="month" id="filtro-mes-ar" class="lista-chip lista-filtro" aria-label="Mês de referência" onchange="window.renderizarAbasEspecificas()">
+                            <input type="date" id="filtro-dia-ar" class="lista-chip lista-filtro" aria-label="Dia" onchange="window.renderizarAbasEspecificas()">
+                            </div>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <div class="lista-ferramentas">
+                            <label class="lista-rotulo" for="ordem-ar">Ordenar por</label>
+                            <select id="ordem-ar" class="lista-chip lista-ordem" onchange="window.renderizarAbasEspecificas()">
+                                <option value="prioridade">Prioridade, depois atraso</option><option value="atraso">Maior atraso</option><option value="recentes">Mais recentes</option>
+                            </select>
+                            <div class="lista-densidade" role="group" aria-label="Densidade da lista">
+                                <button type="button" data-dens="compacta" aria-pressed="true" aria-label="Lista compacta" title="Lista compacta"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                                <button type="button" data-dens="confortavel" aria-pressed="false" aria-label="Lista confortável" title="Lista confortável"><i class="fas fa-grip-lines" aria-hidden="true"></i></button>
+                            </div>
+                            <button class="btn-excel" onclick="exportarExcel('ar')"><i class="fas fa-file-excel" aria-hidden="true"></i> Exportar</button>
+                        </div>
                     </div>
-                    <div class="table-container"><table id="tabela-ar"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="lista-lote" data-lista="ar" role="region" aria-label="Ações para as demandas selecionadas" hidden></div>
+                    <div class="table-container">
+                        <table id="tabela-ar" class="tabela-refinada">
+                            <thead><tr><th class="col-sel"><input type="checkbox" class="sel-todas" aria-label="Selecionar todas as linhas desta página"></th><th>Nº</th><th>Demanda</th><th>Prioridade</th><th>Atraso no SLA</th><th>Aberta</th><th>Status</th><th class="col-mais"><span class="sr-only">Ações</span></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -384,19 +447,41 @@
                     <div class="metric-card card-andamento"><div class="metric-info"><h3>Em Andamento</h3><p id="dash-limpeza-andamento">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-concluido"><div class="metric-info"><h3>Concluídas</h3><p id="dash-limpeza-concluido">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
                 </div>
-                <div class="card">
-                    <div class="filter-container">
-                        <div class="filter-group"><label>Mês Ref:</label><input type="month" id="filtro-mes-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Dia:</label><input type="date" id="filtro-dia-limpeza" onchange="window.renderizarAbasEspecificas()"></div>
-                        <div class="filter-group"><label>Buscar:</label><input type="text" id="filtro-busca-limpeza" onkeyup="window.renderizarAbasEspecificas()" placeholder="Filtrar..."></div>
-                        <div class="filter-group"><label>Status:</label>
-                            <select id="filtro-status-limpeza" onchange="window.renderizarAbasEspecificas()">
-                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em Andamento</option><option value="Concluído">Concluído</option>
+                <div class="card lista-card">
+                    <div class="lista-visoes" data-lista="limpeza" role="tablist" aria-label="Visualizações da lista"></div>
+                    <div class="lista-barra">
+                        <div class="lista-filtros">
+                            <label class="lista-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="filtro-busca-limpeza" placeholder="Buscar serviço, local ou solicitante" aria-label="Buscar"></label>
+                            <div class="lista-chips">
+                            <select id="filtro-prioridade-limpeza" class="lista-chip lista-filtro" aria-label="Prioridade" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Prioridade: todas</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
                             </select>
+                            <select id="filtro-status-limpeza" class="lista-chip lista-filtro" aria-label="Status" onchange="window.renderizarAbasEspecificas()">
+                                <option value="">Status: todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em andamento</option><option value="Concluído">Concluído</option>
+                            </select>
+                            <input type="month" id="filtro-mes-limpeza" class="lista-chip lista-filtro" aria-label="Mês de referência" onchange="window.renderizarAbasEspecificas()">
+                            <input type="date" id="filtro-dia-limpeza" class="lista-chip lista-filtro" aria-label="Dia" onchange="window.renderizarAbasEspecificas()">
+                            </div>
                         </div>
-                        <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel"></i> Exportar</button>
+                        <div class="lista-ferramentas">
+                            <label class="lista-rotulo" for="ordem-limpeza">Ordenar por</label>
+                            <select id="ordem-limpeza" class="lista-chip lista-ordem" onchange="window.renderizarAbasEspecificas()">
+                                <option value="prioridade">Prioridade, depois atraso</option><option value="atraso">Maior atraso</option><option value="recentes">Mais recentes</option>
+                            </select>
+                            <div class="lista-densidade" role="group" aria-label="Densidade da lista">
+                                <button type="button" data-dens="compacta" aria-pressed="true" aria-label="Lista compacta" title="Lista compacta"><i class="fas fa-bars" aria-hidden="true"></i></button>
+                                <button type="button" data-dens="confortavel" aria-pressed="false" aria-label="Lista confortável" title="Lista confortável"><i class="fas fa-grip-lines" aria-hidden="true"></i></button>
+                            </div>
+                            <button class="btn-excel" onclick="exportarExcel('limpeza')"><i class="fas fa-file-excel" aria-hidden="true"></i> Exportar</button>
+                        </div>
                     </div>
-                    <div class="table-container"><table id="tabela-limpeza"><thead><tr><th>Data</th><th>Serviço</th><th>Solicitante</th><th>Status</th><th>Tempo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="lista-lote" data-lista="limpeza" role="region" aria-label="Ações para as demandas selecionadas" hidden></div>
+                    <div class="table-container">
+                        <table id="tabela-limpeza" class="tabela-refinada">
+                            <thead><tr><th class="col-sel"><input type="checkbox" class="sel-todas" aria-label="Selecionar todas as linhas desta página"></th><th>Nº</th><th>Demanda</th><th>Prioridade</th><th>Atraso no SLA</th><th>Aberta</th><th>Status</th><th class="col-mais"><span class="sr-only">Ações</span></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 

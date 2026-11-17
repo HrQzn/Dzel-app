@@ -72,7 +72,7 @@
         // permissão "Exportar" de Frota/Veículos marcada.
         const _MODULO_PERMISSAO = { frota: 'veiculos' };
 
-        async function exportarExcel(tipo) {
+        async function exportarExcel(tipo, somente) {
             const moduloPerm = _MODULO_PERMISSAO[tipo] || tipo;
             if (!pode(moduloPerm, 'exportar')) { alert('Você não tem permissão para exportar estes dados.'); return; }
             await ensureXLSX(); // Carrega SheetJS sob demanda (~500KB)
@@ -86,6 +86,7 @@
             else if (tipo === 'eventos') { data = eventos; nomeArquivo = "Relatorio_Eventos.xlsx"; }
             else if (tipo === 'crachas') { data = crachas; nomeArquivo = "Relatorio_Crachas.xlsx"; }
             else if (tipo === 'ocorrencias') { data = ocorrencias; nomeArquivo = "Relatorio_Ocorrencias.xlsx"; }
+            if (Array.isArray(somente)) data = somente;   // seleção em lote: só os itens escolhidos
             if(data.length === 0) return alert("Não há dados para exportar.");
             if (['demandas', 'predial', 'ar', 'limpeza'].includes(tipo)) {
                 data = data.map(d => {

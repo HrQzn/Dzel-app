@@ -20,6 +20,7 @@
     color-scheme: dark;
 }
 body { background: #09080D; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---- Menu lateral ---- */
 .nav-tabs { background: #0E0C14; border-right: 1px solid #221E2D; }
@@ -176,6 +177,108 @@ label[style*="font-size:0.8rem"], label[style*="font-size: 0.8rem"] { color: #D6
 .login-btn { background: #7C3AED; }
 .login-btn:hover { box-shadow: 0 12px 28px rgba(124,58,237,0.4); }
 .login-eye:hover, .login-forgot:hover { color: #C4B5FD; }
+
+/* =====================================================================
+   LISTA REFINADA (Demandas, Predial, Ar condicionado, Limpeza)
+   ===================================================================== */
+.lista-card { background: transparent; border: 0; padding: 0; border-radius: 0; }
+#demandas > .dashboard-panel { display: none; }   /* em Demandas as contagens ficam nas abas da lista */
+.lista-visoes { display: flex; gap: 0 24px; border-bottom: 1px solid #221E2D; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+.lista-visoes::-webkit-scrollbar { display: none; }
+.visao { display: inline-flex; align-items: center; gap: 8px; height: 40px; margin-bottom: -1px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #B5AFC6; font: 600 0.84rem/1 'Plus Jakarta Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+.visao:hover { color: #EFEDF5; }
+.visao.ativa { color: #EFEDF5; border-bottom-color: #A78BFA; }
+.visao-n { font-size: 0.75rem; font-weight: 600; color: #918AA6; font-variant-numeric: tabular-nums; }
+.visao.ativa .visao-n { color: #A78BFA; }
+.visao.alerta .visao-n { color: #FF7A8A; }
+.lista-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.lista-filtros, .lista-ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lista-ferramentas { margin-left: auto; }
+.lista-busca { position: relative; display: inline-flex; align-items: center; }
+.lista-busca i { position: absolute; left: 12px; color: #918AA6; font-size: 0.75rem; pointer-events: none; }
+#app-content .lista-busca input { width: 280px; height: 34px; padding: 0 12px 0 32px; border-radius: 9px; font-size: 0.82rem; text-transform: none; }
+.lista-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#app-content .lista-chip { width: auto; height: 34px; min-height: 34px; padding: 0 30px 0 11px; border: 1px dashed #3D3550; border-radius: 9px; background-color: transparent; color: #B5AFC6; font-size: 0.8rem; font-weight: 600; text-transform: none; }
+#app-content input.lista-chip { padding: 0 10px; }
+#app-content .lista-chip.ativo { border-style: solid; border-color: #A78BFA; background-color: #1D1530; color: #EFEDF5; }
+#app-content .lista-ordem { border-style: solid; color: #EFEDF5; }
+.lista-rotulo { font-size: 0.78rem; color: #918AA6; }
+.lista-densidade { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #221E2D; border-radius: 9px; background: #0E0C14; }
+.lista-densidade button { width: 30px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: #918AA6; cursor: pointer; }
+.lista-densidade button[aria-pressed="true"] { background: #221A38; color: #EFEDF5; }
+#app-content .lista-ferramentas .btn-excel { height: 34px; margin-left: 0; }
+.lista-lote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 7px 8px 7px 14px; margin-bottom: 12px; border: 1px solid #4A3A78; border-radius: 10px; background: #1D1530; }
+.lista-lote[hidden] { display: none; }
+.lote-n { font-size: 0.82rem; font-weight: 600; color: #EFEDF5; }
+.lote-espaco { flex: 1 1 0; }
+#app-content .lista-lote :is(button, select) { width: auto; height: 32px; min-height: 32px; padding: 0 12px; border: 1px solid #4A3A78; border-radius: 8px; background-color: transparent; color: #EFEDF5; font: 600 0.78rem 'Plus Jakarta Sans', sans-serif; text-transform: none; cursor: pointer; }
+#app-content .lista-lote select { padding-right: 30px; }
+#app-content .lista-lote .lote-limpar { border-color: transparent; color: #B5AFC6; }
+.lista-card .table-container { border: 0; border-radius: 0; }
+.tabela-refinada { table-layout: auto; }
+#app-content .tabela-refinada th { background: transparent; height: 36px; padding: 0 10px; border-top: 1px solid #221E2D; border-bottom: 1px solid #221E2D; font-size: 0.75rem; color: #918AA6; white-space: nowrap; }
+#app-content .tabela-refinada td { height: 44px; padding: 0 10px; border-bottom: 1px solid #1B1825; font-size: 0.82rem; color: #D6D1E3; white-space: nowrap; }
+html.densidade-confortavel #app-content .tabela-refinada td { height: 60px; }
+#app-content .tabela-refinada tr.linha-sel td { background: #1D1530; }
+.tabela-refinada .col-sel { width: 36px; }
+#app-content .tabela-refinada .col-num { width: 64px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #918AA6; }
+.tabela-refinada td.col-dem { width: 100%; max-width: 0; }
+.dem { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dem-titulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; font-weight: 600; color: #EFEDF5; }
+.dem-local { flex: none; max-width: 200px; height: 20px; display: inline-flex; align-items: center; padding: 0 7px; overflow: hidden; text-overflow: ellipsis; border: 1px solid #2C2739; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #B5AFC6; }
+.dem-sub { display: none; margin-top: 4px; font-size: 0.75rem; color: #918AA6; overflow: hidden; text-overflow: ellipsis; }
+html.densidade-confortavel .dem-sub { display: block; }
+.serv, .pri, .st { display: inline-flex; align-items: center; gap: 7px; }
+.serv { color: #B5AFC6; }
+.serv i { flex: none; width: 7px; height: 7px; border-radius: 2px; }
+.pri, .st { color: #D6D1E3; }
+.sla { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sla-atraso { color: #FF7A8A; }
+.sla-prazo { color: #B5AFC6; font-weight: 500; }
+.sla-ok { color: #4ADE9B; font-weight: 500; }
+.sla-neutro { color: #918AA6; font-weight: 500; }
+#app-content .tabela-refinada .col-data { color: #B5AFC6; font-variant-numeric: tabular-nums; }
+.st i { flex: none; box-sizing: border-box; width: 9px; height: 9px; border-radius: 50%; border: 2px solid #918AA6; }
+.st-andamento i { border-color: #A78BFA; background: #A78BFA; }
+.st-concluido i { border-color: #4ADE9B; background: #4ADE9B; }
+.tabela-refinada .col-mais { width: 44px; text-align: right; }
+.btn-mais { width: 30px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: #918AA6; cursor: pointer; }
+.btn-mais:hover, .btn-mais[aria-expanded="true"] { background: #221A38; color: #EFEDF5; }
+.menu-linha { position: fixed; z-index: 950; min-width: 210px; padding: 6px; background: #1E1A29; border: 1px solid #3D3550; border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+.menu-linha button { display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: #EFEDF5; font: 500 0.82rem 'Plus Jakarta Sans', sans-serif; text-align: left; cursor: pointer; }
+.menu-linha button i { width: 16px; text-align: center; color: #918AA6; }
+.menu-linha button:hover, .menu-linha button:focus-visible { background: #2C2342; outline: none; }
+.menu-linha .perigo, .menu-linha .perigo i { color: #FF7A8A; }
+
+/* Lista no celular: cada demanda vira um cartão */
+@media (max-width: 900px) {
+    #app-content .lista-busca, #app-content .lista-busca input { width: 100%; }
+    .lista-busca { flex: 1 1 100%; }
+    .lista-filtros, .lista-ferramentas { width: 100%; }
+    .lista-chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; scrollbar-width: none; }
+    .lista-chips::-webkit-scrollbar { display: none; }
+    #app-content .lista-chips .lista-chip { flex: none; }
+    .lista-ferramentas { flex-wrap: nowrap; margin-left: 0; }
+    #app-content .lista-ferramentas .lista-ordem { flex: 1 1 auto; min-width: 0; }
+    .lista-rotulo { display: none; }
+    #app-content .lista-ferramentas .btn-excel { width: auto; flex: none; padding: 0 12px; }
+    .lista-card .table-container { margin: 0; width: 100%; }
+    #app-content .tabela-refinada, #app-content .tabela-refinada tbody { display: block; min-width: 0; }
+    .tabela-refinada thead { display: none; }
+    #app-content .tabela-refinada tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 2px; border-bottom: 1px solid #1B1825; }
+    #app-content .tabela-refinada td { display: block; width: auto; height: auto; padding: 0; border: 0; background: transparent; }
+    #app-content .tabela-refinada tr.linha-sel { background: #1D1530; }
+    #app-content .tabela-refinada td.col-sel, #app-content .tabela-refinada td.col-data { display: none; }
+    .tabela-refinada td.col-dem { order: 1; flex: 1 1 calc(100% - 58px); max-width: none; }
+    .tabela-refinada td.col-mais { order: 2; flex: 0 0 30px; }
+    .tabela-refinada td.col-num { order: 3; }
+    .tabela-refinada td.col-st { order: 4; }
+    .tabela-refinada td.col-pri { order: 5; }
+    .tabela-refinada td.col-sla { order: 6; }
+    .tabela-refinada td.col-serv { order: 7; }
+    .dem { flex-wrap: wrap; row-gap: 6px; }
+    .dem-titulo { white-space: normal; }
+}
 
 /* Com o painel aberto, os avisos sobem para a esquerda dele */
 @media (min-width: 901px) {

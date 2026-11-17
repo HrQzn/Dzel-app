@@ -176,7 +176,7 @@
         const _pgFilterKey = {};   // tableId -> assinatura dos filtros (reseta página ao mudar)
         const _pgRerender  = {};   // tableId -> função que refaz a renderização
         const _TABELA_COLSPAN = {
-            'tabela-demandas': 6, 'tabela-predial': 6, 'tabela-ar': 6, 'tabela-limpeza': 6,
+            'tabela-demandas': 9, 'tabela-predial': 8, 'tabela-ar': 8, 'tabela-limpeza': 8,
             'tabela-visitantes': 6, 'tabela-veiculos': 8, 'tabela-eventos': 6,
             'tabela-crachas': 6, 'tabela-ocorrencias': 7
         };
