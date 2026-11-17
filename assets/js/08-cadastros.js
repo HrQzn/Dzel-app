@@ -8,7 +8,7 @@
             const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
             if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); fecharPainel({ salvo: true }); }
         });
 
         window.editarVisitante = function(id) {
@@ -28,7 +28,7 @@
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-vis').style.display = "block";
             const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status;
-            document.getElementById('visitantes').scrollIntoView({behavior:'smooth'});
+            abrirPainel('visitantes');
         }
 
         window.deletarVisitante = async function(id) {
@@ -121,7 +121,7 @@
             const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', hora_final: null };
             if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
             const { error } = await sb.from('frota').upsert(novoVeiculo);
-            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); fecharPainel({ salvo: true }); }
         });
 
         window.editarVeiculo = function(id) {
@@ -140,7 +140,7 @@
             document.getElementById('container-status-veiculo').style.display = "block";
             document.getElementById('veiculo-status-edit').value = f.status;
             window.atualizarLabels();
-            document.getElementById('veiculos').scrollIntoView({behavior: 'smooth'});
+            abrirPainel('veiculos');
         }
 
         window.deletarVeiculo = async function(id) {
@@ -233,7 +233,7 @@
             const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
             const { error } = await sb.from('eventos').upsert(novoEvento);
-            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); }
+            if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); fecharPainel({ salvo: true }); }
         });
 
         window.editarEvento = function(id) {
@@ -251,7 +251,7 @@
             document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento';
             const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-evento').style.display = "block";
-            document.getElementById('eventos').scrollIntoView({behavior: 'smooth'});
+            abrirPainel('eventos');
         }
 
         window.cancelarEdicaoEvento = function() {
@@ -317,7 +317,7 @@
             else {
                 if (idEdicao) registrarLog('Edição', 'Crachás', `Editou crachá de: ${novoCracha.nome}`);
                 else registrarLog('Criação', 'Crachás', `Solicitou crachá para: ${novoCracha.nome}`);
-                syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados();
+                syncSheets('crachas','upsert',novoCracha); cancelarEdicaoCracha(); carregarDados(); fecharPainel({ salvo: true });
             }
         });
 
@@ -336,7 +336,7 @@
             document.getElementById('titulo-form-cracha').innerHTML = '<i class="fas fa-edit"></i> Editando Crachá';
             const btn = document.getElementById('btn-submit-cracha'); btn.innerText = "Salvar Alterações"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-cracha').style.display = "block";
-            document.getElementById('crachas').scrollIntoView({behavior: 'smooth'});
+            abrirPainel('crachas');
         }
 
         window.cancelarEdicaoCracha = function() {

@@ -30,7 +30,7 @@
             }
             const { error } = await sb.from('ocorrencias').upsert(novaOco);
             if (error) alert('Erro: ' + error.message);
-            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); }
+            else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); fecharPainel({ salvo: true }); }
         });
 
         window.editarOcorrencia = function(id) {
@@ -52,7 +52,7 @@
             document.getElementById('btn-cancel-oco').style.display = 'block';
             document.getElementById('oco-status-edit').style.display = 'block';
             document.getElementById('oco-status-edit').value = o.status;
-            document.getElementById('ocorrencias').scrollIntoView({ behavior: 'smooth' });
+            abrirPainel('ocorrencias');
         };
 
         window.cancelarEdicaoOcorrencia = function() {

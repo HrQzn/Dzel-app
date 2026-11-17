@@ -179,6 +179,7 @@
                 syncSheets('demandas', 'upsert', { ...(itemAntigo || {}), ...upd, id: Number(idEdicao) });
                 cancelarEdicaoDemandaEspecifica(prefixo);
                 carregarDados();
+                fecharPainel({ salvo: true });
                 return;
             }
 
@@ -195,6 +196,7 @@
                 document.getElementById(`${prefixo}-data`).value = brt.slice(0, 10);
                 document.getElementById(`${prefixo}-hora`).value = brt.slice(11, 16);
                 carregarDados();
+                fecharPainel({ salvo: true });
             }
         }
 
@@ -230,7 +232,7 @@
                 btn.style.background = 'linear-gradient(135deg, var(--edit), #d97706)';
             }
             document.getElementById(`btn-cancel-${prefixo}`).style.display = 'inline-flex';
-            document.getElementById(prefixo).scrollIntoView({ behavior: 'smooth' });
+            abrirPainel(prefixo);
         }
 
         // Mostra/esconde o campo de hora de encerramento conforme o status escolhido
@@ -337,7 +339,7 @@
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
-            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); }
+            if(error) alert('Erro: ' + error.message); else { cancelarEdicaoDemanda(); carregarDados(); fecharPainel({ salvo: true }); }
         });
 
         window.editarDemanda = function(id, origem) {
@@ -366,7 +368,7 @@
                 wrapEnc.style.display = 'block';
                 inputFim.value = d.data_fim ? DateUtils.isoParaInputBRT(d.data_fim) : '';
             } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
-            document.getElementById('demandas').scrollIntoView({behavior: 'smooth'});
+            abrirPainel('demandas');
         }
 
         window.cancelarEdicaoDemanda = function() {

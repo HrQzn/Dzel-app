@@ -840,3 +840,71 @@
             .pagination-controls { order: 1; }
             .pg-btn { width: 38px; height: 38px; }
         }
+
+
+        /* ======== MENU LATERAL RECOLHÍVEL (só desktop, acima de 900px) ======== */
+        :root { --sidebar-w-recolhido: 72px; }
+        #app-content.app-visible { transition: grid-template-columns 0.2s ease; }
+        .sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .sidebar-brand-logo { min-width: 0; }
+        .sidebar-brand-text { white-space: nowrap; overflow: hidden; }
+        .sidebar-toggle {
+            flex: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            color: rgba(255,255,255,0.55); cursor: pointer; font-size: 0.8rem; transition: background 0.2s, color 0.2s;
+        }
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        @media (min-width: 901px) {
+            html.menu-recolhido { --sidebar-w: var(--sidebar-w-recolhido); }
+            html.menu-recolhido .sidebar-brand { flex-direction: column; padding: 1rem 0 0.85rem; gap: 12px; }
+            html.menu-recolhido .sidebar-brand-text,
+            html.menu-recolhido .tab-label { display: none; }
+            html.menu-recolhido .sidebar-toggle i { transform: rotate(180deg); }
+            html.menu-recolhido .sidebar-section-label { font-size: 0; height: 1px; padding: 0; margin: 0.6rem 1.1rem; background: rgba(255,255,255,0.1); }
+            html.menu-recolhido .tab-btn { justify-content: center; padding: 0; gap: 0; }
+            html.menu-recolhido .tab-btn i { width: auto; font-size: 1rem; }
+        }
+        @media (max-width: 900px) { .sidebar-toggle { display: none; } }
+
+        /* ======== PAINEL LATERAL DE FORMULÁRIO ======== */
+        .page-header-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .page-header-acoes .btn-primary { flex: none; display: inline-flex; align-items: center; gap: 8px; }
+        #painel-overlay {
+            position: fixed; inset: 0; z-index: 900; background: rgba(15,23,42,0.45); backdrop-filter: blur(2px);
+            opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+        }
+        #painel-overlay.aberto { opacity: 1; visibility: visible; transition: opacity 0.2s ease; }
+        .painel-form {
+            position: fixed; top: 0; right: 0; bottom: 0; z-index: 1000; width: min(560px, 100%);
+            display: flex; flex-direction: column; background: var(--bg-card);
+            border-left: 1px solid var(--border); border-top: 3px solid var(--cor-modulo, var(--accent));
+            box-shadow: -16px 0 40px rgba(15,23,42,0.18); outline: none;
+            transform: translateX(100%); visibility: hidden;
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s;
+        }
+        .painel-form.aberto { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); }
+        .painel-cabecalho { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+        .painel-cabecalho h2 { font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0; }
+        .painel-cabecalho h2 i { color: var(--cor-modulo, var(--accent)); font-size: 0.95rem; }
+        .painel-fechar {
+            flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+        }
+        .painel-fechar:hover { background: var(--bg-main); color: var(--text-primary); }
+        .painel-corpo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 0; scroll-padding-bottom: 96px; display: flex; flex-direction: column; }
+        .painel-corpo > * { flex-shrink: 0; }
+        .painel-corpo > form { flex-grow: 1; display: flex; flex-direction: column; }
+        .painel-form .btn-container {
+            position: sticky; bottom: 0; z-index: 1; justify-content: flex-end;
+            margin: auto -24px 0; padding: 14px 24px calc(14px + env(safe-area-inset-bottom));
+            background: var(--bg-card); border-top: 1px solid var(--border);
+        }
+        .painel-form .btn-container .btn-primary { flex: none; }
+        .painel-form .btn-cancel { display: inline-flex !important; align-items: center; justify-content: center; order: -1; }
+        @media (max-width: 900px) {
+            .painel-form { width: 100%; border-left: 0; }
+            .painel-cabecalho { padding: 12px 16px; }
+            .painel-corpo { padding: 16px 16px 0; }
+            .painel-form .btn-container { margin: auto -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+            .painel-form .btn-container > button { flex: 1; }
+        }
