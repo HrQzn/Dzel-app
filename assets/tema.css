@@ -225,7 +225,7 @@ html.densidade-confortavel #app-content .tabela-refinada td { height: 60px; }
 .tabela-refinada td.col-dem { width: 100%; max-width: 0; }
 .dem { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .dem-titulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85rem; font-weight: 600; color: #EFEDF5; }
-.dem-local { flex: none; max-width: 200px; height: 20px; display: inline-flex; align-items: center; padding: 0 7px; overflow: hidden; text-overflow: ellipsis; border: 1px solid #2C2739; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #B5AFC6; }
+.dem-local { flex: none; max-width: 140px; height: 20px; display: inline-flex; align-items: center; padding: 0 7px; overflow: hidden; text-overflow: ellipsis; border: 1px solid #2C2739; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #B5AFC6; }
 .dem-sub { display: none; margin-top: 4px; font-size: 0.75rem; color: #918AA6; overflow: hidden; text-overflow: ellipsis; }
 html.densidade-confortavel .dem-sub { display: block; }
 .serv, .pri, .st { display: inline-flex; align-items: center; gap: 7px; }
@@ -250,6 +250,19 @@ html.densidade-confortavel .dem-sub { display: block; }
 .menu-linha button:hover, .menu-linha button:focus-visible { background: #2C2342; outline: none; }
 .menu-linha .perigo, .menu-linha .perigo i { color: #FF7A8A; }
 
+/* Início e conclusão: clicar na data abre a janela para alterar */
+#app-content .tabela-refinada :is(td.col-ini, td.col-fim) { color: #B5AFC6; font-variant-numeric: tabular-nums; }
+.btn-data { margin: 0 -6px; padding: 2px 6px; border: 0; border-radius: 6px; background: transparent; color: #D6D1E3; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.btn-data:hover { background: #221A38; color: #EFEDF5; }
+.btn-data.vazio { color: #918AA6; font-size: 0.75rem; opacity: 0; }
+.tabela-refinada tr:hover .btn-data.vazio, .btn-data.vazio:focus-visible { opacity: 1; }
+.datas-campo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.datas-campo label { font-size: 0.78rem; font-weight: 600; color: #D6D1E3; }
+.datas-limpar { padding: 2px 4px; border: 0; background: transparent; color: #A78BFA; font: 600 0.75rem 'Plus Jakarta Sans', sans-serif; cursor: pointer; }
+.datas-limpar:hover { color: #C4B5FD; text-decoration: underline; }
+.datas-aviso { min-height: 1.25em; margin: 0 0 0.25rem; font-size: 0.8rem; color: #B5AFC6; }
+.datas-aviso.erro { color: #FF7A8A; }
+
 /* Lista no celular: cada demanda vira um cartão */
 @media (max-width: 900px) {
     #app-content .lista-busca, #app-content .lista-busca input { width: 100%; }
@@ -268,6 +281,7 @@ html.densidade-confortavel .dem-sub { display: block; }
     #app-content .tabela-refinada tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 2px; border-bottom: 1px solid #1B1825; }
     #app-content .tabela-refinada td { display: block; width: auto; height: auto; padding: 0; border: 0; background: transparent; }
     #app-content .tabela-refinada tr.linha-sel { background: #1D1530; }
+    #app-content .tabela-refinada tr:hover td, #app-content .tabela-refinada tr.linha-sel td { background: transparent; }
     #app-content .tabela-refinada td.col-sel, #app-content .tabela-refinada td.col-data { display: none; }
     .tabela-refinada td.col-dem { order: 1; flex: 1 1 calc(100% - 58px); max-width: none; }
     .tabela-refinada td.col-mais { order: 2; flex: 0 0 30px; }
@@ -276,6 +290,11 @@ html.densidade-confortavel .dem-sub { display: block; }
     .tabela-refinada td.col-pri { order: 5; }
     .tabela-refinada td.col-sla { order: 6; }
     .tabela-refinada td.col-serv { order: 7; }
+    .tabela-refinada td.col-ini { order: 8; }
+    .tabela-refinada td.col-fim { order: 9; }
+    #app-content .tabela-refinada td.sem-data { display: none; }
+    .tabela-refinada td.col-ini::before { content: 'Início '; color: #918AA6; }
+    .tabela-refinada td.col-fim::before { content: 'Conclusão '; color: #918AA6; }
     .dem { flex-wrap: wrap; row-gap: 6px; }
     .dem-titulo { white-space: normal; }
 }
