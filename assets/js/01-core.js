@@ -123,7 +123,7 @@
         function ensureChartReady() {
             if (!_chartReady && typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
                 Chart.register(ChartDataLabels);
-                Chart.defaults.color = '#918AA6';
+                Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--t-graf-texto').trim() || '#918AA6';
                 Chart.defaults.borderColor = 'rgba(145,138,166,0.18)';
                 Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
                 _chartReady = true;

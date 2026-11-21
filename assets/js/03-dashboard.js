@@ -74,7 +74,7 @@
                         tbC.innerHTML = '<tr><td colspan="5" class="dash-empty">Nenhuma demanda no período.</td></tr>';
                     } else {
                         tbC.innerHTML = m.contratadas.slice(0, 10).map(c => {
-                            const corP = c.slaPct == null ? '#918AA6' : c.slaPct >= 90 ? '#4ADE9B' : c.slaPct >= 70 ? '#FFC857' : '#FF7A8A';
+                            const corP = c.slaPct == null ? 'var(--t-texto-4)' : c.slaPct >= 90 ? 'var(--t-verde)' : c.slaPct >= 70 ? 'var(--t-ambar)' : 'var(--t-vermelho)';
                             const bgP  = c.slaPct == null ? 'rgba(145,138,166,0.12)' : c.slaPct >= 90 ? 'rgba(74,222,155,0.12)' : c.slaPct >= 70 ? 'rgba(255,200,87,0.12)' : 'rgba(255,122,138,0.12)';
                             const slaTxt = c.slaPct == null ? '—' : c.slaPct + '%';
                             return `<tr>
@@ -94,7 +94,7 @@
                     if (!m.topAntigas.length) {
                         tbA.innerHTML = '<tr><td colspan="5" class="dash-empty">Nenhuma demanda em aberto. 🎉</td></tr>';
                     } else {
-                        const corPrio = p => p === 'Alta' ? '#FF7A8A' : p === 'Média' ? '#FFC857' : '#4ADE9B';
+                        const corPrio = p => p === 'Alta' ? 'var(--t-vermelho)' : p === 'Média' ? 'var(--t-ambar)' : 'var(--t-verde)';
                         const bgPrio  = p => p === 'Alta' ? 'rgba(255,122,138,0.12)' : p === 'Média' ? 'rgba(255,200,87,0.12)' : 'rgba(74,222,155,0.12)';
                         tbA.innerHTML = m.topAntigas.map(x => {
                             const d = x.d; const dias = Math.floor(x.idade/24);
@@ -111,6 +111,15 @@
                     }
                 }
             } catch(err) { console.warn('renderizarKPIsOperacionais:', err); }
+        }
+
+        // Cores dos gráficos lidas do tema ativo (o canvas não entende variáveis CSS)
+        function _corTema(nome, padrao) {
+            return getComputedStyle(document.documentElement).getPropertyValue('--t-' + nome).trim() || padrao;
+        }
+        function _comAlfa(hex, a) {
+            const n = parseInt(hex.replace('#', ''), 16);
+            return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
         }
 
         async function renderizarDashboard() {
@@ -133,6 +142,8 @@
 
             // ── Gráfico: Volume por Setor (apenas setores do escopo do usuário) ──
             const ctxVolume = document.getElementById('chartVolumeSetor').getContext('2d');
+            const C = { roxo: _corTema('graf-roxo', '#A78BFA'), verde: _corTema('graf-verde', '#4ADE9B'), vermelho: _corTema('graf-vermelho', '#FF7A8A'),
+                        ambar: _corTema('graf-ambar', '#FFC857'), rotulo: _corTema('graf-rotulo', '#1F1E24'), texto: _corTema('graf-texto', '#918AA6') };
             if (chartVolume) chartVolume.destroy();
             const dadosSetor = [];
             if (semRestricao || pode('veiculos', 'ver'))      dadosSetor.push({ label: 'Garagem', valor: totalFrota });
@@ -145,8 +156,8 @@
             dadosSetor.sort((a, b) => b.valor - a.valor);
             chartVolume = new Chart(ctxVolume, {
                 type: 'bar',
-                data: { labels: dadosSetor.map(d => d.label), datasets: [{ label: 'Volume', data: dadosSetor.map(d => d.valor), backgroundColor: '#A78BFA', borderRadius: 6, barThickness: isMobile ? 14 : 18 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: isMobile ? 30 : 40, left: isMobile ? 0 : 0 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: '#918AA6', font: { weight: 'bold', size: isMobile ? 10 : 11 }, formatter: (value) => value > 0 ? value : '' } }, scales: { x: { display: false, grace: '15%' }, y: { grid: { display: false }, ticks: { font: { size: isMobile ? 11 : 12, family: 'Plus Jakarta Sans' }, color: '#918AA6' } } } }
+                data: { labels: dadosSetor.map(d => d.label), datasets: [{ label: 'Volume', data: dadosSetor.map(d => d.valor), backgroundColor: C.roxo, borderRadius: 6, barThickness: isMobile ? 14 : 18 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: isMobile ? 30 : 40, left: isMobile ? 0 : 0 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', color: C.texto, font: { weight: 'bold', size: isMobile ? 10 : 11 }, formatter: (value) => value > 0 ? value : '' } }, scales: { x: { display: false, grace: '15%' }, y: { grid: { display: false }, ticks: { font: { size: isMobile ? 11 : 12, family: 'Plus Jakarta Sans' }, color: C.texto } } } }
             });
 
             // ── Gráfico: Tendência Mensal (linha) ──
@@ -156,10 +167,10 @@
             chartTendencia = new Chart(ctxTend, {
                 type: 'line',
                 data: { labels: tend.map(t => t.label), datasets: [
-                    { label: 'Aberturas', data: tend.map(t => t.abertas), borderColor: '#A78BFA', backgroundColor: 'rgba(167,139,250,0.12)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: '#A78BFA' },
-                    { label: 'Conclusões', data: tend.map(t => t.concluidas), borderColor: '#4ADE9B', backgroundColor: 'rgba(74,222,155,0.1)', borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: '#4ADE9B' }
+                    { label: 'Aberturas', data: tend.map(t => t.abertas), borderColor: C.roxo, backgroundColor: _comAlfa(C.roxo, 0.12), borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: C.roxo },
+                    { label: 'Conclusões', data: tend.map(t => t.concluidas), borderColor: C.verde, backgroundColor: _comAlfa(C.verde, 0.1), borderWidth: 2.5, tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: C.verde }
                 ] },
-                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 12, usePointStyle: true } }, datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: isMobile ? 10 : 11 }, color: '#918AA6' } }, y: { beginAtZero: true, grid: { color: 'rgba(145,138,166,0.18)' }, ticks: { font: { size: 10 }, color: '#918AA6', precision: 0 } } } }
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 12, usePointStyle: true } }, datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: isMobile ? 10 : 11 }, color: C.texto } }, y: { beginAtZero: true, grid: { color: 'rgba(145,138,166,0.18)' }, ticks: { font: { size: 10 }, color: C.texto, precision: 0 } } } }
             });
 
             // ── Gráfico: Distribuição por Prioridade (doughnut) ──
@@ -168,8 +179,8 @@
             if (chartPrioridade) chartPrioridade.destroy();
             chartPrioridade = new Chart(ctxPrio, {
                 type: 'doughnut',
-                data: { labels: ['Alta', 'Média', 'Baixa'], datasets: [{ data: [slaData.prio['Alta'], slaData.prio['Média'], slaData.prio['Baixa']], backgroundColor: ['#FF7A8A', '#FFC857', '#4ADE9B'], borderWidth: 0, cutout: '62%' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 10, usePointStyle: true } }, datalabels: { color: '#09080D', font: { weight: 'bold', size: isMobile ? 11 : 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d); return sum === 0 || value === 0 ? '' : (value * 100 / sum).toFixed(0) + '%'; } } } }
+                data: { labels: ['Alta', 'Média', 'Baixa'], datasets: [{ data: [slaData.prio['Alta'], slaData.prio['Média'], slaData.prio['Baixa']], backgroundColor: [C.vermelho, C.ambar, C.verde], borderWidth: 0, cutout: '62%' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 10, usePointStyle: true } }, datalabels: { color: C.rotulo, font: { weight: 'bold', size: isMobile ? 11 : 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d); return sum === 0 || value === 0 ? '' : (value * 100 / sum).toFixed(0) + '%'; } } } }
             });
 
             // ── Gráfico: Garagem Perfil (doughnut) — oculto p/ usuário restrito sem permissão ──
@@ -181,8 +192,8 @@
             if (chartGaragem) chartGaragem.destroy();
             chartGaragem = new Chart(ctxGaragem, {
                 type: 'doughnut',
-                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor || 0, qtdVisitante || 0], backgroundColor: ['#4ADE9B', '#FFC857'], borderWidth: 0, cutout: '65%' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 10 } }, datalabels: { color: '#09080D', font: { weight: 'bold', size: isMobile ? 11 : 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d); return sum === 0 ? "" : (value * 100 / sum).toFixed(0) + "%"; } } } }
+                data: { labels: ['Servidores', 'Visitantes'], datasets: [{ data: [qtdServidor || 0, qtdVisitante || 0], backgroundColor: [C.verde, C.ambar], borderWidth: 0, cutout: '65%' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: isMobile ? 11 : 12 }, padding: 10 } }, datalabels: { color: C.rotulo, font: { weight: 'bold', size: isMobile ? 11 : 12 }, formatter: (value, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d); return sum === 0 ? "" : (value * 100 / sum).toFixed(0) + "%"; } } } }
             });
         }
 

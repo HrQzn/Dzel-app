@@ -5,6 +5,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1F1E24">
     <title>Divisão de Zeladoria | Dzel</title>
     <!-- Preconnect — reduz DNS+TLS em ~100-200ms por domínio -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -28,8 +29,10 @@
     <link rel="stylesheet" href="assets/styles.css">
     <link rel="stylesheet" href="assets/tema.css">
     <script>
-        // Aplica o menu recolhido antes da 1ª pintura (sem "piscar")
+        // Aplica tema e menu salvos antes da 1ª pintura (sem "piscar")
+        document.documentElement.setAttribute('data-tema', 'escuro');
         try {
+            if (localStorage.getItem('dzel.tema') === 'claro') document.documentElement.setAttribute('data-tema', 'claro');
             var _m = localStorage.getItem('dzel.menuRecolhido');
             if (_m === '1' || (_m === null && innerWidth > 900 && innerWidth < 1280)) document.documentElement.classList.add('menu-recolhido');
         } catch (e) {}
@@ -204,6 +207,7 @@
             </div>
             <div class="header-right">
                 <span id="date-display" class="hide-mobile" style="font-size:0.78rem; color:var(--text-muted);"></span>
+                <button type="button" id="btn-tema" class="btn-tema" onclick="alternarTema()" aria-label="Mudar para o tema claro" title="Mudar para o tema claro"><i class="fas fa-sun" aria-hidden="true"></i><i class="fas fa-moon" aria-hidden="true"></i></button>
                 <div class="header-user">
                     <div class="header-avatar" id="avatar-initials">U</div>
                     <div class="hide-mobile">

@@ -26,6 +26,32 @@
         _aplicarMenu(document.documentElement.classList.contains('menu-recolhido'));
 
         // ════════════════════════════════════════════════════════════════
+        // TEMA CLARO / ESCURO: botão no topo; a escolha fica no navegador.
+        // O <head> já aplica o tema salvo antes da primeira pintura.
+        // ════════════════════════════════════════════════════════════════
+        const _TEMA_CHAVE = 'dzel.tema';
+        function _aplicarTema(tema) {
+            document.documentElement.setAttribute('data-tema', tema);
+            const btn = document.getElementById('btn-tema');
+            if (btn) {
+                const rotulo = tema === 'claro' ? 'Mudar para o tema escuro' : 'Mudar para o tema claro';
+                btn.setAttribute('aria-label', rotulo);
+                btn.title = rotulo;
+            }
+            const barra = document.querySelector('meta[name="theme-color"]');
+            if (barra) barra.setAttribute('content', tema === 'claro' ? '#F1F1F5' : '#1F1E24');
+        }
+        window.alternarTema = function() {
+            const novo = document.documentElement.getAttribute('data-tema') === 'claro' ? 'escuro' : 'claro';
+            _aplicarTema(novo);
+            try { localStorage.setItem(_TEMA_CHAVE, novo); } catch (e) {}
+            // Os gráficos são desenhados em canvas: refaz com as cores do tema novo
+            if (typeof Chart !== 'undefined') Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--t-graf-texto').trim() || Chart.defaults.color;
+            if (typeof renderizarDashboard === 'function' && typeof Chart !== 'undefined') renderizarDashboard();
+        };
+        _aplicarTema(document.documentElement.getAttribute('data-tema') === 'claro' ? 'claro' : 'escuro');
+
+        // ════════════════════════════════════════════════════════════════
         // PAINEL LATERAL DE FORMULÁRIO: abre só ao criar ou editar.
         // Cada módulo reaproveita a função de cancelar que já existia.
         // ════════════════════════════════════════════════════════════════

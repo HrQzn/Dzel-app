@@ -11,11 +11,12 @@
             { id: 'concluidas', nome: 'Concluídas',      f: d => d.status === 'Concluído' },
             { id: 'todas',      nome: 'Todas',           f: () => true }
         ];
+        // Cores de serviço e de prioridade vêm do tema (tema.css), por classe
         const _SERVICOS = {
-            PREDIAL: ['Predial', '#FF9D5C'], AR: ['Ar condicionado', '#4CC9F0'], LIMPEZA: ['Limpeza', '#2DD4BF'],
-            RAMAL: ['Telefonia', '#F472B6'], OUTROS: ['Outros', '#8B8599']
+            PREDIAL: ['Predial', 'predial'], AR: ['Ar condicionado', 'ar'], LIMPEZA: ['Limpeza', 'limpeza'],
+            RAMAL: ['Telefonia', 'telefonia'], OUTROS: ['Outros', 'outros']
         };
-        const _BARRAS = { 'Alta': ['#FF7A8A', '#FF7A8A', '#FF7A8A'], 'Média': ['#FFC857', '#FFC857', '#3D3550'], 'Baixa': ['#918AA6', '#3D3550', '#3D3550'] };
+        const _CLASSE_PRIORIDADE = { 'Alta': 'pri-alta', 'Média': 'pri-media', 'Baixa': 'pri-baixa' };
         const _PESO_PRIORIDADE = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
 
         function _valor(id) { const el = document.getElementById(id); return el ? el.value : ''; }
@@ -62,8 +63,8 @@
             return `<span class="sla sla-prazo">Vence em ${_uteis(meta - idade)}</span>`;
         }
         function _celulaPrioridade(p) {
-            const b = _BARRAS[p] || _BARRAS['Baixa'];
-            return `<span class="pri"><svg aria-hidden="true" width="13" height="12" viewBox="0 0 13 12"><rect x="0" y="7" width="3" height="5" rx="1" fill="${b[0]}"/><rect x="5" y="3.5" width="3" height="8.5" rx="1" fill="${b[1]}"/><rect x="10" y="0" width="3" height="12" rx="1" fill="${b[2]}"/></svg>${esc(p || 'Sem prioridade')}</span>`;
+            const cls = _CLASSE_PRIORIDADE[p] || 'pri-baixa';
+            return `<span class="pri ${cls}"><svg aria-hidden="true" width="13" height="12" viewBox="0 0 13 12"><rect class="b1" x="0" y="7" width="3" height="5" rx="1"/><rect class="b2" x="5" y="3.5" width="3" height="8.5" rx="1"/><rect class="b3" x="10" y="0" width="3" height="12" rx="1"/></svg>${esc(p || 'Sem prioridade')}</span>`;
         }
         function _celulaStatus(s) {
             const cls = s === 'Pendente' ? 'st-pendente' : (s === 'Em Andamento' ? 'st-andamento' : 'st-concluido');
@@ -103,7 +104,7 @@
             const nomeServ = (cat === 'OUTROS' && d.contratada) ? d.contratada : serv[0];
             const aberta = _diaCurto(d.data);
             const sub = [d.solicitante, d.numero_os ? 'O.S. ' + d.numero_os : ''].filter(Boolean).map(esc).join(', ');
-            const colServico = origem ? '' : `<td class="col-serv"><span class="serv"><i style="background:${serv[1]}" aria-hidden="true"></i>${esc(nomeServ)}</span></td>`;
+            const colServico = origem ? '' : `<td class="col-serv"><span class="serv"><i class="serv-${serv[1]}" aria-hidden="true"></i>${esc(nomeServ)}</span></td>`;
             return `<tr class="${marcada ? 'linha-sel' : ''}">`
                 + `<td class="col-sel"><input type="checkbox" class="sel-linha" data-id="${d.id}" ${marcada ? 'checked' : ''} aria-label="Selecionar a demanda ${d.id}"></td>`
                 + `<td class="col-num">#${d.id}</td>`
