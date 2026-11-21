@@ -30,7 +30,7 @@
             if(!email || !pass || !nome) return alert("Preencha todos os campos obrigatórios!");
             const { data, error } = await sb.rpc('admin_create_user', { email_input: email, pass_input: pass, nome_input: nome, is_admin_input: isAdmin, permissoes_input: perms });
             if(error) alert("Erro ao criar: " + error.message);
-            else { showToast('Usuário criado com sucesso!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`); }
+            else { showToast('Usuário criado com sucesso!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); fecharPainel({ salvo: true }); registrarLog('Criação', 'Usuários', `Criou usuário: ${email}`); }
         }
 
         async function editarUsuarioSalvar(id) {
@@ -39,7 +39,7 @@
             const perms = montarPermissoesJSON();
             const { error } = await sb.rpc('admin_update_user_meta', { user_id_input: id, nome_input: nome, role_input: 'custom', is_admin_input: isAdmin, permissoes_input: perms });
             if(error) alert("Erro ao atualizar: " + error.message);
-            else { showToast('Usuário atualizado!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); registrarLog('Edição', 'Usuários', `Atualizou permissões do usuário ID: ${id}`); }
+            else { showToast('Usuário atualizado!', 'success'); cancelarEdicaoUsuario(); carregarUsuarios(); fecharPainel({ salvo: true }); registrarLog('Edição', 'Usuários', `Atualizou permissões do usuário ID: ${id}`); }
         }
 
         function editarUsuario(userStr) {
@@ -63,7 +63,7 @@
                 if(document.getElementById(`perm-${m}-del`)) document.getElementById(`perm-${m}-del`).checked = p[m]?.excluir === true;
                 if(document.getElementById(`perm-${m}-exp`)) document.getElementById(`perm-${m}-exp`).checked = p[m]?.exportar === true;
             });
-            document.getElementById('usuarios').scrollIntoView({behavior: 'smooth'});
+            abrirPainel('usuarios');
         }
 
         function cancelarEdicaoUsuario() {
