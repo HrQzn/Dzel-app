@@ -230,6 +230,7 @@
                 window.renderizarApenasEventos?.();
                 window.renderizarApenasCrachas?.();
                 window.renderizarApenasOcorrencias?.();
+                window._atualizarContadoresMenu?.();
 
                 // "Total de Veículos no Período" pertence ao Dashboard e segue
                 // o filtro de mês dele (não o da aba Garagem).
