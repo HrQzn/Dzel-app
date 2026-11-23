@@ -7,6 +7,7 @@
             const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('vis-entrada').value) : dataLocalParaISO(DateUtils.getToInput());
             const novoVisitante = { id, foto: fotoBase64 || null, nome: document.getElementById('vis-nome').value.toUpperCase(), doc: document.getElementById('vis-doc').value.toUpperCase(), empresa: document.getElementById('vis-empresa').value.toUpperCase(), contato: document.getElementById('vis-contato').value.toUpperCase(), responsavel: document.getElementById('vis-responsavel').value.toUpperCase(), finalidade: document.getElementById('vis-finalidade').value.toUpperCase(), entrada: horaEntrada, status: idEdicao ? document.getElementById('vis-status-edit').value : 'Ativo', saida: null };
             if(idEdicao) { const ant = visitantes.find(v => v.id == id); if (!novoVisitante.foto && ant && ant.foto) novoVisitante.foto = ant.foto; if (novoVisitante.status === 'Saiu' && (!ant || !ant.saida)) novoVisitante.saida = new Date().toISOString(); else if (ant && ant.saida) novoVisitante.saida = ant.saida; registrarLog('Edição', 'Visitantes', `Alterou visitante: ${novoVisitante.nome}`); }
+            Object.assign(novoVisitante, await extrasDe('visitantes'));
             const { error } = await sb.from('visitantes').upsert(novoVisitante);
             if(error) alert('Erro: ' + error.message); else { syncSheets('visitantes', 'upsert', novoVisitante); cancelarEdicaoVisitante(); carregarDados(); fecharPainel({ salvo: true }); }
         });
@@ -28,6 +29,7 @@
             const btn = document.getElementById('btn-submit-vis'); btn.innerText = "Salvar"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-vis').style.display = "block";
             const selStat = document.getElementById('vis-status-edit'); selStat.style.display="block"; selStat.value = v.status;
+            preencherExtras('visitantes', v);
             abrirPainel('visitantes');
         }
 
@@ -70,7 +72,7 @@
                     if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     const imgTag = `<img src="${esc(v.foto || defaultIcon)}" class="avatar-table">`;
-                    return `<tr><td>${celPill(v.status === 'Ativo' ? 'Na empresa' : 'Saiu', v.status === 'Ativo' ? 'ambar' : 'neutro')}</td><td><div class="cel-pessoa">${v.foto ? `<img src="${esc(v.foto)}" class="cel-avatar" alt="">` : `<span class="cel-avatar" aria-hidden="true">${celIniciais(v.nome)}</span>`}${celDuas('<b>' + esc(v.nome) + '</b>', esc(v.contato))}</div></td><td>${celDuas(esc(v.empresa) || '-', v.doc ? '<span class="cel-mono">' + esc(celMascara(v.doc)) + '</span>' : '')}</td><td>${celDuas(esc(v.responsavel) || '-', esc(v.finalidade))}</td><td>${celDuas(celQuando(v.entrada), v.saida ? celSaida(v.entrada, v.saida) : (v.status === 'Ativo' ? 'ainda na empresa' : ''))}</td><td>${celAcoes(btnBaixa + buttons)}</td></tr>`;
+                    return `<tr><td>${celPill(v.status === 'Ativo' ? 'Na empresa' : 'Saiu', v.status === 'Ativo' ? 'ambar' : 'neutro')}</td><td><div class="cel-pessoa">${v.foto ? `<img src="${esc(v.foto)}" class="cel-avatar" alt="">` : `<span class="cel-avatar" aria-hidden="true">${celIniciais(v.nome)}</span>`}${celDuas('<b>' + esc(v.nome) + '</b>', esc(v.contato))}</div></td><td>${celDuas(esc(v.empresa) || '-', v.doc ? '<span class="cel-mono">' + esc(celMascara(v.doc)) + '</span>' : '')}</td><td>${celDuas(esc(v.responsavel) || '-', [esc(v.finalidade), v.unidade && v.unidade !== 'Sede' ? esc(v.unidade) : ''].filter(Boolean).join(', '))}</td><td>${celDuas(celQuando(v.entrada), v.saida ? celSaida(v.entrada, v.saida) : (v.status === 'Ativo' ? 'ainda na empresa' : ''))}</td><td>${celAcoes(btnBaixa + buttons)}</td></tr>`;
                 }
             });
         }
@@ -120,6 +122,7 @@
             const horaEntrada = idEdicao ? dataLocalParaISO(document.getElementById('veiculo-hora-saida').value) : dataLocalParaISO(DateUtils.getToInput());
             const novoVeiculo = { id, tipo, carro: document.getElementById('veiculo-carro').value.toUpperCase(), motorista: document.getElementById('veiculo-motorista').value.toUpperCase(), setor: document.getElementById('veiculo-setor').value.toUpperCase(), contato: document.getElementById('veiculo-contato').value.toUpperCase(), destino: document.getElementById('veiculo-destino').value.toUpperCase(), hora_inicial: horaEntrada, status: idEdicao ? document.getElementById('veiculo-status-edit').value : 'Aberto', hora_final: null };
             if(idEdicao) { const ant = frota.find(f => f.id == id); if (novoVeiculo.status === 'Aberto') { novoVeiculo.hora_final = null; } else if (ant && ant.hora_final) { novoVeiculo.hora_final = ant.hora_final; } registrarLog('Edição', 'Garagem', `Alterou registro: ${novoVeiculo.carro}`); }
+            Object.assign(novoVeiculo, await extrasDe('veiculos'));
             const { error } = await sb.from('frota').upsert(novoVeiculo);
             if(error) alert('Erro: ' + error.message); else { syncSheets('frota', 'upsert', novoVeiculo); cancelarEdicaoVeiculo(); window.atualizarLabels(); carregarDados(); fecharPainel({ salvo: true }); }
         });
@@ -140,6 +143,7 @@
             document.getElementById('container-status-veiculo').style.display = "block";
             document.getElementById('veiculo-status-edit').value = f.status;
             window.atualizarLabels();
+            preencherExtras('veiculos', f);
             abrirPainel('veiculos');
         }
 
@@ -191,7 +195,7 @@
                     let buttons = '';
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
-                    return `<tr><td>${celPill(f.status === 'Aberto' ? 'Estacionado' : 'Finalizado', f.status === 'Aberto' ? 'ambar' : 'neutro')}</td><td>${f.tipo === 'servidor' ? 'Servidor' : 'Visitante'}</td><td>${celDuas('<b>' + esc(f.motorista) + '</b>', esc(f.contato))}</td><td>${celVeiculo(f.carro)}</td><td>${esc(f.setor) || '-'}</td><td>${celDuas(celQuando(f.hora_inicial), f.hora_final ? celSaida(f.hora_inicial, f.hora_final) : 'ainda na garagem')}</td><td><span class="cel-tempo${f.status === 'Aberto' ? ' ativo' : ''}">${tempoStr}</span></td><td>${celAcoes((f.status === 'Aberto' ? btnBaixa : '') + buttons)}</td></tr>`;
+                    return `<tr><td>${celPill(f.status === 'Aberto' ? 'Estacionado' : 'Finalizado', f.status === 'Aberto' ? 'ambar' : 'neutro')}</td><td>${f.tipo === 'servidor' ? 'Servidor' : 'Visitante'}</td><td>${celDuas('<b>' + esc(f.motorista) + '</b>', esc(f.contato))}</td><td>${celVeiculo(f.carro)}</td><td>${celDuas(esc(f.setor) || '-', f.unidade && f.unidade !== 'Sede' ? esc(f.unidade) : '')}</td><td>${celDuas(celQuando(f.hora_inicial), f.hora_final ? celSaida(f.hora_inicial, f.hora_final) : 'ainda na garagem')}</td><td><span class="cel-tempo${f.status === 'Aberto' ? ' ativo' : ''}">${tempoStr}</span></td><td>${celAcoes((f.status === 'Aberto' ? btnBaixa : '') + buttons)}</td></tr>`;
                 }
             });
         }
@@ -232,6 +236,8 @@
             const id = idEdicao || Date.now();
             const novoEvento = { id, tipo: document.querySelector('input[name="tipoEvento"]:checked').value, nome: document.getElementById('evento-nome').value.toUpperCase(), organizador: document.getElementById('evento-organizador').value.toUpperCase(), data: document.getElementById('evento-data').value, publico: parseInt(document.getElementById('evento-publico').value) || 0, local: document.getElementById('evento-local').value.toUpperCase(), coffee: document.getElementById('evento-coffee').checked, obs: document.getElementById('evento-obs').value.toUpperCase() };
             if(idEdicao) registrarLog('Edição', 'Eventos', `Alterou evento: ${novoEvento.nome}`);
+            if (conferirConflitoEvento().length && !confirm('Esse espaço já tem evento nessa data e horário. Salvar assim mesmo?')) return;
+            Object.assign(novoEvento, await extrasDe('eventos'));
             const { error } = await sb.from('eventos').upsert(novoEvento);
             if(error) alert('Erro ao salvar evento: ' + error.message); else { syncSheets('eventos','upsert',novoEvento); cancelarEdicaoEvento(); carregarDados(); fecharPainel({ salvo: true }); }
         });
@@ -251,6 +257,7 @@
             document.getElementById('titulo-form-evento').innerHTML = '<i class="fas fa-edit"></i> Editando Evento';
             const btn = document.getElementById('btn-submit-evento'); btn.innerText = "Salvar Evento"; btn.style.background = "linear-gradient(135deg, var(--edit), #d97706)";
             document.getElementById('btn-cancel-evento').style.display = "block";
+            preencherExtras('eventos', ev);
             abrirPainel('eventos');
         }
 
@@ -295,7 +302,8 @@
                     if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     const tomLocal = /TEATRO/i.test(ev.local || '') ? 'rosa' : /NOBRE/i.test(ev.local || '') ? 'ciano' : '';
-                    return `<tr><td class="cel-data">${celDiaMes(ev.data)}</td><td><div class="cel-duas"><span><b>${esc(ev.nome)}</b>${ev.coffee ? ' <i class="fas fa-mug-hot cel-cafe" title="Com coffee break" aria-label="Com coffee break"></i>' : ''}</span><small>${ev.local ? celChip(ev.local, tomLocal) : ''}${ev.organizador ? `<span>Organização: ${esc(ev.organizador)}</span>` : ''}</small>${ev.obs ? `<small class="cel-obs">${esc(ev.obs)}</small>` : ''}</div></td><td>${esc(ev.tipo) || '-'}</td><td class="cel-num">${(parseInt(ev.publico) || 0).toLocaleString('pt-BR')}</td><td>${celAcoes(buttons)}</td></tr>`;
+                    const horario = ev.hora_inicio ? ev.hora_inicio.replace(':00', 'h').replace(':', 'h') + (ev.hora_fim ? ' às ' + ev.hora_fim.replace(':00', 'h').replace(':', 'h') : '') : '';
+                    return `<tr><td>${celDuas('<b>' + celDiaMes(ev.data) + '</b>', horario)}</td><td><div class="cel-duas"><span><b>${esc(ev.nome)}</b>${ev.coffee ? ' <i class="fas fa-mug-hot cel-cafe" title="Com coffee break" aria-label="Com coffee break"></i>' : ''}</span><small>${ev.local ? celChip(ev.local, tomLocal) : ''}${ev.organizador ? `<span>Organização: ${esc(ev.organizador)}</span>` : ''}${ev.chamado ? `<span>Chamado ${esc(ev.chamado)}</span>` : ''}${ev.suporte_tecnico ? '<span>Com suporte técnico</span>' : ''}</small>${ev.obs ? `<small class="cel-obs">${esc(ev.obs)}</small>` : ''}</div></td><td>${esc(ev.tipo) || '-'}</td><td class="cel-num">${(parseInt(ev.publico) || 0).toLocaleString('pt-BR')}</td><td>${celAcoes(buttons)}</td></tr>`;
                 }
             });
         }

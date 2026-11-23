@@ -173,6 +173,7 @@
                         upd.data_fim = DateUtils.getNowDatabaseISO();
                     }
                 }
+                Object.assign(upd, await extrasDe(prefixo, itemAntigo));
                 const { error } = await sb.from('demandas').update(upd).eq('id', idEdicao);
                 if (error) { alert('Erro: ' + error.message); return; }
                 const nomeAba = prefixo === 'predial' ? 'Predial' : prefixo === 'ar' ? 'Ar Condicionado' : 'Limpeza';
@@ -185,6 +186,7 @@
             }
 
             const novaDemanda = { numero_os, titulo, setor, solicitante, contratada: contratadaFixa.toUpperCase(), prioridade, data: dataInput, hora: horaInput, status: 'Pendente', data_fim: null };
+            Object.assign(novaDemanda, await extrasDe(prefixo));
             const { data: insertData, error } = await sb.from('demandas').insert(novaDemanda).select().single();
             if(error) alert('Erro: ' + error.message);
             else {
@@ -233,6 +235,7 @@
                 btn.style.background = 'linear-gradient(135deg, var(--edit), #d97706)';
             }
             document.getElementById(`btn-cancel-${prefixo}`).style.display = 'inline-flex';
+            preencherExtras(prefixo, d);
             abrirPainel(prefixo);
         }
 
@@ -328,6 +331,7 @@
                 // manter o data_fim antigo fazia a O.S. e a planilha exportada
                 // mostrarem data de encerramento em demanda ainda aberta.
                 // (É o mesmo comportamento já aplicado nas abas técnicas.)
+                Object.assign(novaDemanda, await extrasDe('demandas', itemAntigo));
                 const res = await sb.from('demandas').update(novaDemanda).eq('id', idEdicao); error = res.error;
                 // Log só depois de confirmar a gravação — registrar antes criava
                 // entrada de auditoria para edição que podia ter falhado.
@@ -337,6 +341,7 @@
                     syncSheets('demandas', 'upsert', { ...(itemAntigo || {}), ...novaDemanda, id: Number(idEdicao) });
                 }
             } else {
+                Object.assign(novaDemanda, await extrasDe('demandas'));
                 const res = await sb.from('demandas').insert(novaDemanda); error = res.error;
                 if(!error) { registrarLog('Criação', 'Demandas', `Nova O.S. Gerada`); syncSheets('demandas', 'insert', novaDemanda); }
             }
@@ -369,6 +374,7 @@
                 wrapEnc.style.display = 'block';
                 inputFim.value = d.data_fim ? DateUtils.isoParaInputBRT(d.data_fim) : '';
             } else { wrapEnc.style.display = 'none'; inputFim.value = ''; }
+            preencherExtras('demandas', d);
             abrirPainel('demandas');
         }
 

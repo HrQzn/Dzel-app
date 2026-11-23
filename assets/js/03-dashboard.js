@@ -353,7 +353,8 @@
             atualizarTodosKPIs();
             if (!document.getElementById('pn-aberto')) return;
             aplicarEscopoDashboardUI();
-            const lista = demandasEscopoDash() || [];
+            const uniSel = (document.getElementById('dash-filtro-unidade') || {}).value || '';
+            const lista = (demandasEscopoDash() || []).filter(d => !uniSel || unidadeDe(d) === uniSel);
             const abertas = lista.filter(d => d.status !== 'Concluído');
             const mes = _pnPreencherMeses(lista);
             const btnNova = document.getElementById('pn-btn-nova');

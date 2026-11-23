@@ -108,10 +108,12 @@
             if (!appUsers.length) { tbody.innerHTML = '<tr><td colspan="5" class="tabela-vazia">Nenhum usuário cadastrado.</td></tr>'; return; }
             const htmlRows = appUsers.map(u => {
                 const meta = u.usr_meta || {};
-                const tipo = meta.is_admin ? '<span class="badge bg-concluido">ADMIN</span>' : '<span class="badge bg-saiu">USUÁRIO</span>';
-                const lastLogin = u.usr_last_login ? new Date(u.usr_last_login).toLocaleString('pt-BR') : 'Nunca';
+                const tipo = meta.is_admin ? celPill('Admin', 'roxo') : celPill('Operador', 'neutro');
+                const lastLogin = u.usr_last_login ? celQuando(u.usr_last_login) + '/' + new Date(u.usr_last_login).getFullYear() : 'Nunca entrou';
                 const userStr = encodeURIComponent(JSON.stringify(u));
-                return `<tr><td><strong>${esc(meta.nome)}</strong></td><td>${esc(u.usr_email)}</td><td>${tipo}</td><td><span style="font-family:'JetBrains Mono', monospace; font-size:0.82rem;">${lastLogin}</span></td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button></td></tr>`;
+                const perms = meta.permissoes || {};
+                const nMods = Object.keys(perms).filter(m => perms[m] && perms[m].ver === true).length;
+                return `<tr><td><div class="cel-pessoa"><span class="cel-avatar" aria-hidden="true">${celIniciais(meta.nome || u.usr_email)}</span>${celDuas('<b>' + esc(meta.nome || '-') + '</b>', esc(u.usr_email))}</div></td><td>${tipo}</td><td>${meta.is_admin ? 'Todos' : nMods === 1 ? '1 módulo' : nMods + ' módulos'}</td><td class="cel-tempo">${lastLogin}</td><td><button onclick="editarUsuario('${userStr}')" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button><button onclick="excluirUsuario('${u.usr_id}', '${escJs(u.usr_email)}')" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button></td></tr>`;
             }).join('');
             tbody.innerHTML = htmlRows;
         }
