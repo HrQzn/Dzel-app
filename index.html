@@ -171,24 +171,39 @@
 
     <!-- Login -->
     <div id="login-overlay">
-        <div class="login-box">
-            <div class="login-logo"><i class="fas fa-building"></i></div>
-            <h2>Bem-vindo de volta</h2>
-            <p>Divisão de Zeladoria — COGESPA</p>
-            <div class="login-field">
-                <i class="fas fa-envelope login-ic"></i>
-                <input type="email" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-label="E-mail institucional">
+        <div class="login-arte" aria-hidden="true">
+            <div class="login-marca"><span class="marca-janelas"><i></i><i></i><i></i><i></i><i class="acesa"></i><i></i></span><span><b>Zeladoria</b><small>DZEL, COGESPA</small></span></div>
+            <div class="login-fachada">
+                <div class="login-andar"><span><i class="j2"></i><i class="j3"></i><i class="j1"></i><i class="acesa"></i><i class="j2"></i><i class="j4"></i><i class="j2"></i><i class="j3"></i><i class="j3"></i><i class="j3"></i><i></i><i></i></span><span><i class="j4"></i><i class="j3"></i><i></i><i class="j3"></i><i></i><i class="j1"></i><i class="acesa"></i><i class="j1"></i><i></i><i></i><i class="j2"></i><i class="j2"></i></span></div>
+                <div class="login-andar"><span><i class="j1"></i><i class="j2"></i><i class="j4"></i><i></i><i></i><i></i><i class="j2"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j3"></i><i class="j3"></i></span><span><i class="j1"></i><i class="j3"></i><i class="acesa"></i><i></i><i class="j1"></i><i class="j4"></i><i></i><i></i><i></i><i class="j2"></i><i class="acesa"></i><i class="j3"></i></span></div>
+                <div class="login-andar"><span><i></i><i class="j1"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j1"></i><i class="acesa"></i><i></i><i class="j4"></i><i class="acesa"></i><i></i><i class="j2"></i></span><span><i class="j2"></i><i class="j2"></i><i class="j1"></i><i class="j2"></i><i class="j4"></i><i class="acesa"></i><i></i><i></i><i class="j1"></i><i class="j3"></i><i class="j1"></i><i class="j1"></i></span></div>
+                <div class="login-andar"><span><i></i><i class="acesa"></i><i></i><i class="j2"></i><i></i><i class="j1"></i><i></i><i class="j1"></i><i></i><i class="j4"></i><i class="j2"></i><i class="j1"></i></span><span><i></i><i class="j3"></i><i class="j2"></i><i></i><i></i><i class="j4"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j3"></i><i></i><i class="j2"></i></span></div>
+                <div class="login-chao"></div>
             </div>
+            <div class="login-frase">
+                <p class="login-frase-tit">Cada janela acesa é uma demanda em aberto.</p>
+                <p>Demandas, eventos e controle de acesso da Sede e das unidades, em um só lugar.</p>
+            </div>
+        </div>
+        <div class="login-box">
+            <div class="login-marca login-marca-cel"><span class="marca-janelas"><i></i><i></i><i></i><i></i><i class="acesa"></i><i></i></span><span><b>Zeladoria</b><small>DZEL, COGESPA</small></span></div>
+            <h2>Entrar na conta</h2>
+            <p>Use o seu e-mail institucional.</p>
+            <label class="login-rot" for="login-email">E-mail</label>
             <div class="login-field">
-                <i class="fas fa-lock login-ic"></i>
-                <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)" autocomplete="current-password">
-                <button type="button" class="login-eye" onclick="toggleLoginPass()" title="Mostrar/ocultar senha" aria-label="Mostrar ou ocultar senha"><i class="fas fa-eye" id="login-eye-icon"></i></button>
+                <input type="email" id="login-email" placeholder="nome@educacao.sp.gov.br" onkeyup="checkEnter(event)" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+            </div>
+            <label class="login-rot" for="login-pass">Senha</label>
+            <div class="login-field">
+                <input type="password" id="login-pass" placeholder="Sua senha" onkeyup="checkEnter(event)" autocomplete="current-password">
+                <button type="button" class="login-eye" onclick="toggleLoginPass()" title="Mostrar ou ocultar a senha" aria-label="Mostrar ou ocultar a senha"><i class="fas fa-eye" id="login-eye-icon"></i></button>
             </div>
             <div class="login-forgot-row">
                 <button type="button" class="login-forgot" onclick="esqueceuSenha()">Esqueceu a senha?</button>
             </div>
-            <button onclick="fazerLogin()" class="login-btn">Entrar na conta <i class="fas fa-arrow-right"></i></button>
-            <p id="login-error" class="login-error"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos!</p>
+            <button type="button" onclick="fazerLogin()" class="login-btn">Entrar</button>
+            <p id="login-error" class="login-error" role="alert"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos.</p>
+            <p class="login-rodape">Acesso restrito a servidores e equipes autorizadas pela Divisão de Zeladoria.</p>
         </div>
     </div>
 
