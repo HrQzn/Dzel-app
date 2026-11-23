@@ -259,6 +259,8 @@
             <button id="tab-eventos" class="tab-btn" onclick="switchTab('eventos')"><i class="fas fa-calendar-alt"></i> <span class="tab-label">Eventos</span></button>
             <button id="tab-crachas" class="tab-btn hidden-tab" onclick="switchTab('crachas')"><i class="fas fa-id-card"></i> <span class="tab-label">Crachás</span></button>
             <button id="tab-ocorrencias" class="tab-btn hidden-tab" onclick="switchTab('ocorrencias')"><i class="fas fa-triangle-exclamation"></i> <span class="tab-label">Ocorrências</span></button>
+            <div class="sidebar-section-label">Gestão</div>
+            <button id="tab-projetos" class="tab-btn hidden-tab" onclick="switchTab('projetos')"><i class="fas fa-diagram-project"></i> <span class="tab-label">Projetos</span></button>
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> <span class="tab-label">Auditoria</span></button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> <span class="tab-label">Usuários</span></button>
@@ -285,8 +287,9 @@
                     <article class="pn-card pn-mes" id="pn-mes"></article>
                     <article class="pn-card pn-sede" id="pn-sede"></article>
                     <article class="pn-card pn-fila" id="pn-fila"></article>
-                    <article class="pn-card pn-servicos" id="pn-servicos"></article>
+                    <article class="pn-card pn-projetos" id="pn-projetos"></article>
                     <article class="pn-card pn-meses" id="pn-meses"></article>
+                    <article class="pn-card pn-servicos" id="pn-servicos"></article>
                     <article class="pn-card pn-outros" id="pn-outros"></article>
                 </div>
             </section>
@@ -618,6 +621,17 @@
                 </div>
             </section>
 
+            <section id="projetos" class="section">
+                <div class="page-header pj-topo"><div class="page-header-left"><h2>Projetos</h2><p>Cada projeto reúne etapas, documentos e as demandas ligadas a ele</p></div>
+                    <div class="page-header-acoes">
+                        <div class="pj-visao" role="tablist" aria-label="Forma de ver os projetos"><button type="button" role="tab" data-visao="quadro">Quadro</button><button type="button" role="tab" data-visao="lista">Lista</button></div>
+                        <button type="button" class="btn-primary btn-novo" id="pj-btn-novo" onclick="novoRegistro('projetos')"><i class="fas fa-plus" aria-hidden="true"></i> Novo projeto</button>
+                    </div>
+                </div>
+                <div id="pj-conteudo"></div>
+                <div id="pj-detalhe" hidden></div>
+            </section>
+
             <section id="auditoria" class="section">
                 <div class="page-header"><div class="page-header-left"><h2>Auditoria</h2><p id="aud-sub">Quem fez o quê, em qual módulo e quando</p></div></div>
                 <div class="aud-resumo" id="aud-resumo"></div>
@@ -904,6 +918,49 @@
                     </form>
         </div>
     </aside>
+    <aside id="painel-projetos" class="painel-form no-print" role="dialog" aria-modal="true" aria-labelledby="titulo-form-projeto" tabindex="-1" style="--cor-modulo: var(--t-roxo-texto);">
+        <div class="painel-cabecalho">
+            <h2 id="titulo-form-projeto">Novo projeto</h2>
+            <button type="button" class="painel-fechar" onclick="fecharPainel()" aria-label="Fechar"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <div class="painel-corpo">
+            <form id="form-projeto">
+                <input type="hidden" id="projeto-id-edit" value="">
+                <div class="ex-grade pj-form">
+                    <label class="ex-campo ex-largo"><span>Nome do projeto</span><input type="text" id="pj-nome" required placeholder="Ex.: Preventivas de ar condicionado, novembro"></label>
+                    <label class="ex-campo"><span>Tipo</span><select id="pj-tipo"><option>Aquisição</option><option>Contratação</option><option>Instalação</option><option>Manutenção</option></select></label>
+                    <label class="ex-campo"><span>Fase atual</span><select id="pj-fase"><option>Planejamento</option><option>Contratação</option><option>Execução e recebimento</option><option>Concluído</option></select></label>
+                    <label class="ex-campo"><span>Unidade</span><select id="pj-unidade"><option>Sede</option><option>Arouche</option><option>Armênia</option><option>EFAPE</option><option>Todas</option></select></label>
+                    <label class="ex-campo"><span>Serviço</span><select id="pj-servico"><option value="">Não se aplica</option><option>Predial</option><option>Ar condicionado</option><option>Limpeza</option><option>Telefonia</option><option>Copa</option><option>Segurança e acesso</option><option>Mobiliário</option><option>Outro</option></select></label>
+                    <label class="ex-campo"><span>Responsável</span><input type="text" id="pj-responsavel" placeholder="Quem conduz"></label>
+                    <label class="ex-campo"><span>Pedido por <small>opcional</small></span><input type="text" id="pj-pedido" placeholder="Quem pediu"></label>
+                    <label class="ex-campo"><span>Processo SEI <small>opcional</small></span><input type="text" id="pj-sei" placeholder="Número do processo"></label>
+                    <label class="ex-campo"><span>Prazo final <small>opcional</small></span><input type="date" id="pj-prazo"></label>
+                    <label class="ex-campo"><span>Origem <small>opcional</small></span><input type="text" id="pj-origem" placeholder="Ex.: relatório da contratada"></label>
+                    <label class="ex-campo"><span>Item do PCA <small>opcional</small></span><input type="text" id="pj-pca" placeholder="Item do plano de contratações"></label>
+                    <label class="ex-campo ex-largo" id="pj-contrato-campo" hidden><span>Contrato <small>opcional</small></span><select id="pj-contrato"><option value="">Nenhum</option></select></label>
+                    <label class="ex-campo ex-largo"><span>Objetivo</span><textarea id="pj-objetivo" rows="3" placeholder="O que o projeto precisa entregar"></textarea></label>
+                    <div class="ex-campo ex-largo"><span>Etapas <small>sugeridas pelo tipo; você pode mudar</small></span><ol id="pj-etapas" class="pj-etapas-edit"></ol><button type="button" class="pn-link" id="pj-add-etapa">Adicionar etapa</button></div>
+                </div>
+                <div class="btn-container">
+                    <button type="submit" class="btn-primary" id="btn-submit-projeto">Criar projeto</button>
+                    <button type="button" class="btn-cancel" onclick="fecharPainel()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </aside>
+
+    <div id="modal-vincular" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vinc-titulo">
+        <div class="modal-box vinc-box">
+            <h3 id="vinc-titulo">Vincular demandas</h3>
+            <p class="vinc-sub" id="vinc-sub"></p>
+            <label class="lista-busca vinc-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="vinc-busca" placeholder="Buscar por descrição, local ou nº da O.S." aria-label="Buscar demanda"></label>
+            <label class="ex-check"><input type="checkbox" id="vinc-so-abertas" checked> Só demandas em aberto</label>
+            <ul id="vinc-lista" class="vinc-lista"></ul>
+            <div class="btn-container"><button type="button" class="btn-cancel" onclick="fecharVincular()">Fechar</button></div>
+        </div>
+    </div>
+
     <aside id="painel-ocorrencias" class="painel-form no-print" role="dialog" aria-modal="true" aria-labelledby="titulo-form-ocorrencia" tabindex="-1" style="--cor-modulo: var(--ocorrencia);">
         <div class="painel-cabecalho">
             <h2 id="titulo-form-ocorrencia" style="color:var(--ocorrencia);"><i class="fas fa-triangle-exclamation" style="color:var(--ocorrencia)"></i> Registrar Ocorrência</h2>
@@ -984,6 +1041,7 @@
                                         <tr><td>Eventos</td><td><input type="checkbox" id="perm-eventos-ver"></td><td><input type="checkbox" id="perm-eventos-edit"></td><td><input type="checkbox" id="perm-eventos-del"></td><td><input type="checkbox" id="perm-eventos-exp"></td></tr>
                                         <tr><td style="color:var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
                                         <tr><td style="color:var(--ocorrencia)">Ocorrências</td><td><input type="checkbox" id="perm-ocorrencias-ver"></td><td><input type="checkbox" id="perm-ocorrencias-edit"></td><td><input type="checkbox" id="perm-ocorrencias-del"></td><td><input type="checkbox" id="perm-ocorrencias-exp"></td></tr>
+                                        <tr><td>Projetos</td><td><input type="checkbox" id="perm-projetos-ver"></td><td><input type="checkbox" id="perm-projetos-edit"></td><td><input type="checkbox" id="perm-projetos-del"></td><td><input type="checkbox" id="perm-projetos-exp"></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1181,5 +1239,6 @@
     <script src="assets/js/12-menu-paineis.js" defer></script>
     <script src="assets/js/13-celulas.js" defer></script>
     <script src="assets/js/14-extras.js" defer></script>
+    <script src="assets/js/15-projetos.js" defer></script>
 </body>
 </html>
