@@ -28,6 +28,7 @@
     <!-- SheetJS e jsPDF removidos do <head> — serão carregados sob demanda (lazy-load) -->
     <link rel="stylesheet" href="assets/styles.css">
     <link rel="stylesheet" href="assets/tema.css">
+    <link rel="stylesheet" href="assets/telas.css">
     <script>
         // Aplica tema e menu salvos antes da 1ª pintura (sem "piscar")
         document.documentElement.setAttribute('data-tema', 'escuro');
@@ -170,24 +171,39 @@
 
     <!-- Login -->
     <div id="login-overlay">
-        <div class="login-box">
-            <div class="login-logo"><i class="fas fa-building"></i></div>
-            <h2>Bem-vindo de volta</h2>
-            <p>Divisão de Zeladoria — COGESPA</p>
-            <div class="login-field">
-                <i class="fas fa-envelope login-ic"></i>
-                <input type="email" id="login-email" placeholder="E-mail institucional" onkeyup="checkEnter(event)" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-label="E-mail institucional">
+        <div class="login-arte" aria-hidden="true">
+            <div class="login-marca"><span class="marca-janelas"><i></i><i></i><i></i><i></i><i class="acesa"></i><i></i></span><span><b>Zeladoria</b><small>DZEL, COGESPA</small></span></div>
+            <div class="login-fachada">
+                <div class="login-andar"><span><i class="j2"></i><i class="j3"></i><i class="j1"></i><i class="acesa"></i><i class="j2"></i><i class="j4"></i><i class="j2"></i><i class="j3"></i><i class="j3"></i><i class="j3"></i><i></i><i></i></span><span><i class="j4"></i><i class="j3"></i><i></i><i class="j3"></i><i></i><i class="j1"></i><i class="acesa"></i><i class="j1"></i><i></i><i></i><i class="j2"></i><i class="j2"></i></span></div>
+                <div class="login-andar"><span><i class="j1"></i><i class="j2"></i><i class="j4"></i><i></i><i></i><i></i><i class="j2"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j3"></i><i class="j3"></i></span><span><i class="j1"></i><i class="j3"></i><i class="acesa"></i><i></i><i class="j1"></i><i class="j4"></i><i></i><i></i><i></i><i class="j2"></i><i class="acesa"></i><i class="j3"></i></span></div>
+                <div class="login-andar"><span><i></i><i class="j1"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j1"></i><i class="acesa"></i><i></i><i class="j4"></i><i class="acesa"></i><i></i><i class="j2"></i></span><span><i class="j2"></i><i class="j2"></i><i class="j1"></i><i class="j2"></i><i class="j4"></i><i class="acesa"></i><i></i><i></i><i class="j1"></i><i class="j3"></i><i class="j1"></i><i class="j1"></i></span></div>
+                <div class="login-andar"><span><i></i><i class="acesa"></i><i></i><i class="j2"></i><i></i><i class="j1"></i><i></i><i class="j1"></i><i></i><i class="j4"></i><i class="j2"></i><i class="j1"></i></span><span><i></i><i class="j3"></i><i class="j2"></i><i></i><i></i><i class="j4"></i><i class="j1"></i><i class="j1"></i><i></i><i class="j3"></i><i></i><i class="j2"></i></span></div>
+                <div class="login-chao"></div>
             </div>
+            <div class="login-frase">
+                <p class="login-frase-tit">Cada janela acesa é uma demanda em aberto.</p>
+                <p>Demandas, eventos e controle de acesso da Sede e das unidades, em um só lugar.</p>
+            </div>
+        </div>
+        <div class="login-box">
+            <div class="login-marca login-marca-cel"><span class="marca-janelas"><i></i><i></i><i></i><i></i><i class="acesa"></i><i></i></span><span><b>Zeladoria</b><small>DZEL, COGESPA</small></span></div>
+            <h2>Entrar na conta</h2>
+            <p>Use o seu e-mail institucional.</p>
+            <label class="login-rot" for="login-email">E-mail</label>
             <div class="login-field">
-                <i class="fas fa-lock login-ic"></i>
-                <input type="password" id="login-pass" placeholder="Senha" onkeyup="checkEnter(event)" autocomplete="current-password">
-                <button type="button" class="login-eye" onclick="toggleLoginPass()" title="Mostrar/ocultar senha" aria-label="Mostrar ou ocultar senha"><i class="fas fa-eye" id="login-eye-icon"></i></button>
+                <input type="email" id="login-email" placeholder="nome@educacao.sp.gov.br" onkeyup="checkEnter(event)" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+            </div>
+            <label class="login-rot" for="login-pass">Senha</label>
+            <div class="login-field">
+                <input type="password" id="login-pass" placeholder="Sua senha" onkeyup="checkEnter(event)" autocomplete="current-password">
+                <button type="button" class="login-eye" onclick="toggleLoginPass()" title="Mostrar ou ocultar a senha" aria-label="Mostrar ou ocultar a senha"><i class="fas fa-eye" id="login-eye-icon"></i></button>
             </div>
             <div class="login-forgot-row">
                 <button type="button" class="login-forgot" onclick="esqueceuSenha()">Esqueceu a senha?</button>
             </div>
-            <button onclick="fazerLogin()" class="login-btn">Entrar na conta <i class="fas fa-arrow-right"></i></button>
-            <p id="login-error" class="login-error"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos!</p>
+            <button type="button" onclick="fazerLogin()" class="login-btn">Entrar</button>
+            <p id="login-error" class="login-error" role="alert"><i class="fas fa-exclamation-circle"></i> E-mail ou senha incorretos.</p>
+            <p class="login-rodape">Acesso restrito a servidores e equipes autorizadas pela Divisão de Zeladoria.</p>
         </div>
     </div>
 
@@ -253,79 +269,24 @@
             <section id="dashboard" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
-                        <h2><i class="fas fa-chart-line" style="color:var(--accent); margin-right:8px;"></i>Relatório Consolidado</h2>
-                        <p>Divisão de Zeladoria — Dados em Tempo Real</p>
+                        <h2>Painel</h2>
+                        <p id="pn-subtitulo">Sede e demais unidades</p>
                     </div>
-                    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-                        <div>
-                            <label style="font-size:0.72rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Filtrar Período:</label>
-                            <input type="month" id="dash-filtro-mes" onchange="renderizarDashboard()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;height:38px;font-size:0.85rem;">
-                        </div>
-                        <button onclick="imprimirDashboard()" title="Imprimir (PC)" class="btn-primary" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:var(--secondary);">
-                            <i class="fas fa-print"></i><span class="hide-mobile" style="margin-left:6px;">Imprimir</span>
-                        </button>
-                        <button id="btn-pdf-dash" onclick="gerarPDFDashboard()" title="Baixar PDF" style="padding:0 14px;font-size:0.82rem;height:38px;flex:unset;width:auto;background:linear-gradient(135deg,#dc2626,#991b1b);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fas fa-file-pdf"></i><span class="hide-mobile">PDF</span>
-                        </button>
+                    <div class="page-header-acoes">
+                        <label class="pn-mes-sel"><span class="sr-only">Mês do resumo</span><select id="dash-filtro-mes" onchange="this.dataset.escolhido = '1'; renderizarDashboard()"></select></label>
+                        <button type="button" class="btn-sec pn-so-pc" onclick="imprimirDashboard()" title="Imprimir" aria-label="Imprimir"><i class="fas fa-print" aria-hidden="true"></i></button>
+                        <button type="button" id="btn-pdf-dash" class="btn-sec" onclick="gerarPDFDashboard()">Exportar PDF</button>
+                        <button type="button" id="pn-btn-nova" class="btn-primary btn-novo" onclick="painelNovaDemanda()"><i class="fas fa-plus" aria-hidden="true"></i> Nova demanda</button>
                     </div>
                 </div>
-                <!-- ═══ KPIs OPERACIONAIS ═══ -->
-                <div class="kpi-grid">
-                    <div class="kpi-card"><div><div class="kpi-card-label">Tempo Médio de Atendimento</div><div class="kpi-card-value" id="kpi-tma">—</div><div class="kpi-card-sub" id="kpi-tma-sub">Horas úteis até conclusão</div></div><div class="kpi-card-icon" style="background:#eff6ff;"><i class="fas fa-stopwatch" style="color:var(--accent);"></i></div></div>
-                    <div class="kpi-card"><div><div class="kpi-card-label">Tempo de 1ª Resposta</div><div class="kpi-card-value" id="kpi-tmpr">—</div><div class="kpi-card-sub" id="kpi-tmpr-sub">Abertura → início do atendimento</div></div><div class="kpi-card-icon" style="background:#f0f9ff;"><i class="fas fa-bolt" style="color:#0ea5e9;"></i></div></div>
-                    <div class="kpi-card"><div><div class="kpi-card-label">SLA Cumprido</div><div class="kpi-card-value" id="kpi-sla-pct">—</div><div class="kpi-card-sub" id="kpi-sla-sub">— dentro do prazo</div></div><div class="kpi-card-icon" id="kpi-sla-icon" style="background:#f0fdf4;"><i class="fas fa-bullseye" id="kpi-sla-iconel" style="color:var(--success);"></i></div></div>
-                    <div class="kpi-card"><div><div class="kpi-card-label">Backlog em Aberto</div><div class="kpi-card-value" id="kpi-backlog">0</div><div class="kpi-card-sub">Pendentes + em andamento</div></div><div class="kpi-card-icon" style="background:#fefce8;"><i class="fas fa-layer-group" style="color:#ca8a04;"></i></div></div>
-                    <div class="kpi-card"><div><div class="kpi-card-label">SLA Vencido</div><div class="kpi-card-value" id="kpi-vencidas" style="color:var(--danger);">0</div><div class="kpi-card-sub">Abertas fora do prazo</div></div><div class="kpi-card-icon" style="background:#fef2f2;"><i class="fas fa-triangle-exclamation" style="color:var(--danger);"></i></div></div>
-                </div>
-
-                <!-- ═══ ENVELHECIMENTO DO BACKLOG ═══ -->
-                <div class="stats-grid" style="margin-bottom:1.5rem;">
-                    <div class="stat-mini" style="border-left-color:var(--success);"><h4>Em Dia (0–2 dias úteis)</h4><p id="kpi-aging-02">0 <small>demandas</small></p><span>Dentro da janela saudável</span></div>
-                    <div class="stat-mini" style="border-left-color:var(--warning);"><h4>Atenção (3–7 dias úteis)</h4><p id="kpi-aging-37">0 <small>demandas</small></p><span>Acompanhar de perto</span></div>
-                    <div class="stat-mini" style="border-left-color:var(--danger);"><h4>Crítico (+7 dias úteis)</h4><p id="kpi-aging-7">0 <small>demandas</small></p><span>Alto risco de SLA estourado</span></div>
-                    <div class="stat-mini" style="border-left-color:#475569;"><h4>Demanda Mais Antiga</h4><p id="kpi-mais-antiga">— <small>dias úteis</small></p><span id="kpi-mais-antiga-os">em aberto</span></div>
-                </div>
-
-                <!-- ═══ GRÁFICOS PRINCIPAIS ═══ -->
-                <div class="charts-grid">
-                    <div class="chart-card"><h3><i class="fas fa-chart-line" style="color:var(--accent);margin-right:6px;"></i>Tendência Mensal (Aberturas × Conclusões)</h3><div class="chart-wrapper-bar"><canvas id="chartTendencia"></canvas></div></div>
-                    <div class="chart-card"><h3><i class="fas fa-bar-chart" style="color:var(--accent);margin-right:6px;"></i>Volume de Atendimento por Setor</h3><div class="chart-wrapper-bar"><canvas id="chartVolumeSetor"></canvas></div></div>
-                </div>
-
-                <!-- ═══ PERFORMANCE POR CONTRATADA ═══ -->
-                <div class="chart-card" style="margin-bottom:1.5rem;">
-                    <h3><i class="fas fa-building" style="color:var(--accent);margin-right:6px;"></i>Performance por Contratada</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="dash-table" id="tabela-contratadas">
-                            <thead><tr><th>Contratada</th><th style="text-align:center;">Total</th><th style="text-align:center;">Em Aberto</th><th style="text-align:center;">TMA</th><th style="text-align:center;">% SLA</th></tr></thead>
-                            <tbody><tr><td colspan="5" class="dash-empty">Carregando…</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ═══ DEMANDAS MAIS ANTIGAS EM ABERTO ═══ -->
-                <div class="chart-card" style="margin-bottom:1.5rem;">
-                    <h3><i class="fas fa-hourglass-half" style="color:var(--danger);margin-right:6px;"></i>Demandas Mais Antigas em Aberto</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="dash-table" id="tabela-antigas">
-                            <thead><tr><th>O.S.</th><th>Descrição</th><th>Setor</th><th style="text-align:center;">Prioridade</th><th style="text-align:center;">Dias úteis</th></tr></thead>
-                            <tbody><tr><td colspan="5" class="dash-empty">Carregando…</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ═══ GRÁFICOS SECUNDÁRIOS ═══ -->
-                <div class="charts-grid">
-                    <div class="chart-card"><h3><i class="fas fa-flag" style="color:var(--accent);margin-right:6px;"></i>Distribuição por Prioridade</h3><div class="chart-wrapper-dnut"><canvas id="chartPrioridade"></canvas></div></div>
-                    <div class="chart-card" id="card-chart-garagem"><h3><i class="fas fa-car" style="color:var(--estacionado);margin-right:6px;"></i>Garagem: Perfil de Acesso</h3><div class="chart-wrapper-dnut"><canvas id="chartGaragemPerfil"></canvas></div><div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);"><p style="font-size:0.75rem;color:var(--text-muted);">Total de Veículos no Período</p><p id="total-garagem-label" style="font-weight:800;font-size:1.75rem;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">0</p></div></div>
-                </div>
-
-                <!-- ═══ CONTEXTO / VOLUME ═══ -->
-                <div class="stats-grid">
-                    <div class="stat-mini" style="border-left-color:var(--accent);"><h4>Total de Atendimentos</h4><p id="kpi-total-geral">0 <small>registros</small></p><span>Soma de todos os setores</span></div>
-                    <div class="stat-mini" id="stat-mini-eventos" style="border-left-color:#8b5cf6;"><h4>Eventos Realizados</h4><p id="kpi-total-eventos">0 <small>eventos</small></p><span id="kpi-publico-eventos">0 participantes</span></div>
-                    <div class="stat-mini" id="stat-mini-crachas" style="border-left-color:var(--success);"><h4>Crachás Emitidos</h4><p id="kpi-total-crachas">0 <small>solicitações</small></p><span>Atendidas no período</span></div>
-                    <div class="stat-mini" id="stat-mini-cftv" style="border-left-color:#475569;"><h4>Segurança Eletrônica</h4><p>161 <small>câmeras</small></p><span>Monitoramento 24h (CFTV)</span></div>
+                <div class="pn-grade">
+                    <article class="pn-card pn-aberto" id="pn-aberto"></article>
+                    <article class="pn-card pn-mes" id="pn-mes"></article>
+                    <article class="pn-card pn-sede" id="pn-sede"></article>
+                    <article class="pn-card pn-fila" id="pn-fila"></article>
+                    <article class="pn-card pn-servicos" id="pn-servicos"></article>
+                    <article class="pn-card pn-meses" id="pn-meses"></article>
+                    <article class="pn-card pn-outros" id="pn-outros"></article>
                 </div>
             </section>
 
@@ -517,7 +478,7 @@
             </section>
 
             <section id="visitantes" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Recepção de Visitantes</h2><p>Registro e controle de entrada e saída</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-visitante" onclick="abrirImportGenerico('visitantes')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('visitantes')"><i class="fas fa-plus" aria-hidden="true"></i> Novo visitante</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Recepção de visitantes</h2><p>Entrada e saída de visitantes</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-visitante" onclick="abrirImportGenerico('visitantes')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('visitantes')"><i class="fas fa-plus" aria-hidden="true"></i> Novo visitante</button></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-recepcao"><div class="metric-info"><h3>Visitantes Ativos</h3><p id="dash-visitantes-ativos">...</p></div><i class="fas fa-users metric-icon"></i></div>
                     <div class="metric-card card-total"><div class="metric-info"><h3>Total no Período</h3><p id="dash-visitantes-total">...</p></div><i class="fas fa-list metric-icon"></i></div>
@@ -539,7 +500,7 @@
             </section>
 
             <section id="veiculos" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Controle de Garagem</h2><p>Registro de entrada e saída de veículos</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-veiculo" onclick="abrirImportGenerico('frota')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('veiculos')"><i class="fas fa-plus" aria-hidden="true"></i> Nova entrada</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Controle de garagem</h2><p>Entrada e saída de veículos</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-veiculo" onclick="abrirImportGenerico('frota')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('veiculos')"><i class="fas fa-plus" aria-hidden="true"></i> Nova entrada</button></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-estacionado"><div class="metric-info"><h3>Estacionados</h3><p id="dash-frota-estacionados">...</p></div><i class="fas fa-parking metric-icon"></i></div>
                     <div class="metric-card card-total"><div class="metric-info"><h3>Acessos</h3><p id="dash-frota-total">...</p></div><i class="fas fa-car metric-icon"></i></div>
@@ -563,13 +524,16 @@
             </section>
 
             <section id="eventos" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Gestão de Eventos</h2><p>Registro e controle de eventos institucionais</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-evento" onclick="abrirImportGenerico('eventos')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('eventos')" style="background:linear-gradient(135deg,var(--evento),#be185d);"><i class="fas fa-plus" aria-hidden="true"></i> Novo evento</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Eventos</h2><p>Teatro, Salão Nobre e demais espaços</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-evento" onclick="abrirImportGenerico('eventos')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('eventos')" style="background:linear-gradient(135deg,var(--evento),#be185d);"><i class="fas fa-plus" aria-hidden="true"></i> Novo evento</button></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-evt-total"><div class="metric-info"><h3>Total Eventos</h3><p id="dash-eventos-qtd">...</p></div><i class="fas fa-calendar metric-icon"></i></div>
                     <div class="metric-card card-evt-interno"><div class="metric-info"><h3>Internos</h3><p id="dash-eventos-interno">...</p></div><i class="fas fa-building metric-icon"></i></div>
                     <div class="metric-card card-evt-externo"><div class="metric-info"><h3>Externos</h3><p id="dash-eventos-externo">...</p></div><i class="fas fa-globe metric-icon"></i></div>
                     <div class="metric-card card-evt-publico"><div class="metric-info"><h3>Público Total</h3><p id="dash-eventos-publico">...</p></div><i class="fas fa-users metric-icon"></i></div>
+                    <div class="metric-card card-evt-cafe"><div class="metric-info"><h3>Com coffee break</h3><p id="dash-eventos-cafe">...</p></div><i class="fas fa-mug-hot metric-icon"></i></div>
                 </div>
+                <div class="ev-grade">
+                <aside class="card ev-agenda" id="ev-agenda" aria-label="Agenda do mês"></aside>
                 <div class="card">
                     <div class="filter-container">
                         <div class="filter-group"><label>Filtrar Mês:</label><input type="month" id="filtro-mes-evento" onchange="window.renderizarApenasEventos()"></div>
@@ -579,15 +543,16 @@
                     </div>
                     <div class="table-container">
                         <table id="tabela-eventos">
-                            <thead><tr><th>Data</th><th>Tipo</th><th>Evento / Local / Obs</th><th>Organizador</th><th>Público</th><th>Ações</th></tr></thead>
-                            <tbody><tr><td colspan="6" class="loading">Carregando dados...</td></tr></tbody>
+                            <thead><tr><th>Data</th><th>Evento</th><th>Tipo</th><th>Público</th><th>Ações</th></tr></thead>
+                            <tbody><tr><td colspan="5" class="loading">Carregando dados...</td></tr></tbody>
                         </table>
                     </div>
+                </div>
                 </div>
             </section>
 
             <section id="crachas" class="section">
-                <div class="page-header"><div class="page-header-left"><h2 style="color:var(--cracha)"><i class="fas fa-id-card" style="margin-right:8px;"></i>Gestão de Crachás</h2><p>Solicitação, confecção e entrega de crachás</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-cracha" onclick="abrirImportGenerico('crachas')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('crachas')" style="background:linear-gradient(135deg,var(--cracha),#5b21b6);"><i class="fas fa-plus" aria-hidden="true"></i> Novo crachá</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Crachás</h2><p>Pedido, confecção e entrega de crachás</p></div><div class="page-header-acoes"><button type="button" class="btn-primary" id="btn-import-cracha" onclick="abrirImportGenerico('crachas')" title="Disponível apenas para administradores" style="display:none;background:linear-gradient(135deg,var(--excel),#15803d);flex:0 0 auto;padding:0.75rem 1.25rem;"><i class="fas fa-file-import"></i> Importar Planilha</button><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('crachas')" style="background:linear-gradient(135deg,var(--cracha),#5b21b6);"><i class="fas fa-plus" aria-hidden="true"></i> Novo crachá</button></div></div>
                 <div class="dashboard-panel">
                     <div class="metric-card card-cracha-solicitado"><div class="metric-info"><h3>Solicitados</h3><p id="dash-cracha-solicitado">...</p></div><i class="fas fa-id-card metric-icon"></i></div>
                     <div class="metric-card card-cracha-pronto"><div class="metric-info"><h3>Confeccionados</h3><p id="dash-cracha-confeccionado">...</p></div><i class="fas fa-check metric-icon"></i></div>
@@ -617,8 +582,8 @@
             <section id="ocorrencias" class="section">
                 <div class="page-header">
                     <div class="page-header-left">
-                        <h2 style="color:var(--ocorrencia)"><i class="fas fa-triangle-exclamation" style="margin-right:8px;"></i>Registro de Ocorrências</h2>
-                        <p>Controle de ocorrências e registros por contratada</p>
+                        <h2>Registro de ocorrências</h2>
+                        <p>Fatos que afetam a execução dos contratos, com número próprio e impressão da R.O.</p>
                     </div><div class="page-header-acoes"><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('ocorrencias')" style="background:linear-gradient(135deg,var(--ocorrencia),#991b1b);"><i class="fas fa-plus" aria-hidden="true"></i> Nova ocorrência</button></div>
                 </div>
                 <div class="dashboard-panel">
@@ -626,6 +591,7 @@
                     <div class="metric-card card-oco-aberta"><div class="metric-info"><h3>Abertas</h3><p id="dash-oco-abertas">...</p></div><i class="fas fa-exclamation-circle metric-icon"></i></div>
                     <div class="metric-card card-oco-tratativa"><div class="metric-info"><h3>Em Tratativa</h3><p id="dash-oco-tratativa">...</p></div><i class="fas fa-tools metric-icon"></i></div>
                     <div class="metric-card card-oco-encerrada"><div class="metric-info"><h3>Encerradas</h3><p id="dash-oco-encerradas">...</p></div><i class="fas fa-check-circle metric-icon"></i></div>
+                    <div class="metric-card card-oco-alta"><div class="metric-info"><h3>Gravidade alta</h3><p id="dash-oco-alta">...</p></div><i class="fas fa-bolt metric-icon"></i></div>
                 </div>
                 <div class="card">
                     <div class="filter-container">
@@ -652,19 +618,28 @@
             </section>
 
             <section id="auditoria" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Logs de Auditoria</h2><p>Histórico das últimas ações no sistema</p></div></div>
-                <div class="card">
+                <div class="page-header"><div class="page-header-left"><h2>Auditoria</h2><p id="aud-sub">Quem fez o quê, em qual módulo e quando</p></div></div>
+                <div class="aud-resumo" id="aud-resumo"></div>
+                <div class="card aud-card">
+                    <div class="aud-filtros">
+                        <label>De<input type="date" id="aud-de"></label>
+                        <label>Até<input type="date" id="aud-ate"></label>
+                        <label>Usuário<select id="aud-usuario"><option value="">Todos</option></select></label>
+                        <label>Módulo<select id="aud-modulo"><option value="">Todos</option></select></label>
+                        <label>Ação<select id="aud-acao"><option value="">Todas</option><option>Criação</option><option>Edição</option><option>Exclusão</option><option>Exportação</option><option>Importação</option><option>Saída</option></select></label>
+                    </div>
                     <div class="table-container">
                         <table id="tabela-logs">
-                            <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Seção</th><th>Ação</th><th>Detalhes</th></tr></thead>
+                            <thead><tr><th>Data e hora</th><th>Usuário</th><th>Módulo</th><th>Ação</th><th>Detalhes</th></tr></thead>
                             <tbody><tr><td colspan="5" class="loading">Carregando histórico...</td></tr></tbody>
                         </table>
                     </div>
+                    <p class="aud-rodape" id="aud-rodape"></p>
                 </div>
             </section>
 
             <section id="usuarios" class="section">
-                <div class="page-header"><div class="page-header-left"><h2>Gestão de Usuários</h2><p>Criação e permissões de acesso ao sistema</p></div><div class="page-header-acoes"><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('usuarios')"><i class="fas fa-plus" aria-hidden="true"></i> Novo usuário</button></div></div>
+                <div class="page-header"><div class="page-header-left"><h2>Usuários</h2><p>Contas de acesso e permissões por módulo</p></div><div class="page-header-acoes"><button type="button" class="btn-primary btn-novo" onclick="novoRegistro('usuarios')"><i class="fas fa-plus" aria-hidden="true"></i> Novo usuário</button></div></div>
                 <div class="card">
                     <div class="table-container">
                         <table id="tabela-usuarios-app">
@@ -1203,5 +1178,6 @@
     <script src="assets/js/10-import.js" defer></script>
     <script src="assets/js/11-import-generico.js" defer></script>
     <script src="assets/js/12-menu-paineis.js" defer></script>
+    <script src="assets/js/13-celulas.js" defer></script>
 </body>
 </html>

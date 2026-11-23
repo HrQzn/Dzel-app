@@ -177,7 +177,7 @@
         const _pgRerender  = {};   // tableId -> função que refaz a renderização
         const _TABELA_COLSPAN = {
             'tabela-demandas': 11, 'tabela-predial': 10, 'tabela-ar': 10, 'tabela-limpeza': 10,
-            'tabela-visitantes': 6, 'tabela-veiculos': 8, 'tabela-eventos': 6,
+            'tabela-visitantes': 6, 'tabela-veiculos': 8, 'tabela-eventos': 5,
             'tabela-crachas': 6, 'tabela-ocorrencias': 7
         };
 
