@@ -388,6 +388,7 @@
         window.painelAbrirDemanda = function(id) {
             const d = demandas.find(x => x.id == id); if (!d) return;
             const aba = _pnAbaDe(d); if (!aba) return;
+            if (window.matchMedia('(max-width: 900px)').matches && window.abrirDetalheDemanda) { abrirDetalheDemanda(d.id, aba === 'demandas' ? undefined : aba); return; }
             switchTab(aba);
             editarDemanda(d.id, aba === 'demandas' ? undefined : aba);
         };

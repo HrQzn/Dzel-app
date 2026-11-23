@@ -168,3 +168,111 @@
                 window.renderizarLogs();
             });
         })();
+
+        // ════════════════════════════════════════════════════════════════
+        // CELULAR: tocar numa demanda da lista abre a ficha dela em tela
+        // cheia (serviço, prazos, andamento e as ações principais).
+        // ════════════════════════════════════════════════════════════════
+        (function () {
+            const celular = window.matchMedia('(max-width: 900px)');
+            let voltarPara = null;
+            const hora = h => { if (!h || !/^\d{1,2}:\d{2}/.test(h)) return ''; const [hh, mm] = h.slice(0, 5).split(':'); return parseInt(hh, 10) + 'h' + (mm === '00' ? '' : mm); };
+            const quando = v => {
+                const d = v ? new Date(v) : null; if (!d || isNaN(d)) return '';
+                return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}, às ${hora(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'))}`;
+            };
+            function folha() {
+                let el = document.getElementById('detalhe-demanda');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'detalhe-demanda'; el.className = 'detalhe'; el.hidden = true;
+                    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'detalhe-titulo');
+                    document.body.appendChild(el);
+                }
+                return el;
+            }
+            window.fecharDetalheDemanda = function () {
+                const el = document.getElementById('detalhe-demanda'); if (!el || el.hidden) return;
+                el.hidden = true; document.documentElement.classList.remove('detalhe-aberto');
+                const alvo = voltarPara && document.contains(voltarPara) ? voltarPara : document.querySelector(`.section.active .btn-mais[data-id="${el.dataset.id}"]`);
+                if (alvo) alvo.focus();
+            };
+            window.abrirDetalheDemanda = function (id, origem, botao) {
+                const d = demandas.find(x => x.id == id); if (!d) return;
+                const modulo = origem || 'demandas';
+                const el = folha();
+                if (el.hidden) voltarPara = botao || document.activeElement;
+                el.dataset.id = d.id;
+                const pri = d.prioridade || 'Baixa';
+                const st = d.status || 'Pendente';
+                const serv = (_PN_SERVICOS[(d.contratada || '').trim().toUpperCase()] || [(d.contratada || '').trim() || '-'])[0];
+                const meta = metaSLA(d);
+                const abertaEm = d.data ? `${d.data.slice(8, 10)}/${d.data.slice(5, 7)}/${d.data.slice(0, 4)}${hora(d.hora) ? ', às ' + hora(d.hora) : ''}` : '-';
+                const linhas = [['Serviço', esc(serv)], ['Aberta em', abertaEm], ['Prazo de SLA', meta === 24 ? '1 dia útil' : Math.round(meta / 24) + ' dias úteis']];
+                if (st !== 'Concluído') {
+                    const dias = Math.floor((idadeAberta(d) || 0) / 24);
+                    linhas.push(['Em aberto há', `<span class="pn-ab">${dias ? (dias === 1 ? '1 dia útil' : dias + ' dias úteis') : 'menos de 1 dia útil'}</span>`]);
+                } else {
+                    linhas.push(['Concluída em', quando(d.data_fim) || '-']);
+                    linhas.push(['Tempo de atendimento', formatarDuracao(tempoResolucao(d))]);
+                }
+                if (d.solicitante) linhas.push(['Solicitante', esc(d.solicitante)]);
+                if (d.numero_os) linhas.push(['Nº da O.S.', esc(d.numero_os)]);
+                const passos = [
+                    ['feito', 'Demanda aberta', abertaEm],
+                    st === 'Pendente' ? ['futuro', 'Atendimento', 'Ainda não começou']
+                        : ['feito' + (st === 'Em Andamento' ? ' agora' : ''), st === 'Em Andamento' ? 'Em andamento' : 'Atendimento iniciado', quando(d.data_inicio_atendimento) || 'Sem horário de início registrado']
+                ];
+                if (st === 'Concluído') passos.push(['feito fim', 'Concluída', quando(d.data_fim) || 'Sem horário de conclusão registrado']);
+                const podeEditar = pode(modulo, 'editar');
+                const acao = st !== 'Concluído' && podeEditar ? (st === 'Pendente' ? 'Iniciar atendimento' : 'Concluir demanda') : '';
+                el.innerHTML = `
+                    <div class="detalhe-topo">
+                        <button type="button" class="detalhe-voltar" onclick="fecharDetalheDemanda()" aria-label="Voltar para a lista"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+                        <h2 id="detalhe-titulo">Demanda${d.numero_os ? ' ' + esc(d.numero_os) : ''}</h2>
+                        ${podeEditar ? `<button type="button" class="detalhe-editar" aria-label="Editar demanda" title="Editar"><i class="fas fa-pen" aria-hidden="true"></i></button>` : ''}
+                    </div>
+                    <div class="detalhe-corpo">
+                        <div class="detalhe-etiquetas">${celPill('Prioridade ' + pri.toLowerCase(), pri === 'Alta' ? 'vermelho' : pri === 'Média' ? 'ambar' : 'neutro')}${celPill(st === 'Em Andamento' ? 'Em andamento' : st, st === 'Concluído' ? 'verde' : st === 'Em Andamento' ? 'ambar' : 'neutro')}</div>
+                        <p class="detalhe-tit">${esc(d.titulo || 'Sem descrição')}</p>
+                        ${d.setor ? `<div class="detalhe-locais">${celChip(d.setor)}</div>` : ''}
+                        <dl class="detalhe-info">${linhas.map(([r, v]) => `<div><dt>${r}</dt><dd>${v}</dd></div>`).join('')}</dl>
+                        <section class="detalhe-andamento"><h3>Andamento</h3>${passos.map(([c, t, s]) => `<div class="detalhe-passo ${c}"><b>${t}</b><small>${s}</small></div>`).join('')}</section>
+                    </div>
+                    <div class="detalhe-rodape">
+                        <button type="button" class="sec detalhe-os">Gerar O.S.</button>
+                        ${acao ? `<button type="button" class="pri detalhe-avancar">${acao}</button>` : ''}
+                    </div>`;
+                el.querySelector('.detalhe-os').onclick = () => { fecharDetalheDemanda(); abrirModalImpressao(d.id); };
+                const ed = el.querySelector('.detalhe-editar');
+                if (ed) ed.onclick = () => { fecharDetalheDemanda(); editarDemanda(d.id, origem); };
+                const av = el.querySelector('.detalhe-avancar');
+                if (av) av.onclick = async () => {
+                    av.disabled = true;
+                    if (st === 'Em Andamento' && origem) { fecharDetalheDemanda(); avancarStatus(d.id, origem); return; }
+                    try {
+                        await avancarStatus(d.id, origem);
+                        // a lista recarrega em segundo plano; espera o novo status chegar
+                        for (let i = 0; i < 25; i++) {
+                            const atual = demandas.find(x => x.id == d.id);
+                            if (!atual || atual.status !== st) break;
+                            await new Promise(r => setTimeout(r, 200));
+                        }
+                    } finally { if (!el.hidden) abrirDetalheDemanda(d.id, origem); }
+                };
+                el.hidden = false; document.documentElement.classList.add('detalhe-aberto');
+                el.querySelector('.detalhe-voltar').focus();
+            };
+            document.addEventListener('click', (e) => {
+                if (!celular.matches) return;
+                const tr = e.target.closest('.tabela-refinada tbody tr');
+                if (!tr || e.target.closest('button, a, input, select, label, textarea')) return;
+                const mais = tr.querySelector('.btn-mais'); if (!mais) return;
+                abrirDetalheDemanda(Number(mais.dataset.id), mais.dataset.origem || undefined, mais);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                const el = document.getElementById('detalhe-demanda');
+                if (el && !el.hidden && !document.querySelector('.modal-overlay[style*="flex"]')) { e.stopPropagation(); fecharDetalheDemanda(); }
+            }, true);
+        })();
