@@ -16,6 +16,8 @@
             if (admin || p.crachas?.ver) { keys.push('crachas'); promises.push(fetchAll('crachas', 'id', false)); }
             if (admin || p.ocorrencias?.ver) { keys.push('ocorrencias'); promises.push(fetchAll('ocorrencias', 'data_hora', false)); }
             if (admin || p.projetos?.ver) { keys.push('projetos'); promises.push(fetchAll('projetos', 'id', true)); }
+            if (admin || p.contratos?.ver || p.ocorrencias?.ver || p.projetos?.ver) { keys.push('contratos'); promises.push(fetchAll('contratos', 'id', true)); }
+            if (admin || p.contratos?.ver) { keys.push('avaliacoes'); promises.push(fetchAll('contratos_avaliacoes', 'id', false)); }
             if (admin) { keys.push('logs'); promises.push(sb.from('logs_auditoria').select('*').order('id', { ascending: false }).limit(50).then(r => r.error ? null : (r.data || []))); }
             const results = await Promise.all(promises);
             const activeTab = document.querySelector('.section.active')?.id || '';
@@ -32,6 +34,8 @@
                 if(key === 'crachas')     { crachas = data; }
                 if(key === 'ocorrencias') { ocorrencias = data; }
                 if(key === 'projetos')    { projetos = data; }
+                if(key === 'contratos')   { contratos = data; }
+                if(key === 'avaliacoes')  { avaliacoes = data; }
                 if(key === 'logs')        { logs = data; if(activeTab === 'auditoria') renderizarLogs(); }
             });
             _dadosCarregados = true;
@@ -234,6 +238,7 @@
                 window.renderizarApenasOcorrencias?.();
                 window._atualizarContadoresMenu?.();
                 window.renderizarProjetos?.();
+                window.renderizarContratos?.();
 
                 // "Total de Veículos no Período" pertence ao Dashboard e segue
                 // o filtro de mês dele (não o da aba Garagem).

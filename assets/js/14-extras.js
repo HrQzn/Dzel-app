@@ -39,7 +39,8 @@
                     + txt('audiovisual', 'Audiovisual', 'Ex.: microfone, projetor, som')
                     + `<label class="ex-check"><input type="checkbox" data-col="suporte_tecnico"> Suporte técnico no evento</label>`
                     + `<p class="ex-conflito ex-largo" role="status" hidden></p>`,
-                ocorrencias: txt('data_encerramento', 'Data de encerramento <small>se encerrada</small>', '', 'datetime-local', 'data-se-vazio="manter" data-iso="1"')
+                ocorrencias: `<label class="ex-campo ex-largo" hidden><span>Contrato <small>opcional</small></span><select data-col="contrato_id" data-num="1" disabled><option value="">Sem contrato vinculado</option></select></label>`
+                    + txt('data_encerramento', 'Data de encerramento <small>se encerrada</small>', '', 'datetime-local', 'data-se-vazio="manter" data-iso="1"')
                     + `<div class="ex-campo ex-largo"><span>Anexos <small>fotos ou relatório em PDF</small></span><ul class="ex-anexos"></ul>
                        <input type="file" multiple accept="image/*,application/pdf" data-anexos="anexos" aria-label="Anexos da ocorrência"></div>`
             };
@@ -132,6 +133,7 @@
         window.preencherExtras = function (chave, item) {
             const box = _exBox(chave); if (!box) return;
             window.preencherOpcoesProjeto?.(box, item);
+            window.preencherOpcoesContrato?.(box, item);
             box.querySelectorAll('[data-col]').forEach(el => {
                 const v = item ? item[el.dataset.col] : null;
                 if (el.type === 'checkbox') el.checked = !!v;
