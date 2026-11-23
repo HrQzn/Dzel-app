@@ -56,7 +56,7 @@
             document.getElementById('novo-user-admin').checked = meta.is_admin === true;
             togglePermissoes(document.getElementById('novo-user-admin'));
             const p = meta.permissoes || {};
-            const mods = ['dashboard', 'demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'projetos'];
+            const mods = ['dashboard', 'demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'projetos', 'contratos'];
             mods.forEach(m => {
                 if(document.getElementById(`perm-${m}-ver`)) document.getElementById(`perm-${m}-ver`).checked = p[m]?.ver === true;
                 if(document.getElementById(`perm-${m}-edit`)) document.getElementById(`perm-${m}-edit`).checked = p[m]?.editar === true;
@@ -83,7 +83,7 @@
         }
 
         function montarPermissoesJSON() {
-            const mods = ['dashboard', 'demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'projetos'];
+            const mods = ['dashboard', 'demandas', 'visitantes', 'veiculos', 'eventos', 'crachas', 'predial', 'limpeza', 'ar', 'ocorrencias', 'projetos', 'contratos'];
             let perms = {};
             mods.forEach(m => {
                 perms[m] = {

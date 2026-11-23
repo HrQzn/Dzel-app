@@ -261,6 +261,7 @@
             <button id="tab-ocorrencias" class="tab-btn hidden-tab" onclick="switchTab('ocorrencias')"><i class="fas fa-triangle-exclamation"></i> <span class="tab-label">Ocorrências</span></button>
             <div class="sidebar-section-label">Gestão</div>
             <button id="tab-projetos" class="tab-btn hidden-tab" onclick="switchTab('projetos')"><i class="fas fa-diagram-project"></i> <span class="tab-label">Projetos</span></button>
+            <button id="tab-contratos" class="tab-btn hidden-tab" onclick="switchTab('contratos')"><i class="fas fa-file-signature"></i> <span class="tab-label">Contratos</span></button>
             <div class="sidebar-section-label">Admin</div>
             <button id="tab-auditoria" class="tab-btn hidden-tab" onclick="switchTab('auditoria')"><i class="fas fa-history"></i> <span class="tab-label">Auditoria</span></button>
             <button id="tab-usuarios" class="tab-btn hidden-tab" onclick="switchTab('usuarios')"><i class="fas fa-user-cog"></i> <span class="tab-label">Usuários</span></button>
@@ -632,6 +633,14 @@
                 <div id="pj-detalhe" hidden></div>
             </section>
 
+            <section id="contratos" class="section">
+                <div class="page-header"><div class="page-header-left"><h2>Contratos</h2><p>Cada contrato junta as demandas e as ocorrências da contratada, a vigência e a avaliação mensal</p></div>
+                    <div class="page-header-acoes"><button type="button" class="btn-primary btn-novo" id="ct-btn-novo" onclick="novoRegistro('contratos')"><i class="fas fa-plus" aria-hidden="true"></i> Cadastrar contrato</button></div>
+                </div>
+                <div id="ct-aviso" class="ct-aviso" role="status" hidden></div>
+                <div id="ct-lista" class="ct-grade"></div>
+            </section>
+
             <section id="auditoria" class="section">
                 <div class="page-header"><div class="page-header-left"><h2>Auditoria</h2><p id="aud-sub">Quem fez o quê, em qual módulo e quando</p></div></div>
                 <div class="aud-resumo" id="aud-resumo"></div>
@@ -957,7 +966,57 @@
             <label class="lista-busca vinc-busca"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="text" id="vinc-busca" placeholder="Buscar por descrição, local ou nº da O.S." aria-label="Buscar demanda"></label>
             <label class="ex-check"><input type="checkbox" id="vinc-so-abertas" checked> Só demandas em aberto</label>
             <ul id="vinc-lista" class="vinc-lista"></ul>
-            <div class="btn-container"><button type="button" class="btn-cancel" onclick="fecharVincular()">Fechar</button></div>
+            <div class="btn-container"><button type="button" class="btn-sec" onclick="fecharVincular()">Fechar</button></div>
+        </div>
+    </div>
+
+    <aside id="painel-contratos" class="painel-form no-print" role="dialog" aria-modal="true" aria-labelledby="titulo-form-contrato" tabindex="-1" style="--cor-modulo: var(--t-roxo-texto);">
+        <div class="painel-cabecalho">
+            <h2 id="titulo-form-contrato">Cadastrar contrato</h2>
+            <button type="button" class="painel-fechar" onclick="fecharPainel()" aria-label="Fechar"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <div class="painel-corpo">
+            <form id="form-contrato">
+                <input type="hidden" id="contrato-id-edit" value="">
+                <div class="ex-grade ct-form">
+                    <label class="ex-campo"><span>Nº do contrato</span><input type="text" id="ct-numero" required placeholder="Ex.: 016/2024"></label>
+                    <label class="ex-campo"><span>CNPJ <small>opcional</small></span><input type="text" id="ct-cnpj" inputmode="numeric" placeholder="00.000.000/0000-00"></label>
+                    <label class="ex-campo ex-largo"><span>Contratada</span><input type="text" id="ct-contratada" required placeholder="Nome da empresa"></label>
+                    <label class="ex-campo"><span>Serviço no app</span><select id="ct-servico"><option value="MANUTENÇÃO PREDIAL">Manutenção predial</option><option value="AR CONDICIONADO">Ar condicionado</option><option value="LIMPEZA">Limpeza</option><option value="TELEFONIA">Telefonia</option><option value="COPA">Copa</option><option value="SEGURANÇA E ACESSO">Segurança e acesso</option><option value="SUPORTE TI">Suporte de TI</option><option value="">Outro</option></select></label>
+                    <label class="ex-campo"><span>Unidades atendidas</span><select id="ct-unidades"><option>Todas</option><option>Sede</option><option>Arouche</option><option>Armênia</option><option>EFAPE</option></select></label>
+                    <label class="ex-campo ex-largo"><span>Objeto</span><textarea id="ct-objeto" rows="2" placeholder="O que o contrato cobre"></textarea></label>
+                    <label class="ex-campo"><span>Início da vigência</span><input type="date" id="ct-inicio"></label>
+                    <label class="ex-campo"><span>Fim da vigência</span><input type="date" id="ct-fim"></label>
+                    <label class="ex-campo"><span>Valor mensal <small>R$</small></span><input type="text" id="ct-valor" inputmode="decimal" placeholder="0,00"></label>
+                    <label class="ex-campo"><span>Avisar antes do fim</span><select id="ct-aviso-dias"><option value="90">90 dias</option><option value="120">120 dias</option><option value="180">180 dias</option></select></label>
+                    <label class="ex-campo"><span>Gestor do contrato</span><input type="text" id="ct-gestor"></label>
+                    <label class="ex-campo"><span>Fiscal técnico</span><input type="text" id="ct-fiscal"></label>
+                    <label class="ex-campo"><span>Processo SEI <small>opcional</small></span><input type="text" id="ct-sei"></label>
+                    <label class="ex-check ct-ativo"><input type="checkbox" id="ct-ativo" checked> Contrato em acompanhamento</label>
+                    <div class="ex-campo ex-largo ex-foto"><span>Contrato assinado <small>PDF, opcional</small></span>
+                        <div class="ex-foto-linha"><a href="#" class="anexo-abrir" id="ct-pdf-ver" hidden>Ver o contrato atual</a><input type="file" id="ct-pdf" accept="application/pdf" aria-label="Contrato assinado em PDF"></div></div>
+                </div>
+                <div class="btn-container">
+                    <button type="submit" class="btn-primary" id="btn-submit-contrato">Salvar contrato</button>
+                    <button type="button" class="btn-cancel" onclick="fecharPainel()">Cancelar</button>
+                    <button type="button" class="ct-excluir" id="ct-excluir" hidden>Excluir contrato</button>
+                </div>
+            </form>
+        </div>
+    </aside>
+
+    <div id="modal-avaliacao" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="av-titulo">
+        <div class="modal-box av-box">
+            <h3 id="av-titulo">Avaliação do mês</h3>
+            <p class="vinc-sub" id="av-sub"></p>
+            <form id="form-avaliacao" class="ex-grade av-grade">
+                <label class="ex-campo"><span>Mês</span><input type="month" id="av-mes" required></label>
+                <label class="ex-campo"><span>Conceito</span><select id="av-conceito"><option>Ótimo</option><option selected>Bom</option><option>Regular</option><option>Ruim</option></select></label>
+                <label class="ex-campo"><span>Nota <small>0 a 10, opcional</small></span><input type="number" id="av-nota" min="0" max="10" step="0.5"></label>
+                <label class="ex-campo ex-largo"><span>Observações</span><textarea id="av-obs" rows="3" placeholder="O que pesou na avaliação"></textarea></label>
+                <div class="btn-container ex-largo"><button type="submit" class="btn-primary" id="av-salvar">Salvar avaliação</button><button type="button" class="btn-sec" onclick="fecharAvaliacao()">Fechar</button></div>
+            </form>
+            <div class="av-historico" id="av-historico"></div>
         </div>
     </div>
 
@@ -1042,6 +1101,7 @@
                                         <tr><td style="color:var(--cracha)">Crachás</td><td><input type="checkbox" id="perm-crachas-ver"></td><td><input type="checkbox" id="perm-crachas-edit"></td><td><input type="checkbox" id="perm-crachas-del"></td><td><input type="checkbox" id="perm-crachas-exp"></td></tr>
                                         <tr><td style="color:var(--ocorrencia)">Ocorrências</td><td><input type="checkbox" id="perm-ocorrencias-ver"></td><td><input type="checkbox" id="perm-ocorrencias-edit"></td><td><input type="checkbox" id="perm-ocorrencias-del"></td><td><input type="checkbox" id="perm-ocorrencias-exp"></td></tr>
                                         <tr><td>Projetos</td><td><input type="checkbox" id="perm-projetos-ver"></td><td><input type="checkbox" id="perm-projetos-edit"></td><td><input type="checkbox" id="perm-projetos-del"></td><td><input type="checkbox" id="perm-projetos-exp"></td></tr>
+                                        <tr><td>Contratos</td><td><input type="checkbox" id="perm-contratos-ver"></td><td><input type="checkbox" id="perm-contratos-edit"></td><td><input type="checkbox" id="perm-contratos-del"></td><td><input type="checkbox" id="perm-contratos-exp"></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1240,5 +1300,6 @@
     <script src="assets/js/13-celulas.js" defer></script>
     <script src="assets/js/14-extras.js" defer></script>
     <script src="assets/js/15-projetos.js" defer></script>
+    <script src="assets/js/16-contratos.js" defer></script>
 </body>
 </html>

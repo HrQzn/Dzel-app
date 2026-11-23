@@ -359,7 +359,7 @@
             return d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
         }
 
-        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [], projetos = [], contratos = [];
+        let demandas = [], frota = [], visitantes = [], eventos = [], logs = [], appUsers = [], crachas = [], ocorrencias = [], projetos = [], contratos = [], avaliacoes = [];
         let currentUserData = null;
         let streamGeral = null;
         let osPrintAtualId = null;
@@ -568,7 +568,7 @@
             carregarDados();
             iniciarRealtime();
 
-            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias', 'projetos'];
+            const allTabs = ['dashboard', 'demandas', 'predial', 'limpeza', 'ar', 'visitantes', 'veiculos', 'eventos', 'auditoria', 'usuarios', 'crachas', 'ocorrencias', 'projetos', 'contratos'];
             allTabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden-tab'));
 
             // Botão "Importar Planilha" (Demandas) — exclusivo de administradores
@@ -598,6 +598,7 @@
                 if (userData.perms.crachas?.ver) { document.getElementById('tab-crachas').classList.remove('hidden-tab'); if(!firstTab) firstTab='crachas'; }
                 if (userData.perms.ocorrencias?.ver) { document.getElementById('tab-ocorrencias').classList.remove('hidden-tab'); if(!firstTab) firstTab='ocorrencias'; }
                 if (userData.perms.projetos?.ver) { document.getElementById('tab-projetos').classList.remove('hidden-tab'); if(!firstTab) firstTab='projetos'; }
+                if (userData.perms.contratos?.ver) { document.getElementById('tab-contratos').classList.remove('hidden-tab'); if(!firstTab) firstTab='contratos'; }
                 if(userData.perms.dashboard?.ver || userData.perms.demandas?.ver || userData.perms.visitantes?.ver) {
                     document.getElementById('tab-dashboard').classList.remove('hidden-tab');
                     if(!firstTab) firstTab = 'dashboard';
