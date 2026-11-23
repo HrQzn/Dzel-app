@@ -108,7 +108,7 @@
             return `<tr class="${marcada ? 'linha-sel' : ''}">`
                 + `<td class="col-sel"><input type="checkbox" class="sel-linha" data-id="${d.id}" ${marcada ? 'checked' : ''} aria-label="Selecionar a demanda ${d.id}"></td>`
                 + `<td class="col-num">#${d.id}</td>`
-                + `<td class="col-dem"><div class="dem"><span class="dem-titulo" title="${esc(d.titulo)}">${esc(d.titulo)}</span>${d.setor ? `<span class="dem-local" title="${esc(d.setor)}">${esc(d.setor)}</span>` : ''}</div>${sub ? `<small class="dem-sub">${sub}</small>` : ''}</td>`
+                + `<td class="col-dem"><div class="dem"><span class="dem-titulo" title="${esc(d.titulo)}">${esc(d.titulo)}${d.foto_path ? '<i class="fas fa-camera cel-icone" title="Tem foto" aria-label="Tem foto"></i>' : ''}${typeof unidadeDe === 'function' && unidadeDe(d) !== 'Sede' ? `<span class="dem-unidade">${esc(unidadeDe(d))}</span>` : ''}</span>${d.setor ? `<span class="dem-local" title="${esc(d.setor)}">${esc(d.setor)}</span>` : ''}</div>${sub ? `<small class="dem-sub">${sub}</small>` : ''}</td>`
                 + colServico
                 + `<td class="col-pri">${_celulaPrioridade(d.prioridade)}</td>`
                 + `<td class="col-sla">${_celulaSLA(d)}</td>`
@@ -157,6 +157,7 @@
         window.renderizarApenasDemandas = function() {
             const mes = _valor('filtro-mes-demanda'), dia = _valor('filtro-dia-demanda'), status = _valor('filtro-status-demanda');
             const texto = _valor('filtro-texto-demanda').toUpperCase(), serv = _valor('filtro-servico-demanda'), prio = _valor('filtro-prioridade-demanda');
+            const uni = _valor('filtro-unidade-demanda'), orig = _valor('filtro-origem-demanda');
             const base = [];
             let cPend = 0, cAnd = 0, cConc = 0;
             for (let i = 0, len = demandas.length; i < len; i++) {
@@ -167,6 +168,8 @@
                 if (texto && !(d.titulo + ' ' + d.setor + ' ' + d.solicitante + ' ' + (d.contratada || '')).toUpperCase().includes(texto)) continue;
                 if (serv && getCategoriaCached(d) !== serv) continue;
                 if (prio && d.prioridade !== prio) continue;
+                if (uni && unidadeDe(d) !== uni) continue;
+                if (orig && (d.origem || '') !== orig) continue;
                 base.push(d);
                 if (d.status === 'Pendente') cPend++;
                 else if (d.status === 'Em Andamento') cAnd++;

@@ -216,6 +216,8 @@
                     linhas.push(['Concluída em', quando(d.data_fim) || '-']);
                     linhas.push(['Tempo de atendimento', formatarDuracao(tempoResolucao(d))]);
                 }
+                linhas.push(['Unidade', esc(unidadeDe(d))]);
+                if (d.origem) linhas.push(['Origem', esc(d.origem)]);
                 if (d.solicitante) linhas.push(['Solicitante', esc(d.solicitante)]);
                 if (d.numero_os) linhas.push(['Nº da O.S.', esc(d.numero_os)]);
                 const passos = [
@@ -237,6 +239,8 @@
                         <p class="detalhe-tit">${esc(d.titulo || 'Sem descrição')}</p>
                         ${d.setor ? `<div class="detalhe-locais">${celChip(d.setor)}</div>` : ''}
                         <dl class="detalhe-info">${linhas.map(([r, v]) => `<div><dt>${r}</dt><dd>${v}</dd></div>`).join('')}</dl>
+                        ${d.observacoes ? `<section class="detalhe-obs"><h3>Observações</h3>${esc(d.observacoes)}</section>` : ''}
+                        ${d.foto_path ? '<a class="detalhe-foto" target="_blank" rel="noopener" hidden><img alt="Foto do problema"></a>' : ''}
                         <section class="detalhe-andamento"><h3>Andamento</h3>${passos.map(([c, t, s]) => `<div class="detalhe-passo ${c}"><b>${t}</b><small>${s}</small></div>`).join('')}</section>
                     </div>
                     <div class="detalhe-rodape">
@@ -260,6 +264,7 @@
                         }
                     } finally { if (!el.hidden) abrirDetalheDemanda(d.id, origem); }
                 };
+                if (d.foto_path) urlAnexo(d.foto_path).then(u => { const a = el.querySelector('.detalhe-foto'); if (u && a) { a.href = u; a.querySelector('img').src = u; a.hidden = false; } });
                 el.hidden = false; document.documentElement.classList.add('detalhe-aberto');
                 el.querySelector('.detalhe-voltar').focus();
             };

@@ -273,6 +273,7 @@
                         <p id="pn-subtitulo">Sede e demais unidades</p>
                     </div>
                     <div class="page-header-acoes">
+                        <label class="pn-mes-sel"><span class="sr-only">Unidade</span><select id="dash-filtro-unidade" onchange="renderizarDashboard()"><option value="">Todas as unidades</option><option>Sede</option><option>Arouche</option><option>Armênia</option><option>EFAPE</option></select></label>
                         <label class="pn-mes-sel"><span class="sr-only">Mês do resumo</span><select id="dash-filtro-mes" onchange="this.dataset.escolhido = '1'; renderizarDashboard()"></select></label>
                         <button type="button" class="btn-sec pn-so-pc" onclick="imprimirDashboard()" title="Imprimir" aria-label="Imprimir"><i class="fas fa-print" aria-hidden="true"></i></button>
                         <button type="button" id="btn-pdf-dash" class="btn-sec" onclick="gerarPDFDashboard()">Exportar PDF</button>
@@ -309,7 +310,7 @@
                             </select>
                             <select id="filtro-prioridade-demanda" class="lista-chip lista-filtro" aria-label="Prioridade" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Prioridade: todas</option><option value="Alta">Alta</option><option value="Média">Média</option><option value="Baixa">Baixa</option>
-                            </select>
+                            </select><select id="filtro-unidade-demanda" class="lista-chip lista-filtro" aria-label="Unidade" onchange="window.renderizarApenasDemandas()"><option value="">Unidade: todas</option><option>Sede</option><option>Arouche</option><option>Armênia</option><option>EFAPE</option></select><select id="filtro-origem-demanda" class="lista-chip lista-filtro" aria-label="Origem" onchange="window.renderizarApenasDemandas()"><option value="">Origem: todas</option><option>CRM</option><option>E-mail</option><option>WhatsApp</option><option>Telefone</option><option>Presencial</option><option>Preventiva</option><option>Proativa</option><option>Relatório da contratada</option></select>
                             <select id="filtro-status-demanda" class="lista-chip lista-filtro" aria-label="Status" onchange="window.renderizarApenasDemandas()">
                                 <option value="">Status: todos</option><option value="Pendente">Pendente</option><option value="Em Andamento">Em andamento</option><option value="Concluído">Concluído</option>
                             </select>
@@ -1179,5 +1180,6 @@
     <script src="assets/js/11-import-generico.js" defer></script>
     <script src="assets/js/12-menu-paineis.js" defer></script>
     <script src="assets/js/13-celulas.js" defer></script>
+    <script src="assets/js/14-extras.js" defer></script>
 </body>
 </html>

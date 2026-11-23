@@ -491,3 +491,42 @@ html.detalhe-aberto, html.detalhe-aberto body { overflow: hidden; }
 .detalhe-rodape .pri:disabled { opacity: 0.6; }
 @media (min-width: 901px) { .detalhe { left: auto; width: 440px; border-left: 1px solid var(--t-borda-1); box-shadow: -16px 0 48px var(--t-sombra-forte); } }
 @media print { .detalhe { display: none !important; } }
+
+/* =====================================================================
+   ETAPA 2: campos novos nos formulários
+   ===================================================================== */
+.ex-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 14px; margin: 16px 0 4px; padding-top: 16px; border-top: 1px solid var(--t-borda-1); }
+.ex-campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 0.8rem; font-weight: 600; color: var(--t-texto-2); }
+.ex-campo > span small, .ex-campo small { font-weight: 500; color: var(--t-texto-4); }
+.ex-largo { grid-column: 1 / -1; }
+.ex-grade select, .ex-grade input:not([type="checkbox"]), .ex-grade textarea { width: 100%; margin: 0; }
+.ex-grade select { text-transform: none; }
+.ex-grade textarea { resize: vertical; min-height: 72px; }
+.ex-check { display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 500; color: var(--t-texto-2); cursor: pointer; }
+.ex-check input { width: 18px; height: 18px; accent-color: var(--t-roxo); }
+.ex-foto-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ex-foto-ver img { display: block; width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid var(--t-borda-2); }
+.ex-foto-linha input[type="file"], .ex-campo input[type="file"] { flex: 1; min-width: 200px; font-size: 0.84rem; padding: 8px; }
+.ex-anexos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ex-anexos:empty { display: none; }
+.ex-anexos li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border: 1px solid var(--t-borda-2); border-radius: 8px; font-weight: 500; }
+.ex-anexos li.removido a { text-decoration: line-through; color: var(--t-texto-4); }
+.ex-anexos a { color: var(--t-roxo-texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-anexo-tirar { border: 0; background: none; color: var(--t-texto-3); font: 600 0.8rem 'Plus Jakarta Sans', sans-serif; cursor: pointer; }
+.ex-conflito { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 0.84rem; font-weight: 500; line-height: 1.45; color: var(--t-ambar); background: rgba(255, 200, 87, 0.1); background: color-mix(in srgb, var(--t-ambar) 12%, transparent); }
+@media (max-width: 900px) { .ex-grade { grid-template-columns: minmax(0, 1fr); } }
+.cel-icone { color: var(--t-texto-4); font-size: 0.78rem; margin-left: 6px; }
+.dem-unidade { font-size: 0.72rem; font-weight: 600; color: var(--t-roxo-texto); margin-left: 6px; }
+.detalhe-obs { margin-top: 14px; padding: 14px 16px; background: var(--t-cartao); border: 1px solid var(--t-borda-1); border-radius: 14px; font-size: 0.9rem; line-height: 1.5; color: var(--t-texto-2); }
+.detalhe-obs h3 { margin: 0 0 6px; font: 700 0.9rem 'Plus Jakarta Sans', sans-serif; color: var(--t-texto); }
+.detalhe-foto { display: block; margin-top: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--t-borda-1); }
+.detalhe-foto img { display: block; width: 100%; max-height: 320px; object-fit: cover; }
+.ex-grade [hidden] { display: none !important; }
+#app-content .ex-grade input[type="file"], .painel-form .ex-grade input[type="file"] {
+    display: block !important; width: 100%; min-height: 44px; padding: 9px 10px; border: 1px dashed var(--t-borda-3); border-radius: 10px;
+    background: var(--t-base); color: var(--t-texto-2); font: 500 0.84rem 'Plus Jakarta Sans', sans-serif; cursor: pointer;
+}
+.ex-grade input[type="file"]::file-selector-button {
+    margin-right: 12px; padding: 6px 12px; border: 1px solid var(--t-borda-3); border-radius: 8px;
+    background: var(--t-cartao); color: var(--t-texto); font: 600 0.8rem 'Plus Jakarta Sans', sans-serif; cursor: pointer;
+}

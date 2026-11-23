@@ -28,6 +28,7 @@
             } else {
                 registrarLog('Criação', 'Ocorrências', `Nova ocorrência: ${novaOco.categoria} — ${novaOco.unidade}`);
             }
+            Object.assign(novaOco, await extrasDe('ocorrencias', idEdicao ? ocorrencias.find(o => o.id == id) : null));
             const { error } = await sb.from('ocorrencias').upsert(novaOco);
             if (error) alert('Erro: ' + error.message);
             else { syncSheets('ocorrencias','upsert',novaOco); cancelarEdicaoOcorrencia(); carregarDados(); fecharPainel({ salvo: true }); }
@@ -52,6 +53,7 @@
             document.getElementById('btn-cancel-oco').style.display = 'block';
             document.getElementById('oco-status-edit').style.display = 'block';
             document.getElementById('oco-status-edit').value = o.status;
+            preencherExtras('ocorrencias', o);
             abrirPainel('ocorrencias');
         };
 
@@ -122,7 +124,7 @@
                     <td><div class="cel-duas cel-ro">${o.numero ? `<small class="cel-mono">R.O. ${esc(o.numero)}</small>` : ''}<span>${celQuando(o.data_hora)}</span></div></td>
                     <td>${celPill(o.gravidade || 'Baixa', tomGrav)}</td>
                     <td>${celDuas('<b>' + esc(o.categoria) + '</b>', esc(o.contratada) || ondeFoi)}</td>
-                    <td><div class="cel-duas cel-desc"><span title="${esc(o.descricao)}">${esc(o.descricao) || '-'}</span><small>${ondeFoi}${o.responsavel ? (ondeFoi ? ', ' : '') + 'registrado por ' + esc(o.responsavel) : ''}</small></div></td>
+                    <td><div class="cel-duas cel-desc"><span title="${esc(o.descricao)}">${esc(o.descricao) || '-'}${(o.anexos || []).length ? `<i class="fas fa-paperclip cel-icone" title="${o.anexos.length} anexo(s)" aria-label="${o.anexos.length} anexo(s)"></i>` : ''}</span><small>${ondeFoi}${o.responsavel ? (ondeFoi ? ', ' : '') + 'registrado por ' + esc(o.responsavel) : ''}</small></div></td>
                     <td>${celPill(o.status || 'Aberta', tomStat)}</td>
                     <td><span class="cel-tempo${o.status === 'Encerrada' ? '' : ' ativo'}">${tempoTxt}</span></td>
                     <td>${celAcoes(btnPrint + btnPDF + btnWA + btnEdit + btnDel)}</td>
