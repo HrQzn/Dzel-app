@@ -369,6 +369,7 @@
             _pnCardMes(lista, mes);
             _pnCardSede(lista, abertas);
             _pnCardFila(abertas);
+            window._pnCardProjetos?.();
             _pnCardServicos(lista);
             _pnCardMeses(lista);
             _pnCardOutros(mes);

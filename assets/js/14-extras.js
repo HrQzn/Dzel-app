@@ -26,6 +26,7 @@
                 <input type="file" accept="image/*" data-arquivo="foto_path" aria-label="Foto do problema">
                 <label class="ex-check ex-remover" hidden><input type="checkbox" data-remover="foto_path"> Remover a foto</label></div></div>`;
             const DEMANDA = sel('unidade', 'Unidade', UNIDADES) + sel('origem', 'Origem', ORIGENS, 'Não informada')
+                + `<label class="ex-campo ex-largo" hidden><span>Projeto <small>opcional</small></span><select data-col="projeto_id" data-num="1" disabled><option value="">Sem projeto</option></select></label>`
                 + area('observacoes', 'Observações <small>opcional</small>', 'O que mais é importante saber sobre o pedido') + foto;
             const CAMPOS = {
                 demandas: DEMANDA, predial: DEMANDA, ar: DEMANDA, limpeza: DEMANDA,
@@ -94,11 +95,13 @@
             const box = _exBox(chave); if (!box) return {};
             const out = {};
             box.querySelectorAll('[data-col]').forEach(el => {
+                if (el.disabled) return;
                 let v;
                 if (el.type === 'checkbox') v = el.checked;
                 else if (el.type === 'number') v = el.value === '' ? null : Math.max(0, parseInt(el.value, 10) || 0);
                 else v = String(el.value || '').trim();
                 if (v === '') { if (el.dataset.seVazio === 'manter') return; v = null; }
+                else if (el.dataset.num && typeof v === 'string') v = parseInt(v, 10) || null;
                 else if (el.dataset.iso && v) v = DateUtils.toDatabaseISO(v);
                 else if (typeof v === 'string' && (el.tagName === 'TEXTAREA' || el.type === 'text')) v = v.toUpperCase();
                 out[el.dataset.col] = v;
@@ -128,6 +131,7 @@
         };
         window.preencherExtras = function (chave, item) {
             const box = _exBox(chave); if (!box) return;
+            window.preencherOpcoesProjeto?.(box, item);
             box.querySelectorAll('[data-col]').forEach(el => {
                 const v = item ? item[el.dataset.col] : null;
                 if (el.type === 'checkbox') el.checked = !!v;

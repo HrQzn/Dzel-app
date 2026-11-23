@@ -218,6 +218,7 @@
                 }
                 linhas.push(['Unidade', esc(unidadeDe(d))]);
                 if (d.origem) linhas.push(['Origem', esc(d.origem)]);
+                if (d.projeto_id && typeof projetos !== 'undefined') { const pj = projetos.find(x => x.id == d.projeto_id); if (pj) linhas.push(['Projeto', `<span class="pn-link">${esc(pj.nome)}</span>`]); }
                 if (d.solicitante) linhas.push(['Solicitante', esc(d.solicitante)]);
                 if (d.numero_os) linhas.push(['Nº da O.S.', esc(d.numero_os)]);
                 const passos = [
