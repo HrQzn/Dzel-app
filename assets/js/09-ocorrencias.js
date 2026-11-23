@@ -92,6 +92,7 @@
             document.getElementById('dash-oco-abertas').innerText   = lista.filter(o => o.status === 'Aberta').length;
             document.getElementById('dash-oco-tratativa').innerText = lista.filter(o => o.status === 'Em Tratativa').length;
             document.getElementById('dash-oco-encerradas').innerText= lista.filter(o => o.status === 'Encerrada').length;
+            { const elAlta = document.getElementById('dash-oco-alta'); if (elAlta) elAlta.innerText = lista.filter(o => o.gravidade === 'Alta').length; }
             if (!secaoVisivel('ocorrencias')) return;
 
             const gravClass = { 'Baixa':'bg-concluido', 'Média':'bg-andamento', 'Alta':'bg-pendente', 'Crítica':'bg-critica' };
@@ -113,14 +114,18 @@
                 const btnPrint = `<button onclick="imprimirOcorrencia(${o.id})" class="action-btn btn-print" title="Imprimir R.O." aria-label="Imprimir registro de ocorrência"><i class="fas fa-print" aria-hidden="true"></i></button>`;
                 const btnEdit = pode('ocorrencias','editar') ? `<button onclick="editarOcorrencia(${o.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>` : '';
                 const btnDel  = pode('ocorrencias','excluir') ? `<button onclick="deletarOcorrencia(${o.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>` : '';
+                const tomGrav = { 'Alta': 'vermelho', 'Média': 'ambar' }[o.gravidade] || 'neutro';
+                const tomStat = { 'Aberta': 'vermelho', 'Em tratativa': 'ambar', 'Encerrada': 'verde' }[o.status] || 'neutro';
+                const ondeFoi = [o.unidade, o.local].filter(Boolean).map(esc).join(', ');
+                const tempoTxt = o.status === 'Encerrada' && o.data_encerramento ? calcularTempoOco(o.data_hora, o.data_encerramento) : calcularTempoOco(o.data_hora);
                 return `<tr>
-                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;white-space:nowrap">${dataFmt}</td>
-                    <td><span class="badge ${gravClass[o.gravidade]||'bg-saiu'}">${esc(o.gravidade)}</span></td>
-                    <td>${titulo}<br><small style="color:var(--text-muted)">${esc(o.unidade)} — ${esc(o.local)}</small></td>
-                    <td>${desc}<br><small style="color:var(--text-muted)">Resp: ${esc(o.responsavel)}</small></td>
-                    <td><span class="badge ${statClass[o.status]||'bg-saiu'}">${esc(o.status)}</span></td>
-                    <td>${tempo}</td>
-                    <td style="min-width:170px">${btnWA}${btnPrint}${btnPDF}${btnEdit}${btnDel}</td>
+                    <td><div class="cel-duas cel-ro">${o.numero ? `<small class="cel-mono">R.O. ${esc(o.numero)}</small>` : ''}<span>${celQuando(o.data_hora)}</span></div></td>
+                    <td>${celPill(o.gravidade || 'Baixa', tomGrav)}</td>
+                    <td>${celDuas('<b>' + esc(o.categoria) + '</b>', esc(o.contratada) || ondeFoi)}</td>
+                    <td><div class="cel-duas cel-desc"><span title="${esc(o.descricao)}">${esc(o.descricao) || '-'}</span><small>${ondeFoi}${o.responsavel ? (ondeFoi ? ', ' : '') + 'registrado por ' + esc(o.responsavel) : ''}</small></div></td>
+                    <td>${celPill(o.status || 'Aberta', tomStat)}</td>
+                    <td><span class="cel-tempo${o.status === 'Encerrada' ? '' : ' ativo'}">${tempoTxt}</span></td>
+                    <td>${celAcoes(btnPrint + btnPDF + btnWA + btnEdit + btnDel)}</td>
                 </tr>`;
                 }
             });

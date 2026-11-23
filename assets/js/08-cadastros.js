@@ -70,7 +70,7 @@
                     if (pode('visitantes', 'editar')) buttons += `<button onclick="editarVisitante(${v.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('visitantes', 'excluir')) buttons += `<button onclick="deletarVisitante(${v.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
                     const imgTag = `<img src="${esc(v.foto || defaultIcon)}" class="avatar-table">`;
-                    return `<tr><td>${badge}</td><td>${imgTag}<strong>${esc(v.nome)}</strong><br><small style="color:var(--text-muted)">${esc(v.contato)}</small></td><td>${esc(v.empresa) || '-'}<br><small style="color:var(--text-muted)">${esc(v.doc)}</small></td><td>${esc(v.responsavel)}<br><small style="color:var(--text-muted)">${esc(v.finalidade)}</small></td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dataEnt}<br>Sai: ${dataSai}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${celPill(v.status === 'Ativo' ? 'Na empresa' : 'Saiu', v.status === 'Ativo' ? 'ambar' : 'neutro')}</td><td><div class="cel-pessoa">${v.foto ? `<img src="${esc(v.foto)}" class="cel-avatar" alt="">` : `<span class="cel-avatar" aria-hidden="true">${celIniciais(v.nome)}</span>`}${celDuas('<b>' + esc(v.nome) + '</b>', esc(v.contato))}</div></td><td>${celDuas(esc(v.empresa) || '-', v.doc ? '<span class="cel-mono">' + esc(celMascara(v.doc)) + '</span>' : '')}</td><td>${celDuas(esc(v.responsavel) || '-', esc(v.finalidade))}</td><td>${celDuas(celQuando(v.entrada), v.saida ? celSaida(v.entrada, v.saida) : (v.status === 'Ativo' ? 'ainda na empresa' : ''))}</td><td>${celAcoes(btnBaixa + buttons)}</td></tr>`;
                 }
             });
         }
@@ -191,7 +191,7 @@
                     let buttons = '';
                     if (pode('veiculos', 'editar')) buttons += `<button onclick="editarVeiculo(${f.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('veiculos', 'excluir')) buttons += `<button onclick="deletarVeiculo(${f.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
-                    return `<tr><td>${badge}</td><td>${icon}</td><td><strong>${esc(f.motorista)}</strong><br><small style="color:var(--text-muted)">${esc(f.contato)}</small></td><td>${esc(f.carro)}</td><td>${esc(f.setor) || '-'}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;">Ent: ${dIn}<br>Sai: ${dOut}</td><td>${tempoDisplay}</td><td style="min-width:140px">${btnBaixa}${buttons}</td></tr>`;
+                    return `<tr><td>${celPill(f.status === 'Aberto' ? 'Estacionado' : 'Finalizado', f.status === 'Aberto' ? 'ambar' : 'neutro')}</td><td>${f.tipo === 'servidor' ? 'Servidor' : 'Visitante'}</td><td>${celDuas('<b>' + esc(f.motorista) + '</b>', esc(f.contato))}</td><td>${celVeiculo(f.carro)}</td><td>${esc(f.setor) || '-'}</td><td>${celDuas(celQuando(f.hora_inicial), f.hora_final ? celSaida(f.hora_inicial, f.hora_final) : 'ainda na garagem')}</td><td><span class="cel-tempo${f.status === 'Aberto' ? ' ativo' : ''}">${tempoStr}</span></td><td>${celAcoes((f.status === 'Aberto' ? btnBaixa : '') + buttons)}</td></tr>`;
                 }
             });
         }
@@ -276,12 +276,14 @@
             document.getElementById('dash-eventos-qtd').innerText = lista.length;
             document.getElementById('dash-eventos-interno').innerText = lista.filter(e => e.tipo === 'Interno').length;
             document.getElementById('dash-eventos-externo').innerText = lista.filter(e => e.tipo === 'Externo').length;
+            { const elCafe = document.getElementById('dash-eventos-cafe'); if (elCafe) elCafe.innerText = lista.filter(e => e.coffee).length; }
+            window.renderizarAgendaEventos?.();
             document.getElementById('dash-eventos-publico').innerText = lista.reduce((sum, ev) => sum + (parseInt(ev.publico) || 0), 0);
             const btnExport = document.getElementById('btn-export-eventos');
             if (pode('eventos', 'exportar')) btnExport.style.display = 'inline-flex'; else btnExport.style.display = 'none';
             if (!secaoVisivel('eventos')) return;
             renderPaginated({
-                tableId: 'tabela-eventos', items: lista, colspan: 6,
+                tableId: 'tabela-eventos', items: lista, colspan: 5,
                 emptyMsg: 'Nenhum evento encontrado.',
                 filterKey: mes + '|' + dia + '|' + busca,
                 rerender: window.renderizarApenasEventos,
@@ -292,7 +294,8 @@
                     let buttons = '';
                     if (pode('eventos', 'editar')) buttons += `<button onclick="editarEvento(${ev.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('eventos', 'excluir')) buttons += `<button onclick="deletarEvento(${ev.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;"><strong>${formatarData(ev.data)}</strong></td><td><span class="badge ${badgeClass}">${esc(ev.tipo)}</span></td><td><strong>${esc(ev.nome)}</strong>${iconCoffee}<br><small style="color:var(--text-muted)">${esc(ev.local)}</small>${obsText}</td><td>${esc(ev.organizador)}</td><td><strong style="font-family:'JetBrains Mono',monospace;">${esc(ev.publico)}</strong></td><td style="min-width:100px">${buttons}</td></tr>`;
+                    const tomLocal = /TEATRO/i.test(ev.local || '') ? 'rosa' : /NOBRE/i.test(ev.local || '') ? 'ciano' : '';
+                    return `<tr><td class="cel-data">${celDiaMes(ev.data)}</td><td><div class="cel-duas"><span><b>${esc(ev.nome)}</b>${ev.coffee ? ' <i class="fas fa-mug-hot cel-cafe" title="Com coffee break" aria-label="Com coffee break"></i>' : ''}</span><small>${ev.local ? celChip(ev.local, tomLocal) : ''}${ev.organizador ? `<span>Organização: ${esc(ev.organizador)}</span>` : ''}</small>${ev.obs ? `<small class="cel-obs">${esc(ev.obs)}</small>` : ''}</div></td><td>${esc(ev.tipo) || '-'}</td><td class="cel-num">${(parseInt(ev.publico) || 0).toLocaleString('pt-BR')}</td><td>${celAcoes(buttons)}</td></tr>`;
                 }
             });
         }
@@ -374,7 +377,9 @@
                     let buttons = '';
                     if (pode('crachas', 'editar')) buttons += `<button onclick="editarCracha(${c.id})" class="action-btn btn-edit" title="Editar" aria-label="Editar registro"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
                     if (pode('crachas', 'excluir')) buttons += `<button onclick="deletarCracha(${c.id})" class="action-btn btn-delete" title="Excluir" aria-label="Excluir registro"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
-                    return `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;">${formatarData(c.data_solicitacao)}</td><td><strong>${esc(c.nome)}</strong><br><small style="color:var(--text-muted)">DOC: ${esc(c.doc_identidade) || '-'}</small></td><td>${esc(c.setor)}<br><small style="color:var(--text-muted)">${esc(c.cargo) || '-'}</small></td><td>Sala: <strong>${esc(c.sala) || '-'}</strong><br><small style="color:var(--text-muted)">Ramal: ${esc(c.ramal) || '-'}</small></td><td><span class="badge ${badgeClass}">${esc(c.status)}</span>${dataEnt}</td><td>${buttons}</td></tr>`;
+                    const tomCracha = { 'Solicitado': 'roxo', 'Confeccionado': 'ambar', 'Entregue': 'verde' }[c.status] || 'neutro';
+                    const sala = c.sala ? (/sala/i.test(c.sala) ? c.sala : 'Sala ' + c.sala) : '';
+                    return `<tr><td class="cel-data">${celDiaMes(c.data_solicitacao)}</td><td>${celDuas('<b>' + esc(c.nome) + '</b>', c.doc_identidade ? '<span class="cel-mono">' + esc(celMascara(c.doc_identidade)) + '</span>' : '')}</td><td>${celDuas(esc(c.setor) || '-', esc(c.cargo))}</td><td>${celDuas(sala ? celChip(sala) : '-', c.ramal ? 'ramal ' + esc(c.ramal) : '')}</td><td>${celDuas(celPill(c.status || 'Solicitado', tomCracha), c.data_entrega ? 'entregue em ' + celDiaMes(c.data_entrega) : esc(c.tipo || ''))}</td><td>${celAcoes(buttons)}</td></tr>`;
                 }
             });
         }
